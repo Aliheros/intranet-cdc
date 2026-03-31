@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Emojis & symboles – Intranet CDC</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 20px; background: #f8fafc; color: #1e293b; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    p.sub { color: #64748b; margin-top: 4px; margin-bottom: 32px; font-size: 14px; }
+    h2 { font-size: 15px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .06em; margin: 28px 0 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .card {
+      background: white; border-radius: 12px; border: 1px solid #e2e8f0;
+      padding: 16px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .preview { font-size: 44px; line-height: 1; }
+    .preview img { width: 48px; height: 48px; object-fit: contain; }
+    .label { font-size: 12px; color: #64748b; text-align: center; }
+    .cp { font-size: 11px; color: #94a3b8; font-family: monospace; }
+    .dl-btn {
+      display: inline-block; margin-top: 4px; padding: 5px 12px;
+      background: #6d28d9; color: white; border-radius: 6px;
+      font-size: 12px; font-weight: 600; text-decoration: none;
+      transition: background .15s;
+    }
+    .dl-btn:hover { background: #5b21b6; }
+    .no-img { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 32px 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Emojis &amp; symboles utilisés dans l'intranet CDC</h1>
+  <p class="sub">Tous les caractères non-ASCII détectés dans le code source frontend. Cliquez sur "Télécharger" pour récupérer l'image Apple Emoji (72px).</p>
+
+  <h2>Emojis (Twemoji Apple 72px)</h2>
+  <div class="grid">
+
+    <!-- ⏰ Alarm Clock U+23F0 -->
+    <div class="card">
+      <div class="preview"><img src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/23f0.png" alt="⏰" onerror="this.replaceWith(document.createTextNode('⏰'))"></div>
+      <div class="label">Réveil</div>
+      <div class="cp">U+23F0 ⏰</div>
+      <a class="dl-btn" href="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/23f0.png" download="emoji-23f0-reveil.png">Télécharger</a>
+    </div>
+
+    <!-- ⏱ Stopwatch U+23F1 -->
+    <div class="card">
+      <div class="preview"><img src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/23f1.png" alt="⏱" onerror="this.replaceWith(document.createTextNode('⏱'))"></div>
+      <div class="label">Chronomètre</div>
+      <div class="cp">U+23F1 ⏱</div>
+      <a class="dl-btn" href="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/23f1.png" download="emoji-23f1-chronometre.png">Télécharger</a>
+    </div>
+
+    <!-- ▶ Play Button U+25B6 -->
+    <div class="card">
+      <div class="preview"><img src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/25b6.png" alt="▶" onerror="this.replaceWith(document.createTextNode('▶'))"></div>
+      <div class="label">Lecture (droite)</div>
+      <div class="cp">U+25B6 ▶</div>
+      <a class="dl-btn" href="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/25b6.png" download="emoji-25b6-play.png">Télécharger</a>
+    </div>
+
+    <!-- ◀ Reverse Button U+25C0 -->
+    <div class="card">
+      <div class="preview"><img src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/25c0.png" alt="◀" onerror="this.replaceWith(document.createTextNode('◀'))"></div>
+      <div class="label">Lecture (gauche)</div>
+      <div class="cp">U+25C0 ◀</div>
+      <a class="dl-btn" href="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/25c0.png" download="emoji-25c0-back.png">Télécharger</a>
+    </div>
+
+    <!-- ⚠ Warning U+26A0 -->
+    <div class="card">
+      <div class="preview"><img src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/26a0.png" alt="⚠" onerror="this.replaceWith(document.createTextNode('⚠'))"></div>
+      <div class="label">Avertissement</div>
+      <div class="cp">U+26A0 ⚠</div>
+      <a class="dl-btn" href="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/26a0.png" download="emoji-26a0-warning.png">Télécharger</a>
+    </div>
+
+    <!-- 👋 Waving Hand U+1F44B -->
+    <div class="card">
+      <div class="preview"><img src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/1f44b.png" alt="👋" onerror="this.replaceWith(document.createTextNode('👋'))"></div>
+      <div class="label">Main qui salue</div>
+      <div class="cp">U+1F44B 👋</div>
+      <a class="dl-btn" href="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/72x72/1f44b.png" download="emoji-1f44b-main.png">Télécharger</a>
+    </div>
+
+  </div>
+
+  <hr>
+  <h2>Symboles UI (pas d'image emoji disponible)</h2>
+  <p style="font-size:13px;color:#64748b;margin-bottom:12px;">Ces caractères sont utilisés comme icônes UI dans le code, mais ne correspondent pas à des emojis avec image téléchargeable.</p>
+  <div class="grid">
+
+    <div class="card">
+      <div class="preview" style="font-size:40px">─</div>
+      <div class="label">Tiret horizontal</div>
+      <div class="cp">U+2500</div>
+      <span class="no-img">Symbole UI uniquement</span>
+    </div>
+
+    <div class="card">
+      <div class="preview" style="font-size:40px">▲</div>
+      <div class="label">Triangle haut</div>
+      <div class="cp">U+25B2</div>
+      <span class="no-img">Symbole UI uniquement</span>
+    </div>
+
+    <div class="card">
+      <div class="preview" style="font-size:40px">▼</div>
+      <div class="label">Triangle bas</div>
+      <div class="cp">U+25BC</div>
+      <span class="no-img">Symbole UI uniquement</span>
+    </div>
+
+    <div class="card">
+      <div class="preview" style="font-size:40px">●</div>
+      <div class="label">Cercle plein</div>
+      <div class="cp">U+25CF</div>
+      <span class="no-img">Symbole UI uniquement</span>
+    </div>
+
+    <div class="card">
+      <div class="preview" style="font-size:40px">✓</div>
+      <div class="label">Coche</div>
+      <div class="cp">U+2713</div>
+      <span class="no-img">Symbole UI uniquement</span>
+    </div>
+
+    <div class="card">
+      <div class="preview" style="font-size:40px">✕</div>
+      <div class="label">Croix</div>
+      <div class="cp">U+2715</div>
+      <span class="no-img">Symbole UI uniquement</span>
+    </div>
+
+    <div class="card">
+      <div class="preview" style="font-size:40px">⬡</div>
+      <div class="label">Hexagone</div>
+      <div class="cp">U+2B21</div>
+      <span class="no-img">Symbole UI uniquement</span>
+    </div>
+
+  </div>
+
+  <hr>
+  <p style="font-size:12px;color:#94a3b8;margin-top:24px;">
+    Images : <a href="https://twemoji.twitter.com" target="_blank">Twemoji</a> 14.0.2 via jsDelivr — Licence CC BY 4.0.<br>
+    Généré depuis le code source de l'intranet CDC.
+  </p>
+</body>
+</html>

@@ -1,0 +1,478 @@
+// src/components/layout/Layout.jsx
+import React, { useState, useRef, useEffect } from 'react';
+import { AvatarInner, isAvatarUrl } from '../ui/AvatarDisplay';
+import { POLE_COLORS, PROJET_COLORS } from '../../data/constants';
+import { LogOut, Moon, Sun, Settings, Search, X, Bell, ClipboardList, MessageCircle, LayoutDashboard, Zap, Users, Receipt, Crown, Shield, Calendar, User, Target, Menu, ExternalLink, HelpCircle, FileSignature } from 'lucide-react';
+
+const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, darkMode, setDarkMode, currentUser, isAdmin = false, isBureau = false, accessiblePoles = [], accessibleProjets = [], myTeamSpaces = [], onOpenProfile, onOpenMyProfile, onRemoveAvatar, onLogout, globalQuery = "", setGlobalQuery, upcomingNotifications = [], notifBadgeCount = 0, onOpenNotifPanel, bannerHeight = 0, directory = [], actions = [], evenements = [], missions = [], onSelectMember, onSelectAction, onSelectEvent, onSelectMission }) => {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [avatarHovered, setAvatarHovered] = useState(false);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.closest('[data-search-container]')?.contains(e.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Ferme la sidebar si on redimensionne vers desktop
+  useEffect(() => {
+    const onResize = () => { if (window.innerWidth > 768) setSidebarOpen(false); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const navGroups = [
+    {
+      id: "main",
+      label: null,
+      items: [
+        { id: "dashboard", label: "Tableau de bord", IconComp: LayoutDashboard },
+      ],
+    },
+    {
+      id: "terrain",
+      label: "Terrain",
+      items: [
+        { id: "actions", label: "Suivi des actions", IconComp: ClipboardList },
+        { id: "coordination", label: "Coordination", IconComp: Zap },
+        { id: "planning", label: "Planning", IconComp: Calendar },
+      ],
+    },
+    {
+      id: "equipe",
+      label: "Équipe",
+      items: [
+        { id: "annuaire", label: "Annuaire & RH", IconComp: Users },
+        { id: "messagerie", label: "Messagerie", IconComp: MessageCircle },
+      ],
+    },
+    {
+      id: "gestion",
+      label: "Gestion",
+      items: [
+        { id: "notefrais",      label: "Notes de frais",   IconComp: Receipt },
+        { id: "devisFactures",  label: "Devis & Factures", IconComp: FileSignature },
+        { id: "faq",            label: "FAQ",              IconComp: HelpCircle },
+        ...(isAdmin || isBureau ? [{ id: "bureau", label: "Espace Bureau", IconComp: Crown }] : []),
+        ...(isAdmin ? [{ id: "admin", label: "Administration", IconComp: Shield }] : []),
+      ],
+    },
+  ];
+
+  const myPoles = [currentUser.pole].filter(Boolean);
+  const myProjets = (currentUser.projets || []).filter(Boolean);
+
+  // Fusion pôle/projets principaux + espaces d'équipe — déduplication par nom d'espace
+  const mySpaceEntries = (() => {
+    const entries = [];
+    const seen = new Set();
+    myPoles.forEach(p => { if (!seen.has(p)) { seen.add(p); entries.push({ space: p, role: null, type: 'pole' }); } });
+    myProjets.forEach(p => { if (!seen.has(p)) { seen.add(p); entries.push({ space: p, role: null, type: 'projet' }); } });
+    myTeamSpaces.forEach(e => { if (!seen.has(e.space)) { seen.add(e.space); entries.push(e); } else {
+      // Enrichir avec le rôle si déjà présent comme pôle/projet principal
+      const existing = entries.find(x => x.space === e.space);
+      if (existing && !existing.role) existing.role = e.role;
+    }});
+    return entries;
+  })();
+
+  // Sections "Pôles" et "Projets" : uniquement les espaces PAS déjà dans Mon espace
+  const mySpaceNames = new Set(mySpaceEntries.map(e => e.space));
+  const extraPoles = accessiblePoles.filter(p => !mySpaceNames.has(p));
+  const extraProjets = accessibleProjets.filter(p => !mySpaceNames.has(p));
+
+  const ROLE_LABEL_SHORT = { Responsable: 'Resp.', Membre: 'Mbr', Observateur: 'Obs.' };
+
+  const handleNav = (p, sp = "", tab = "contenu") => {
+    setPage(p);
+    setSubPage(sp);
+    if (setActiveTab) setActiveTab(tab);
+    setSidebarOpen(false); // ferme le drawer sur mobile après navigation
+  };
+
+  const openProfile = onOpenMyProfile || onOpenProfile;
+
+  // Éléments de la barre de navigation mobile du bas
+  const bottomNavItems = [
+    { id: "dashboard",    label: "Accueil",    IconComp: LayoutDashboard },
+    { id: "actions",      label: "Actions",    IconComp: ClipboardList },
+    { id: "messagerie",   label: "Messages",   IconComp: MessageCircle },
+    { id: "annuaire",     label: "Annuaire",   IconComp: Users },
+  ];
+
+  return (
+    <div className={`app ${darkMode ? "dark-theme" : "light-theme"}`}>
+
+      {/* ── BARRE DU HAUT MOBILE ──────────────────────────────────────────────── */}
+      <div className="mobile-topbar mobile-only" style={{ alignItems: "center" }}>
+        <button
+          onClick={() => setSidebarOpen(s => !s)}
+          style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 6, display: "flex", alignItems: "center" }}
+        >
+          <Menu size={22} strokeWidth={2} />
+        </button>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ background: "#e63946", color: "#fff", fontFamily: "var(--font-display)", fontSize: 8, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", padding: "2px 7px", borderRadius: 2 }}>Intranet</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 800, color: "#fff", textTransform: "uppercase" }}>Cité des Chances</span>
+        </div>
+
+        <button
+          onClick={onOpenNotifPanel}
+          style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 6, display: "flex", alignItems: "center", position: "relative" }}
+        >
+          <Bell size={20} strokeWidth={1.8} />
+          {notifBadgeCount > 0 && (
+            <span style={{ position: "absolute", top: 2, right: 2, width: 16, height: 16, borderRadius: "50%", background: "#e63946", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      <div className="body-row">
+
+        {/* ── OVERLAY SIDEBAR MOBILE ─────────────────────────────────────────── */}
+        {sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 8400, backdropFilter: "blur(2px)" }}
+          />
+        )}
+
+        {/* ── SIDEBAR ────────────────────────────────────────────────────────── */}
+        <aside className={`sidebar ${sidebarOpen ? "mobile-open" : ""}`} data-tour="sidebar">
+          <div className="s-top" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 20px 16px" }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <img
+                src="/logoCDC.png"
+                alt="Cité Des Chances"
+                style={{ width: 80, height: "auto", display: "block", imageRendering: "auto" }}
+              />
+              <div style={{ textAlign: "center", lineHeight: 1.35 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "var(--font-display)" }}>
+                  Cité des Chances
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 3 }}>
+                  Intranet · Espace membres
+                </div>
+                <a
+                  href="https://www.citedeschances.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5,
+                    padding: "4px 10px", borderRadius: 6,
+                    background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)",
+                    color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700,
+                    letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.16)"; e.currentTarget.style.color = "#fff"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+                >
+                  <ExternalLink size={10} strokeWidth={2} />
+                  Extranet
+                </a>
+              </div>
+            </div>
+            {/* Bouton fermer (mobile uniquement) */}
+            <button
+              className="mobile-only"
+              onClick={() => setSidebarOpen(false)}
+              style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", cursor: "pointer", width: 30, height: 30, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+            >
+              <X size={14} strokeWidth={2} />
+            </button>
+          </div>
+
+          <nav className="nav">
+            {navGroups.map((group, gi) => (
+              <div key={group.id}>
+                {group.label ? (
+                  <div className="ns" style={{ marginTop: gi > 0 ? 14 : 4, cursor: "default", pointerEvents: "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    {group.label}
+                    {group.id === "main" && notifBadgeCount > 0 && (
+                      <span style={{ background: "#e63946", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ paddingTop: 8 }} />
+                )}
+                {group.items.map((item) => (
+                  <div key={item.id} className={`ni ${page === item.id ? "active" : ""}`} onClick={() => handleNav(item.id)}>
+                    <span style={{ display: "inline-flex", alignItems: "center", marginRight: 8, opacity: page === item.id ? 1 : 0.6 }}>
+                      <item.IconComp size={15} strokeWidth={1.8} />
+                    </span>
+                    {item.label}
+                    {item.id === "dashboard" && notifBadgeCount > 0 && (
+                      <span style={{ marginLeft: "auto", background: "#e63946", color: "#fff", fontSize: 9, fontWeight: 700, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* ── Notifications ── */}
+            <div className={`ni`} onClick={() => { onOpenNotifPanel(); setSidebarOpen(false); }} style={{ marginTop: 8 }}>
+              <span style={{ display: "inline-flex", alignItems: "center", marginRight: 8, opacity: notifBadgeCount > 0 ? 1 : 0.6 }}>
+                <Bell size={15} strokeWidth={1.8} />
+              </span>
+              Notifications
+              {notifBadgeCount > 0 && (
+                <span style={{ marginLeft: "auto", background: "#e63946", color: "#fff", fontSize: 9, fontWeight: 700, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
+                </span>
+              )}
+            </div>
+
+            {mySpaceEntries.length > 0 && (
+              <>
+                <div className="ns" style={{ marginTop: 14 }}>Mon espace</div>
+                {mySpaceEntries.map(({ space, role, type }) => {
+                  const color = POLE_COLORS[space] || PROJET_COLORS[space] || '#94a3b8';
+                  const isActive = (type === 'pole' ? page === "pole" : page === "projet") && subPage === space;
+                  return (
+                    <div key={space} className={`ni ${isActive ? "active" : ""}`} onClick={() => handleNav(type === 'pole' ? "pole" : "projet", space)}>
+                      <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: color, marginRight: 8, flexShrink: 0 }} />
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{space}</span>
+                      {role && (
+                        <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.55)", flexShrink: 0, marginLeft: 4 }}>
+                          {ROLE_LABEL_SHORT[role] || role}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+
+            {extraPoles.length > 0 && (
+              <>
+                <div className="ns" style={{ marginTop: 14 }}>Pôles</div>
+                {extraPoles.map(p => (
+                  <div key={p} className={`ni ${page === "pole" && subPage === p ? "active" : ""}`} onClick={() => handleNav("pole", p, p === "Trésorerie" ? "tresorerie" : "contenu")}>
+                    <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: POLE_COLORS[p], marginRight: 8, flexShrink: 0 }} />{p}
+                  </div>
+                ))}
+              </>
+            )}
+
+            {extraProjets.length > 0 && (
+              <>
+                <div className="ns" style={{ marginTop: 14 }}>Projets</div>
+                {extraProjets.map(p => (
+                  <div key={p} className={`ni ${page === "projet" && subPage === p ? "active" : ""}`} onClick={() => handleNav("projet", p)}>
+                    <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: PROJET_COLORS[p], marginRight: 8, flexShrink: 0 }} />{p}
+                  </div>
+                ))}
+              </>
+            )}
+          </nav>
+
+          <div className="s-bottom" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button className="user-btn" onClick={openProfile} title="Éditer mon profil" style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{ position: 'relative', flexShrink: 0 }}
+                  onMouseEnter={() => setAvatarHovered(true)}
+                  onMouseLeave={() => setAvatarHovered(false)}
+                >
+                  <div className="uav" style={{ background: isAvatarUrl(currentUser.avatar) ? "transparent" : undefined, overflow: "hidden", padding: 0 }}>
+                    <AvatarInner avatar={currentUser.avatar} nom={currentUser.nom} />
+                  </div>
+                  {isAvatarUrl(currentUser.avatar) && avatarHovered && onRemoveAvatar && (
+                    <button
+                      onClick={e => { e.stopPropagation(); onRemoveAvatar(); }}
+                      title="Supprimer la photo"
+                      style={{ position: 'absolute', top: -3, right: -3, width: 15, height: 15, borderRadius: '50%', background: '#e63946', border: '1.5px solid rgba(255,255,255,0.8)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}
+                    >
+                      <X size={7} strokeWidth={3} color="#fff" />
+                    </button>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                  <div className="uname">{currentUser.nom}</div>
+                  <div className="urole">{currentUser.role}</div>
+                </div>
+                <span style={{ display: "inline-flex", alignItems: "center", color: "rgba(255,255,255,0.4)" }}><Settings size={14} strokeWidth={1.8} /></span>
+              </button>
+              <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)} title="Changer le thème" style={{ flexShrink: 0 }}>
+                {darkMode ? <Moon size={15} strokeWidth={1.8} /> : <Sun size={15} strokeWidth={1.8} />}
+              </button>
+            </div>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                title="Se déconnecter"
+                style={{
+                  background: 'rgba(230,57,70,0.15)',
+                  border: '1px solid rgba(230,57,70,0.3)',
+                  borderRadius: 8,
+                  color: '#ff6b7a',
+                  padding: '7px 10px',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  transition: 'all 0.2s',
+                  width: '100%',
+                  fontWeight: 600,
+                  letterSpacing: '0.3px',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(230,57,70,0.25)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(230,57,70,0.15)'; }}
+              >
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><LogOut size={15} strokeWidth={1.8} /> Déconnexion</span>
+              </button>
+            )}
+          </div>
+        </aside>
+
+        {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────────── */}
+        <main className="main" style={{ paddingTop: "20px", transition: "all 0.3s ease-out" }}>
+
+          {/* ── BARRE DE RECHERCHE GLOBALE ──────────────────────────────────── */}
+          <div data-search-container="true" style={{ position: "relative", flex: 1, maxWidth: 420, margin: "0 0 16px 0" }}>
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none", display: "inline-flex" }}><Search size={13} strokeWidth={1.8} /></span>
+              <input
+                ref={searchRef}
+                type="text"
+                value={globalQuery}
+                onChange={e => { setGlobalQuery(e.target.value); setSearchOpen(true); }}
+                onFocus={() => setSearchOpen(true)}
+                placeholder="Rechercher membres, actions, événements…"
+                style={{ width: "100%", padding: "7px 12px 7px 32px", fontSize: 12, background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 8, color: "var(--text-base)", outline: "none", boxSizing: "border-box" }}
+              />
+              {globalQuery && (
+                <button onClick={() => { setGlobalQuery(""); setSearchOpen(false); }} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, lineHeight: 1, display: "inline-flex" }}><X size={14} strokeWidth={2} /></button>
+              )}
+            </div>
+
+            {/* OVERLAY RÉSULTATS */}
+            {searchOpen && globalQuery.length >= 2 && (() => {
+              const q = globalQuery.toLowerCase();
+              const memberResults = directory.filter(m => m.nom.toLowerCase().includes(q) || m.pole.toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q)).slice(0, 3);
+              const actionResults = actions.filter(a => !a.isArchived && (a.etablissement.toLowerCase().includes(q) || (a.ville || "").toLowerCase().includes(q) || (a.description || "").toLowerCase().includes(q))).slice(0, 3);
+              const eventResults = evenements.filter(e => !e.isArchived && (e.titre.toLowerCase().includes(q) || (e.lieu || "").toLowerCase().includes(q))).slice(0, 3);
+              const missionResults = missions.filter(m => m.titre.toLowerCase().includes(q) || m.description.toLowerCase().includes(q) || m.pole.toLowerCase().includes(q)).slice(0, 3);
+              const hasResults = memberResults.length + actionResults.length + eventResults.length + missionResults.length > 0;
+
+              return (
+                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: 10, boxShadow: "0 12px 40px rgba(0,0,0,0.18)", zIndex: 9000, overflow: "hidden", maxHeight: 480, overflowY: "auto" }}>
+                  {!hasResults && (
+                    <div style={{ padding: "20px 16px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>Aucun résultat pour "{globalQuery}"</div>
+                  )}
+
+                  {memberResults.length > 0 && (
+                    <div>
+                      <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 4 }}><User size={11} strokeWidth={1.8} /> Membres</div>
+                      {memberResults.map(m => (
+                        <div key={m.id || m.nom} onClick={() => { onSelectMember && onSelectMember(m); setGlobalQuery(""); setSearchOpen(false); }} style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "var(--bg-alt)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: isAvatarUrl(m.avatar) ? "transparent" : "var(--accent)", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                            <AvatarInner avatar={m.avatar} nom={m.nom} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-base)" }}>{m.nom}</div>
+                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{m.pole}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {actionResults.length > 0 && (
+                    <div>
+                      <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 4 }}><ClipboardList size={11} strokeWidth={1.8} /> Actions</div>
+                      {actionResults.map(a => (
+                        <div key={a.id} onClick={() => { onSelectAction && onSelectAction(a); setGlobalQuery(""); setSearchOpen(false); }} style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "var(--bg-alt)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          <span style={{ display: "inline-flex", color: "var(--text-muted)" }}><ClipboardList size={18} strokeWidth={1.8} /></span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.etablissement}</div>
+                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{a.ville} · {a.statut}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {eventResults.length > 0 && (
+                    <div>
+                      <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 4 }}><Zap size={11} strokeWidth={1.8} /> Événements</div>
+                      {eventResults.map(e => (
+                        <div key={e.id} onClick={() => { onSelectEvent && onSelectEvent(e); setGlobalQuery(""); setSearchOpen(false); }} style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={el => el.currentTarget.style.background = "var(--bg-alt)"} onMouseLeave={el => el.currentTarget.style.background = "transparent"}>
+                          <span style={{ display: "inline-flex", color: "var(--text-muted)" }}><Zap size={18} strokeWidth={1.8} /></span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.titre}</div>
+                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{e.date} · {e.lieu || ""}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {missionResults.length > 0 && (
+                    <div>
+                      <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 4 }}><Target size={11} strokeWidth={1.8} /> Missions</div>
+                      {missionResults.map(m => (
+                        <div key={m.id} onClick={() => { onSelectMission && onSelectMission(m); setGlobalQuery(""); setSearchOpen(false); }} style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "var(--bg-alt)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          <span style={{ display: "inline-flex", color: "var(--text-muted)" }}><Target size={18} strokeWidth={1.8} /></span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.titre}</div>
+                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{m.pole} · {m.type}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
+          <div key={page} className="page-transition">{children}</div>
+        </main>
+      </div>
+
+      {/* ── NAVIGATION BAS D'ÉCRAN MOBILE ─────────────────────────────────────── */}
+      <nav className="mobile-bottom-nav mobile-only">
+        {bottomNavItems.map(item => (
+          <button
+            key={item.id}
+            className={`mob-nav-item ${page === item.id ? "active" : ""}`}
+            onClick={() => handleNav(item.id)}
+          >
+            <item.IconComp size={20} strokeWidth={page === item.id ? 2.2 : 1.8} />
+            {item.label}
+          </button>
+        ))}
+        {/* Bouton "Plus" → ouvre la sidebar */}
+        <button
+          className={`mob-nav-item`}
+          onClick={() => setSidebarOpen(true)}
+          style={{ position: "relative" }}
+        >
+          <Menu size={20} strokeWidth={1.8} />
+          Plus
+          {notifBadgeCount > 0 && (
+            <span style={{ position: "absolute", top: 6, right: "calc(50% - 18px)", width: 14, height: 14, borderRadius: "50%", background: "#e63946", color: "#fff", fontSize: 8, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
+            </span>
+          )}
+        </button>
+      </nav>
+
+    </div>
+  );
+};
+
+export default Layout;

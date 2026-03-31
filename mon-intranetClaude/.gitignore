@@ -1,0 +1,29 @@
+# ── Dépendances ──────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Variables d'environnement (NE JAMAIS COMMITTER) ──────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Build frontend ────────────────────────────────────────────────────────────
+frontend/dist/
+frontend/.vite/
+
+# ── Uploads utilisateurs ──────────────────────────────────────────────────────
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo

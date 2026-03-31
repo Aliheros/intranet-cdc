@@ -1,0 +1,364 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  nom          String
+  prenom       String   @default("")
+  avatar       String
+  pole         String
+  email        String       @unique
+  role         String       // Admin | Bureau | Éditeur | Lecteur
+  passwordHash String
+  statut       String       @default("Actif")
+  dateInscription String?
+  competences  String[]     @default([])
+  dispos       String?
+  telephone      String?
+  profileVolontaire Json?
+  commentairesRH    Json     @default("[]")
+  historiqueRH      Json     @default("[]")
+  notesRH      String?
+  projets      String[]     @default([])
+  conges            Json      @default("[]")
+  mustChangePassword Boolean   @default(false)
+  mustTakeTutorial   Boolean   @default(false)
+  emailPerso        String?
+  emailPreferences  Json      @default("{}")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Soft delete — jamais de suppression physique
+  isDeleted    Boolean   @default(false)
+  deletedAt    DateTime?
+  deletedBy    Int?       // ID de l'admin qui a désactivé
+  deleteReason String?
+
+  permissions     Permission[]
+  refreshTokens   RefreshToken[]
+  hours           Hour[]
+  notesFrais      NoteFrais[]
+  messages        Message[]
+}
+
+model Permission {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  pole   String
+  level  String // none | view | edit
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pole])
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Action {
+  id                  Int       @id @default(autoincrement())
+  type                String
+  etablissement       String
+  ville               String?
+  contact_nom         String?
+  contact_email       String?
+  contact_tel         String?
+  date_debut          String?
+  date_fin            String?
+  cycle               String
+  responsables        String[]
+  statut              String
+  notes               String?
+  projet              String?
+  beneficiaires       Int       @default(0)
+  type_classe         String?
+  heures              Float     @default(0)
+  isArchived          Boolean   @default(false)
+  budgetPrevisionnel  Float     @default(0)
+  depensesReelles     Float     @default(0)
+  transactionId       Int?
+  polesNotifies       String[]
+  checklist           Json?
+  bilan               Json?
+  timeline            Json      @default("[]")
+  completionScore     Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Evenement {
+  id          Int      @id @default(autoincrement())
+  titre       String
+  date        String
+  cycle       String
+  lieu        String?
+  actionId    Int?
+  description String?
+  poles       String[]
+  projet      String?
+  equipe      String[]
+  fichiers    Json     @default("[]")
+  statut      String
+  isArchived  Boolean  @default(false)
+  whatsappLink String?
+  seances     Json     @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Task {
+  id               Int      @id @default(autoincrement())
+  space            String
+  text             String
+  description      String?
+  assignees        Json     @default("[]")
+  createdBy        String
+  lockedBy         String?
+  forceCompletedBy String?
+  deadline         String?
+  cycle            String
+  status           String
+  completedAt      String?
+  actionId         Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model TaskRequest {
+  id          Int      @id @default(autoincrement())
+  text        String
+  description String?
+  space       String
+  actionId    Int?
+  requestedBy String
+  assignees   Json     @default("[]")
+  targetPool  Json     @default("[]")
+  deadline    String?
+  cycle       String
+  status      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Transaction {
+  id         Int      @id @default(autoincrement())
+  date       String
+  libelle    String
+  type       String   // Recette | Dépense
+  montant    Float
+  imputation String
+  statut     String
+  fichiers   Json     @default("[]")
+  categorie             String?
+  createdBy             String?
+  horseBudget           Boolean  @default(false)
+  horseBudgetRaison     String?
+  horseBudgetApprovedBy String?
+  devisFactureId        Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Budget {
+  id        Int      @id @default(autoincrement())
+  pole      String   @unique
+  montant   Float
+  updatedAt DateTime @updatedAt
+}
+
+model Mission {
+  id             Int      @id @default(autoincrement())
+  titre          String
+  pole           String
+  projet         String?
+  type           String
+  description    String
+  competences    String[]
+  duree          String?
+  urgence        String
+  statut         String
+  createdBy      String
+  createdAt      String
+  linkedActionId Int?
+  responsable    String?
+  dateDebut      String?
+  dateFin        String?
+  candidatures   Json     @default("[]")
+  updatedAt      DateTime @updatedAt
+}
+
+model NoteFrais {
+  id                   Int      @id @default(autoincrement())
+  numeroDossier        String   @unique
+  demandeurId          Int?
+  demandeurNom         String
+  date                 String
+  categorie            String
+  montant              Float
+  description          String
+  justificatif         String?
+  projet               String?
+  pole                 String?
+  linkedActionId       Int?
+  statut               String
+  commentaireTresorerie String?
+  transactionId        Int?
+  historique              Json     @default("[]")
+  suppressionDemandee     Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  demandeur User? @relation(fields: [demandeurId], references: [id])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  titre       String
+  contenu     String
+  auteur      String
+  date        String
+  cible       String
+  targetPoles String[]
+  targetUsers String[]
+  lu          String[]
+  priorite    String
+  source      String?
+  createdAt   DateTime @default(now())
+}
+
+model Hour {
+  id              Int      @id @default(autoincrement())
+  userId          Int?     // nullable : SET NULL si l'utilisateur est désactivé
+  userNomSnapshot String   @default("") // snapshot immuable du nom au moment de la saisie
+  actionId        Int?
+  eventId         Int?
+  type            String
+  hours           Float
+  date            String
+  status          String
+  createdAt       DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Conversation {
+  id        Int       @id @default(autoincrement())
+  titre     String
+  type      String    // groupe | pole | direct
+  membres   String[]
+  isTrashed Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  messages  Message[]
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  auteurId       Int?
+  auteurNom      String
+  auteurAvatar   String
+  auteurPole     String?
+  texte          String
+  heure          String
+  fichiers       Json         @default("[]")
+  createdAt      DateTime     @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  auteur       User?        @relation(fields: [auteurId], references: [id])
+}
+
+model SpaceChat {
+  id        Int      @id @default(autoincrement())
+  space     String
+  auteur    String
+  avatar    String
+  texte     String
+  heure     String
+  createdAt DateTime @default(now())
+}
+
+model SpaceSettings {
+  id        Int      @id @default(autoincrement())
+  space     String
+  key       String   // "teams" | "sections" | "docs"
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@unique([space, key])
+}
+
+model Contact {
+  id             Int      @id @default(autoincrement())
+  nom            String
+  fonction       String?
+  organisme      String?
+  email          String?
+  telephone      String?
+  notes          String?
+  sollicitations Json     @default("[]")
+  createdBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Faq {
+  id         Int      @id @default(autoincrement())
+  categorie  String   // "général" | "finances" | "fonctionnement"
+  question   String
+  reponse    String
+  ordre      Int      @default(0)
+  createdBy  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model DevisFacture {
+  id              Int      @id @default(autoincrement())
+  titre           String
+  description     String?  // contexte / justification de la demande
+  type            String   // "Devis" | "Facture"
+  categorie       String?  // ex: "Formation" | "Matériel" | "Prestation" | "Autre"
+  montant         Float
+  emetteur        String
+  destinataire    String
+  horseBudget     Boolean  @default(false)
+  statut          String   @default("Brouillon") // Brouillon | Soumis | En traitement | Signé | Refusé
+  signataire      String?
+  signedAt        String?
+  fichier         String?  // random filename on disk
+  fichierOriginal String?  // original filename (display only)
+  soumisAt        String?
+  traitePar       String?  // who took charge (trésorerie)
+  traiteAt        String?
+  motifRefus      String?  // obligatoire si Refusé
+  notes           String?  // notes internes trésorerie
+  historique      Json     @default("[]") // [{date, auteur, action, detail}]
+  transactionId   Int?
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Table d'audit immuable — append only, jamais de UPDATE ni DELETE
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?     // ID de l'admin ayant effectué l'action (null = système)
+  actorNom   String   // Snapshot du nom au moment de l'action
+  action     String   // "user.deactivate" | "user.create" | "user.anonymize" | etc.
+  targetId   Int?     // ID de la ressource concernée
+  targetType String   // "User" | "Action" | "Task" | etc.
+  targetNom  String?  // Snapshot du nom/titre de la cible
+  payload    Json?    // Contexte additionnel (motif, diff avant/après…)
+  ip         String?
+  createdAt  DateTime @default(now())
+}
