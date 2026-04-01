@@ -33,4 +33,7 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { requireAuth, requireRole };
+/** Raccourci pour les routes réservées Admin ou Bureau */
+const requireAdminOrBureau = requireRole('Admin', 'Bureau');
+
+module.exports = { requireAuth, requireRole, requireAdminOrBureau };

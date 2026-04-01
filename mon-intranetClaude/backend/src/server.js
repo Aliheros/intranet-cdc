@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const log = require('./lib/logger');
 const helmet = require('helmet');
 const compression = require('compression');
 const cors = require('cors');
@@ -24,17 +25,40 @@ const adminRoutes    = require('./routes/admin');
 const cyclesRoutes   = require('./routes/cycles');
 const faqRoutes          = require('./routes/faq');
 const devisFacturesRoutes = require('./routes/devis-factures');
+const categoriesDfRoutes  = require('./routes/categories-df');
 
 const app = express();
 
 // Sécurité HTTP headers
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // permet de servir les uploads cross-origin
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'"],
+      styleSrc:    ["'self'", "'unsafe-inline'"], // inline styles React
+      imgSrc:      ["'self'", 'data:', 'blob:'],
+      connectSrc:  ["'self'", process.env.FRONTEND_URL || 'http://localhost:5173'],
+      fontSrc:     ["'self'", 'data:'],
+      objectSrc:   ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
 }));
 // Compression gzip des réponses
 app.use(compression());
 
 // ─── Rate limiting ────────────────────────────────────────────────────────────
+// Limiteur global : toutes les routes API (utilisateur authentifié ou non)
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,     // 1 minute
+  max: 300,                // 300 req / min / IP (seuil confortable pour usage normal)
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de requêtes. Veuillez patienter.' },
+  skip: (req) => req.path === '/api/health', // exclure le health check
+});
+
 const authLimiter = rateLimit({
   windowMs: 60 * 1000,     // 1 minute
   max: 15,                 // 15 tentatives de connexion / min / IP
@@ -77,8 +101,12 @@ app.use(cors({
 app.use(express.json({ limit: '15mb' }));
 app.use(cookieParser());
 
-// Fichiers uploadés — servis statiquement
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Avatars — seul sous-dossier public (photos de profil non sensibles)
+// Tous les autres uploads passent par /api/upload/secure/:filename (route authentifiée)
+app.use('/uploads/avatars', express.static(path.join(__dirname, '../uploads/avatars')));
+
+// Rate limiting global sur toutes les routes API
+app.use('/api', globalLimiter);
 
 // Routes
 app.use('/api/auth', authLimiter, authRoutes);
@@ -99,17 +127,18 @@ app.use('/api/admin',   adminRoutes);
 app.use('/api/cycles',  cyclesRoutes);
 app.use('/api/faq',            faqRoutes);
 app.use('/api/devis-factures', devisFacturesRoutes);
+app.use('/api/categories-df',  categoriesDfRoutes);
 
 // Health check
-app.get('/', (req, res) => res.json({ status: 'ok', message: 'Intranet API', uploads: '/uploads/<fichier>' }));
+app.get('/', (req, res) => res.json({ status: 'ok', message: 'Intranet API' }));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Gestion globale des erreurs (Express 5 catch async automatiquement)
 app.use((err, req, res, next) => {
   const status = err.status || err.statusCode || 500;
   const isProd = process.env.NODE_ENV === 'production';
-  console.error(`[${new Date().toISOString()}] ${req.method} ${req.path} →`, err.message);
-  if (!isProd) console.error(err.stack);
+  log.error({ method: req.method, path: req.path, status, err: isProd ? undefined : err }, err.message);
+  if (!isProd) log.debug(err.stack);
 
   // Prisma-specific errors → messages lisibles
   let message = err.message || 'Erreur serveur interne';
@@ -134,5 +163,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`✅ Backend démarré sur http://localhost:${PORT}`);
+  log.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Backend démarré');
 });

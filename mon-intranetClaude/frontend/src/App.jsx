@@ -26,6 +26,7 @@ import Admin        from './pages/Admin';
 import NoteFrais     from './pages/NoteFrais';
 import FAQ           from './pages/FAQ';
 import DevisFactures from './pages/DevisFactures';
+import TresorerieDevisFactures from './pages/TresorerieDevisFactures';
 
 // Modales
 import ProfileModal         from './components/modals/ProfileModal';
@@ -101,10 +102,11 @@ function App() {
     handleSaveTeam, handleSaveSpaceInfo, handleSaveSection, handleSaveBudgets,
     handleUpdateActionResponsables,
     ndfConfig, budgets,
-    devisFactures,
+    devisFactures, categoriesDF,
     handleCreateDevisFacture, handleUpdateDevisFacture, handleDeleteDevisFacture,
     handleSoumettreDevisFacture, handleDeposeDevisFacture,
     handlePrendreEnChargeDevisFacture, handleSignerDevisFacture,
+    refreshDevisFacture,
   } = useDataContext();
 
   // ─── TUTORIEL — déclenche automatiquement si mustTakeTutorial ───────────────
@@ -268,6 +270,8 @@ function App() {
         {page === 'faq' && <FAQ />}
 
         {page === 'devisFactures' && <DevisFactures />}
+
+        {page === 'tresorerieDF' && <TresorerieDevisFactures addToast={addToast} />}
 
         {page === 'permissions' && !isAdmin && (
           <div className="empty" style={{ marginTop: 60 }}>Accès réservé aux administrateurs.</div>
@@ -534,7 +538,7 @@ function App() {
         <DevisFactureModal
           df={devisFactureModal && !devisFactureModal.id
             ? { type: 'Devis', statut: 'Brouillon', horseBudget: false, historique: [], ...devisFactureModal }
-            : devisFactureModal}
+            : (devisFactures.find(d => d.id === devisFactureModal?.id) || devisFactureModal)}
           onClose={() => setDevisFactureModal(null)}
           onDepose={handleDeposeDevisFacture}
           onSaveDraft={handleCreateDevisFacture}
@@ -547,6 +551,8 @@ function App() {
           canManage={hasPower('manage_budgets') || isAdmin}
           addToast={addToast}
           devisFactures={devisFactures}
+          categories={categoriesDF}
+          onRefreshDf={refreshDevisFacture}
         />
       )}
 

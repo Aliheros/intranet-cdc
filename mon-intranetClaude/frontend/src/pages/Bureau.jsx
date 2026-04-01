@@ -1,6 +1,5 @@
 // src/pages/Bureau.jsx
 import React, { useState } from 'react';
-import Badge from '../components/ui/Badge';
 import { MapPin, User, Calendar, Eye, Trash2, Megaphone, Mail, Search, FileSignature, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
@@ -8,7 +7,7 @@ import { useDataContext } from '../contexts/DataContext';
 
 const Bureau = () => {
   const { currentUser } = useAuth();
-  const { cycles, notifs, isBureau, isAdmin, handleNextCycle, handleDeleteCycle, handleDeleteNotif, devisFactures, handleSignerDevisFacture, transactions, handleApprouverHorsBudget } = useDataContext();
+  const { notifs, handleDeleteNotif, devisFactures, transactions, handleApprouverHorsBudget } = useDataContext();
   const { requestConfirm, setShowNewNotifModal, handleNav } = useAppContext();
   const navigate = handleNav;
   const [expandedNotif, setExpandedNotif] = useState(null);
@@ -18,43 +17,6 @@ const Bureau = () => {
     <>
       <div className="eyebrow">Administration & Gouvernance</div>
       <div className="ptitle">Espace Bureau</div>
-
-      <div className="sc" style={{ maxWidth: 600, marginBottom: 24 }}>
-        <div className="sct">Clôture et Transition Annuelle</div>
-        <p style={{ fontSize: 13, color: "var(--text-base)", lineHeight: 1.6, marginBottom: 16 }}>
-          L'intranet est actuellement paramétré sur le cycle scolaire <strong>{cycles[0]}</strong>. <br /><br />
-          En cliquant sur le bouton ci-dessous, vous allez créer le cycle suivant. Cela générera un nouvel onglet pour chaque pôle et projet, permettant de repartir sur une base vierge pour les actions, les équipes et les documents.
-        </p>
-        <button
-          className="btn-primary"
-          style={{ background: "#0f2d5e" }}
-          onClick={() => requestConfirm(`Êtes-vous sûr de vouloir clôturer le cycle ${cycles[0]} et initialiser le suivant ?`, handleNextCycle)}
-        >
-          Passer à l'année scolaire suivante
-        </button>
-      </div>
-
-      <div className="sc" style={{ maxWidth: 600 }}>
-        <div className="sct">Gestion des Cycles</div>
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {cycles.map((c, idx) => (
-            <li key={c} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", background: "var(--bg-hover)", border: "1px solid var(--border-light)", borderRadius: 8, marginBottom: 8 }}>
-              <span style={{ fontWeight: 600, color: "var(--text-base)", fontSize: 13 }}>
-                {c} {idx === 0 && <Badge label="Actuel" bg="#dcfce7" c="#16a34a" />}
-              </span>
-              {cycles.length > 1 && (
-                <button
-                  className="btn-secondary"
-                  style={{ color: "#e63946", borderColor: "#fca5a5", padding: "4px 10px", fontSize: 11, background: "var(--bg-surface)" }}
-                  onClick={() => handleDeleteCycle(c)}
-                >
-                  <span style={{display:"inline-flex",alignItems:"center",gap:5}}><Trash2 size={11} strokeWidth={1.8}/> Supprimer</span>
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
 
       {/* Devis & Factures en attente de signature */}
       <div className="sc" style={{ maxWidth: "100%", marginTop: 32 }}>

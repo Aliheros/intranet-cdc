@@ -9,6 +9,7 @@
 
   --bg-base: #f0f4ff;
   --bg-surface: #fff;
+  --bg-card: #fff;
   --text-base: #0f172a;
   --text-dim: #64748b;
   --text-muted: #94a3b8;
@@ -21,6 +22,7 @@
 .dark-theme {
   --bg-base: #0f172a;
   --bg-surface: #1e293b;
+  --bg-card: #1e293b;
   --text-base: #f8fafc;
   --text-dim: #cbd5e1;
   --text-muted: #94a3b8;

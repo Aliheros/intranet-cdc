@@ -21,7 +21,8 @@ async function refreshAccessToken() {
     credentials: 'include',
   });
   if (!res.ok) throw new Error('Session expirée');
-  const data = await res.json();
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : {};
   accessToken = data.accessToken;
   return accessToken;
 }

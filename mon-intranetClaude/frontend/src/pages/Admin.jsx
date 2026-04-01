@@ -16,24 +16,114 @@ const fmt = (d) => {
     ' ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 };
 
+// Toutes les actions connues du backend (exhaustif)
 const ACTION_LABELS = {
-  'user.create':       { label: 'Compte créé',        color: '#16a34a' },
-  'user.update':       { label: 'Compte modifié',      color: '#1a56db' },
-  'user.deactivate':   { label: 'Compte désactivé',   color: '#e63946' },
-  'user.anonymize':    { label: 'Anonymisé',           color: '#7c3aed' },
-  'ndf.approve':       { label: 'NDF approuvée',       color: '#16a34a' },
-  'ndf.refuse':        { label: 'NDF refusée',         color: '#e63946' },
-  'ndf.delete':        { label: 'NDF supprimée',       color: '#e63946' },
-  'action.create':     { label: 'Action créée',        color: '#16a34a' },
-  'action.archive':    { label: 'Action archivée',     color: '#94a3b8' },
-  'event.create':      { label: 'Évènement créé',      color: '#16a34a' },
-  'permission.change': { label: 'Droits modifiés',     color: '#d97706' },
+  // Auth
+  'auth.login':            { label: 'Connexion',              color: '#16a34a', cat: 'auth' },
+  'auth.login.failed':     { label: 'Tentative échouée',      color: '#e63946', cat: 'auth' },
+  'auth.logout':           { label: 'Déconnexion',            color: '#64748b', cat: 'auth' },
+  'auth.password.change':  { label: 'Mot de passe changé',    color: '#d97706', cat: 'auth' },
+  // Utilisateurs
+  'user.create':           { label: 'Compte créé',            color: '#16a34a', cat: 'user' },
+  'user.update':           { label: 'Compte modifié',         color: '#1a56db', cat: 'user' },
+  'user.deactivate':       { label: 'Compte désactivé',       color: '#e63946', cat: 'user' },
+  'user.anonymize':        { label: 'Anonymisé',              color: '#7c3aed', cat: 'user' },
+  'user.resetPassword':    { label: 'MDP réinitialisé',       color: '#d97706', cat: 'user' },
+  'user.avatar.upload':    { label: 'Avatar mis à jour',      color: '#64748b', cat: 'user' },
+  'user.avatar.delete':    { label: 'Avatar supprimé',        color: '#94a3b8', cat: 'user' },
+  'permission.change':     { label: 'Droits modifiés',        color: '#d97706', cat: 'user' },
+  // Devis & Factures
+  'devisFacture.create':         { label: 'Devis/Facture créé',       color: '#16a34a', cat: 'devisFacture' },
+  'devisFacture.update':         { label: 'Devis/Facture modifié',     color: '#1a56db', cat: 'devisFacture' },
+  'devisFacture.soumettre':      { label: 'Dossier soumis',           color: '#0891b2', cat: 'devisFacture' },
+  'devisFacture.prendreEnCharge':{ label: 'Pris en charge',           color: '#d97706', cat: 'devisFacture' },
+  'devisFacture.sign':           { label: 'Document signé',           color: '#16a34a', cat: 'devisFacture' },
+  'devisFacture.refuse':         { label: 'Dossier refusé',           color: '#e63946', cat: 'devisFacture' },
+  'devisFacture.delete':         { label: 'Dossier supprimé',         color: '#e63946', cat: 'devisFacture' },
+  // Notes de frais
+  'ndf.create':            { label: 'NDF créée',              color: '#16a34a', cat: 'ndf' },
+  'ndf.statusChange':      { label: 'Statut NDF modifié',     color: '#1a56db', cat: 'ndf' },
+  'ndf.approve':           { label: 'NDF approuvée',          color: '#16a34a', cat: 'ndf' },
+  'ndf.refuse':            { label: 'NDF refusée',            color: '#e63946', cat: 'ndf' },
+  'ndf.delete':            { label: 'NDF supprimée',          color: '#e63946', cat: 'ndf' },
+  // Transactions & Budget
+  'transaction.create':    { label: 'Transaction créée',      color: '#16a34a', cat: 'tresorerie' },
+  'transaction.update':    { label: 'Transaction modifiée',   color: '#1a56db', cat: 'tresorerie' },
+  'transaction.delete':    { label: 'Transaction supprimée',  color: '#e63946', cat: 'tresorerie' },
+  'transaction.horseBudget.approve': { label: 'Hors budget approuvé', color: '#d97706', cat: 'tresorerie' },
+  'budget.update':         { label: 'Budget mis à jour',      color: '#d97706', cat: 'tresorerie' },
+  // Actions terrain
+  'action.create':         { label: 'Action créée',           color: '#16a34a', cat: 'action' },
+  'action.delete':         { label: 'Action supprimée',       color: '#e63946', cat: 'action' },
+  'action.archive':        { label: 'Action archivée',        color: '#94a3b8', cat: 'action' },
+  // Évènements
+  'event.create':          { label: 'Évènement créé',         color: '#16a34a', cat: 'event' },
+  'event.update':          { label: 'Évènement modifié',      color: '#1a56db', cat: 'event' },
+  'event.delete':          { label: 'Évènement supprimé',     color: '#e63946', cat: 'event' },
+  // Missions
+  'mission.create':        { label: 'Mission créée',          color: '#16a34a', cat: 'mission' },
+  'mission.delete':        { label: 'Mission supprimée',      color: '#e63946', cat: 'mission' },
+  'mission.candidate.accept': { label: 'Candidature acceptée', color: '#16a34a', cat: 'mission' },
+  'mission.candidate.refuse': { label: 'Candidature refusée',  color: '#e63946', cat: 'mission' },
+  // Tâches
+  'task.create':           { label: 'Tâche créée',            color: '#16a34a', cat: 'task' },
+  'task.delete':           { label: 'Tâche supprimée',        color: '#e63946', cat: 'task' },
+  // Heures
+  'hour.create':           { label: 'Heures saisies',         color: '#16a34a', cat: 'hour' },
+  'hour.validate':         { label: 'Heures validées',        color: '#0891b2', cat: 'hour' },
+  'hour.delete':           { label: 'Heures supprimées',      color: '#e63946', cat: 'hour' },
+  // Contacts
+  'contact.create':        { label: 'Contact créé',           color: '#16a34a', cat: 'contact' },
+  'contact.update':        { label: 'Contact modifié',        color: '#1a56db', cat: 'contact' },
+  // FAQ
+  'faq.create':            { label: 'FAQ créée',              color: '#16a34a', cat: 'faq' },
+  'faq.update':            { label: 'FAQ modifiée',           color: '#1a56db', cat: 'faq' },
+  'faq.delete':            { label: 'FAQ supprimée',          color: '#e63946', cat: 'faq' },
+  // Notifications
+  'notification.create':   { label: 'Notification envoyée',   color: '#7c3aed', cat: 'notif' },
+  'notification.delete':   { label: 'Notification supprimée', color: '#94a3b8', cat: 'notif' },
+  // Cycles
+  'cycle.create':          { label: 'Cycle créé',             color: '#16a34a', cat: 'admin' },
+  'cycle.delete':          { label: 'Cycle supprimé',         color: '#e63946', cat: 'admin' },
+  // Espaces & Admin
+  'space.settings.update': { label: 'Paramètres espace',      color: '#1a56db', cat: 'admin' },
+  'admin.export':          { label: 'Export CSV',             color: '#64748b', cat: 'admin' },
 };
+
+const ACTION_CATEGORIES = [
+  { value: '',             label: 'Toutes catégories' },
+  { value: 'auth',         label: 'Authentification' },
+  { value: 'user',         label: 'Utilisateurs' },
+  { value: 'devisFacture', label: 'Devis & Factures' },
+  { value: 'ndf',          label: 'Notes de frais' },
+  { value: 'tresorerie',   label: 'Trésorerie' },
+  { value: 'action',       label: 'Actions terrain' },
+  { value: 'event',        label: 'Évènements' },
+  { value: 'mission',      label: 'Missions' },
+  { value: 'task',         label: 'Tâches' },
+  { value: 'hour',         label: 'Heures bénévoles' },
+  { value: 'contact',      label: 'Contacts' },
+  { value: 'admin',        label: 'Administration' },
+];
+
+const TARGET_TYPES = [
+  { value: '',              label: 'Tous types' },
+  { value: 'User',          label: 'Utilisateur' },
+  { value: 'DevisFacture',  label: 'Devis/Facture' },
+  { value: 'NoteFrais',     label: 'Note de frais' },
+  { value: 'Transaction',   label: 'Transaction' },
+  { value: 'Action',        label: 'Action terrain' },
+  { value: 'Evenement',     label: 'Évènement' },
+  { value: 'Mission',       label: 'Mission' },
+  { value: 'Task',          label: 'Tâche' },
+  { value: 'Hour',          label: 'Heure' },
+  { value: 'Contact',       label: 'Contact' },
+];
 
 const ActionBadge = ({ action }) => {
   const meta = ACTION_LABELS[action];
   if (meta) return (
-    <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700, background: meta.color + '15', color: meta.color, whiteSpace: 'nowrap' }}>
+    <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 700, background: meta.color + '18', color: meta.color, whiteSpace: 'nowrap' }}>
       {meta.label}
     </span>
   );
@@ -46,23 +136,27 @@ const ActionBadge = ({ action }) => {
 
 // ─── Onglet Journal d'audit ───────────────────────────────────────────────────
 const AuditTab = () => {
-  const [logs, setLogs]       = useState([]);
-  const [total, setTotal]     = useState(0);
-  const [page, setPage]       = useState(1);
-  const [pages, setPages]     = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({ acteur: '', action: '', dateFrom: '', dateTo: '' });
-  const [draft, setDraft]     = useState({ acteur: '', action: '', dateFrom: '', dateTo: '' });
+  const [logs, setLogs]           = useState([]);
+  const [total, setTotal]         = useState(0);
+  const [page, setPage]           = useState(1);
+  const [pages, setPages]         = useState(1);
+  const [loading, setLoading]     = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+  const EMPTY_FILTERS = { acteur: '', action: '', dateFrom: '', dateTo: '', category: '', targetType: '' };
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [draft, setDraft]     = useState(EMPTY_FILTERS);
   const LIMIT = 50;
 
   const fetchLogs = useCallback(async (p = 1, f = filters) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: p, limit: LIMIT });
-      if (f.acteur)   params.append('acteur',   f.acteur);
-      if (f.action)   params.append('action',   f.action);
-      if (f.dateFrom) params.append('dateFrom', f.dateFrom);
-      if (f.dateTo)   params.append('dateTo',   f.dateTo);
+      if (f.acteur)     params.append('acteur',      f.acteur);
+      if (f.action)     params.append('action',      f.action);
+      if (f.category && !f.action) params.append('actionPrefix', f.category);
+      if (f.dateFrom)   params.append('dateFrom',    f.dateFrom);
+      if (f.dateTo)     params.append('dateTo',      f.dateTo);
+      if (f.targetType) params.append('targetType',  f.targetType);
       const data = await api.get(`/admin/audit?${params}`);
       setLogs(data.data || []);
       setTotal(data.total || 0);
@@ -74,62 +168,69 @@ const AuditTab = () => {
 
   useEffect(() => { fetchLogs(1, filters); }, []);
 
-  const applyFilters = () => {
-    setFilters(draft);
-    fetchLogs(1, draft);
-  };
-  const resetFilters = () => {
-    const empty = { acteur: '', action: '', dateFrom: '', dateTo: '' };
-    setDraft(empty);
-    setFilters(empty);
-    fetchLogs(1, empty);
-  };
+  const applyFilters = () => { setFilters(draft); fetchLogs(1, draft); };
+  const resetFilters = () => { setDraft(EMPTY_FILTERS); setFilters(EMPTY_FILTERS); fetchLogs(1, EMPTY_FILTERS); };
+  const hasActiveFilters = Object.values(draft).some(Boolean);
+
+  const inputStyle = { flex: 1, padding: '6px 8px', borderRadius: 7, border: '1px solid var(--border-light)', background: 'var(--bg-hover)', fontSize: 12, color: 'var(--text-base)' };
+  const selectStyle = { ...inputStyle, cursor: 'pointer' };
 
   return (
     <div>
       {/* Filtres */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, padding: '14px 16px', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 160px' }}>
-          <User size={13} color="var(--text-muted)" strokeWidth={1.8} />
-          <input
-            placeholder="Acteur…"
-            value={draft.acteur}
-            onChange={e => setDraft(d => ({ ...d, acteur: e.target.value }))}
-            onKeyDown={e => e.key === 'Enter' && applyFilters()}
-            style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1px solid var(--border-light)', background: 'var(--bg-hover)', fontSize: 12, color: 'var(--text-base)' }}
-          />
+      <div style={{ marginBottom: 16, padding: '16px 18px', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 12 }}>
+        {/* Ligne 1 : acteur, action texte, catégorie, type cible */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 8, marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <User size={12} color="var(--text-muted)" strokeWidth={1.8} />
+            <input placeholder="Acteur…" value={draft.acteur}
+              onChange={e => setDraft(d => ({ ...d, acteur: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && applyFilters()}
+              style={inputStyle}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Activity size={12} color="var(--text-muted)" strokeWidth={1.8} />
+            <input placeholder="Recherche action…" value={draft.action}
+              onChange={e => setDraft(d => ({ ...d, action: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && applyFilters()}
+              style={inputStyle}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Zap size={12} color="var(--text-muted)" strokeWidth={1.8} />
+            <select value={draft.category} onChange={e => setDraft(d => ({ ...d, category: e.target.value }))} style={selectStyle}>
+              {ACTION_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Shield size={12} color="var(--text-muted)" strokeWidth={1.8} />
+            <select value={draft.targetType} onChange={e => setDraft(d => ({ ...d, targetType: e.target.value }))} style={selectStyle}>
+              {TARGET_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 160px' }}>
-          <Activity size={13} color="var(--text-muted)" strokeWidth={1.8} />
-          <input
-            placeholder="Type d'action…"
-            value={draft.action}
-            onChange={e => setDraft(d => ({ ...d, action: e.target.value }))}
-            onKeyDown={e => e.key === 'Enter' && applyFilters()}
-            style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1px solid var(--border-light)', background: 'var(--bg-hover)', fontSize: 12, color: 'var(--text-base)' }}
-          />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 140px' }}>
-          <Calendar size={13} color="var(--text-muted)" strokeWidth={1.8} />
-          <input type="date" value={draft.dateFrom} onChange={e => setDraft(d => ({ ...d, dateFrom: e.target.value }))}
-            style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1px solid var(--border-light)', background: 'var(--bg-hover)', fontSize: 12, color: 'var(--text-base)' }}
-          />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: '1 1 140px' }}>
+        {/* Ligne 2 : dates + boutons */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Calendar size={12} color="var(--text-muted)" strokeWidth={1.8} />
+            <input type="date" value={draft.dateFrom} onChange={e => setDraft(d => ({ ...d, dateFrom: e.target.value }))} style={{ ...inputStyle, width: 140 }} />
+          </div>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>→</span>
-          <input type="date" value={draft.dateTo} onChange={e => setDraft(d => ({ ...d, dateTo: e.target.value }))}
-            style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '1px solid var(--border-light)', background: 'var(--bg-hover)', fontSize: 12, color: 'var(--text-base)' }}
-          />
+          <input type="date" value={draft.dateTo} onChange={e => setDraft(d => ({ ...d, dateTo: e.target.value }))} style={{ ...inputStyle, width: 140 }} />
+          <div style={{ flex: 1 }} />
+          {hasActiveFilters && (
+            <button onClick={resetFilters} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 7, background: 'var(--bg-hover)', color: 'var(--text-muted)', border: '1px solid var(--border-light)', cursor: 'pointer', fontSize: 12 }}>
+              <RefreshCw size={11} /> Réinitialiser
+            </button>
+          )}
+          <button onClick={() => fetchLogs(page)} title="Actualiser" style={{ display: 'flex', alignItems: 'center', padding: '6px 10px', borderRadius: 7, background: 'var(--bg-hover)', color: 'var(--text-muted)', border: '1px solid var(--border-light)', cursor: 'pointer' }}>
+            <RefreshCw size={13} strokeWidth={1.8} />
+          </button>
+          <button onClick={applyFilters} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 16px', borderRadius: 7, background: '#0f2d5e', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+            <Search size={12} /> Filtrer
+          </button>
         </div>
-        <button onClick={applyFilters} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 7, background: '#0f2d5e', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
-          <Search size={12} /> Filtrer
-        </button>
-        <button onClick={resetFilters} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 7, background: 'var(--bg-hover)', color: 'var(--text-muted)', border: '1px solid var(--border-light)', cursor: 'pointer', fontSize: 12 }}>
-          <RefreshCw size={12} /> Réinitialiser
-        </button>
-        <button onClick={() => fetchLogs(page)} title="Actualiser" style={{ display: 'flex', alignItems: 'center', padding: '6px 10px', borderRadius: 7, background: 'var(--bg-hover)', color: 'var(--text-muted)', border: '1px solid var(--border-light)', cursor: 'pointer' }}>
-          <RefreshCw size={13} strokeWidth={1.8} />
-        </button>
       </div>
 
       {/* Table */}
@@ -142,31 +243,68 @@ const AuditTab = () => {
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-base)', marginBottom: 6 }}>Aucun log d'audit</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 380, lineHeight: 1.6 }}>
-            Les entrées apparaîtront ici au fur et à mesure que les administrateurs effectuent des actions sensibles (création de comptes, modification de droits, validation NDF…).
+            {hasActiveFilters ? 'Aucun résultat pour ces filtres.' : 'Les entrées apparaîtront ici au fur et à mesure des actions effectuées dans l\'intranet.'}
           </div>
         </div>
       ) : (
         <>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>{total} entrée{total > 1 ? 's' : ''} · page {page}/{pages}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+            {total.toLocaleString('fr-FR')} entrée{total > 1 ? 's' : ''} · page {page}/{pages}
+          </div>
           <div style={{ border: '1px solid var(--border-light)', borderRadius: 10, overflow: 'hidden' }}>
             {/* En-têtes */}
-            <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 180px 1fr', gap: 0, background: 'var(--bg-alt)', borderBottom: '1px solid var(--border-light)', padding: '8px 16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '150px 140px 190px 1fr 26px', gap: 0, background: 'var(--bg-alt)', borderBottom: '1px solid var(--border-light)', padding: '8px 14px' }}>
               {['Date & heure', 'Acteur', 'Action', 'Cible'].map(h => (
                 <div key={h} style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{h}</div>
               ))}
+              <div />
             </div>
-            {logs.map((log, i) => (
-              <div key={log.id} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 180px 1fr', gap: 0, padding: '10px 16px', borderBottom: i < logs.length - 1 ? '1px solid var(--border-light)' : 'none', background: i % 2 === 0 ? 'var(--bg-surface)' : 'transparent', transition: 'background 0.1s' }}>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{fmt(log.createdAt)}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
-                  {log.actorNom || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Système</span>}
+            {logs.map((entry, i) => {
+              const isExpanded = expandedId === entry.id;
+              const hasPayload = entry.payload && Object.keys(entry.payload).length > 0;
+              return (
+                <div key={entry.id}>
+                  <div
+                    onClick={() => hasPayload && setExpandedId(isExpanded ? null : entry.id)}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '150px 140px 190px 1fr 26px', gap: 0,
+                      padding: '9px 14px',
+                      borderBottom: (!isExpanded && i < logs.length - 1) ? '1px solid var(--border-light)' : 'none',
+                      background: isExpanded ? 'rgba(26,86,219,0.04)' : (i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'),
+                      cursor: hasPayload ? 'pointer' : 'default',
+                      transition: 'background 0.1s',
+                    }}
+                  >
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.4 }}>{fmt(entry.createdAt)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
+                      {entry.actorNom || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Système</span>}
+                      {entry.ip && <span style={{ marginLeft: 5, fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{entry.ip}</span>}
+                    </div>
+                    <div style={{ paddingRight: 8 }}><ActionBadge action={entry.action} /></div>
+                    <div style={{ fontSize: 11, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {entry.targetType && <span style={{ fontSize: 10, color: 'var(--text-muted)', marginRight: 5, background: 'var(--bg-alt)', padding: '1px 5px', borderRadius: 4 }}>{entry.targetType}</span>}
+                      {entry.targetNom || '—'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {hasPayload && (
+                        <ChevronRight size={13} strokeWidth={2} color="var(--text-muted)"
+                          style={{ transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  {/* Payload expandable */}
+                  {isExpanded && hasPayload && (
+                    <div style={{ padding: '10px 14px 12px 160px', background: 'rgba(26,86,219,0.03)', borderBottom: i < logs.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6 }}>Détails du contexte</div>
+                      <pre style={{ margin: 0, padding: '10px 12px', background: 'var(--bg-alt)', borderRadius: 7, fontSize: 11, color: 'var(--text-base)', overflowX: 'auto', lineHeight: 1.6, border: '1px solid var(--border-light)' }}>
+                        {JSON.stringify(entry.payload, null, 2)}
+                      </pre>
+                    </div>
+                  )}
                 </div>
-                <div><ActionBadge action={log.action} /></div>
-                <div style={{ fontSize: 11, color: 'var(--text-dim)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {log.targetNom || log.targetType ? `${log.targetType || ''}${log.targetNom ? ' · ' + log.targetNom : ''}` : '—'}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pagination */}

@@ -11,11 +11,12 @@ import {
 } from 'lucide-react';
 
 const STATUT_META = {
-  Brouillon:       { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)',  label: 'Brouillon',     step: 0 },
-  Soumis:          { color: '#1a56db', bg: 'rgba(26,86,219,0.1)',    label: 'Soumis',        step: 1 },
-  'En traitement': { color: '#d97706', bg: 'rgba(217,119,6,0.1)',    label: 'En traitement', step: 2 },
-  Signé:           { color: '#16a34a', bg: 'rgba(22,163,74,0.1)',    label: 'Signé ✓',       step: 3 },
-  Refusé:          { color: '#e63946', bg: 'rgba(230,57,70,0.1)',    label: 'Refusé',        step: -1 },
+  Brouillon:          { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)',  label: 'Brouillon',        step: 0 },
+  Soumis:             { color: '#1a56db', bg: 'rgba(26,86,219,0.1)',    label: 'Soumis',           step: 1 },
+  'En traitement':    { color: '#d97706', bg: 'rgba(217,119,6,0.1)',    label: 'En traitement',    step: 2 },
+  'Modif. demandée':  { color: '#7c3aed', bg: 'rgba(124,58,237,0.1)',   label: 'Modif. demandée',  step: 1.5 },
+  Signé:              { color: '#16a34a', bg: 'rgba(22,163,74,0.1)',    label: 'Signé ✓',          step: 3 },
+  Refusé:             { color: '#e63946', bg: 'rgba(230,57,70,0.1)',    label: 'Refusé',           step: -1 },
 };
 
 const PIPELINE = ['Soumis', 'En traitement', 'Signé'];
@@ -70,32 +71,34 @@ const DevisFactures = () => {
   const onOpen = (df) => setDevisFactureModal(df);
   const onNew  = ()   => setDevisFactureModal({});
 
-  // Filtrer aux documents du user courant (le backend stocke createdBy = user.nom)
-  const devisFactures = (allDevisFactures || []).filter(d =>
-    d.createdBy === currentUser?.nom
-  );
+  // Admin/Bureau voient tout (le backend leur envoie déjà tout)
+  const isPrivileged = currentUser?.role === 'Admin' || currentUser?.role === 'Bureau';
+  const devisFactures = isPrivileged
+    ? (allDevisFactures || [])
+    : (allDevisFactures || []).filter(d =>
+        d.createdById != null ? d.createdById === currentUser?.id : d.createdBy === currentUser?.nom
+      );
 
   const [filter, setFilter] = useState('all');
 
-  const enCours  = devisFactures.filter(d => ['Brouillon', 'Soumis', 'En traitement'].includes(d.statut));
+  const enCours = devisFactures.filter(d => ['Brouillon', 'Soumis', 'En traitement', 'Modif. demandée'].includes(d.statut));
   const archives = devisFactures.filter(d => ['Signé', 'Refusé'].includes(d.statut));
 
-  const totalEnAttente = enCours.filter(d => ['Soumis', 'En traitement'].includes(d.statut))
+  const totalEnAttente = enCours.filter(d => ['Soumis', 'En traitement', 'Modif. demandée'].includes(d.statut))
     .reduce((s, d) => s + Number(d.montant), 0);
   const totalSignes    = devisFactures.filter(d => d.statut === 'Signé')
     .reduce((s, d) => s + Number(d.montant), 0);
   const totalAll       = devisFactures.reduce((s, d) => s + Number(d.montant), 0);
 
   const displayed = filter === 'en_cours' ? enCours : filter === 'archives' ? archives : devisFactures;
-  const sorted = [...displayed].sort((a, b) => {
-    const priority = { 'En traitement': 5, Soumis: 4, Brouillon: 3, Signé: 1, Refusé: 0 };
-    return (priority[b.statut] ?? 0) - (priority[a.statut] ?? 0);
-  });
+  const sorted = [...displayed].sort((a, b) =>
+    new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0)
+  );
 
   return (
     <>
       {/* ── EN-TÊTE ── */}
-      <div className="eyebrow">Mes finances</div>
+      <div className="eyebrow">{isPrivileged ? 'Administration & Gouvernance' : 'Mes finances'}</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 10 }}>
         <div className="ptitle" style={{ marginBottom: 0 }}>Devis &amp; Factures</div>
         <button
@@ -110,13 +113,13 @@ const DevisFactures = () => {
       <div className="kpi-3col">
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 12, padding: '16px 20px' }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Clock size={11} strokeWidth={1.8} /> En attente
+            <Clock size={11} strokeWidth={1.8} /> {isPrivileged ? 'À traiter' : 'En attente'}
           </div>
           <div style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)', color: totalEnAttente > 0 ? '#d97706' : 'var(--text-muted)' }}>
             {totalEnAttente.toFixed(2)} €
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-            {enCours.filter(d => d.statut !== 'Brouillon').length} dossier{enCours.length !== 1 ? 's' : ''} en cours
+            {enCours.length} dossier{enCours.length !== 1 ? 's' : ''} {isPrivileged ? 'à traiter' : 'en cours'}
           </div>
         </div>
         <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 12, padding: '16px 20px' }}>
@@ -148,7 +151,7 @@ const DevisFactures = () => {
         <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
           {[
             { key: 'all',      label: `Tout (${devisFactures.length})` },
-            { key: 'en_cours', label: `En cours (${enCours.length})` },
+            { key: 'en_cours', label: isPrivileged ? `À traiter (${enCours.length})` : `En cours (${enCours.length})` },
             { key: 'archives', label: `Archivés (${archives.length})` },
           ].map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
@@ -165,14 +168,21 @@ const DevisFactures = () => {
           <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(26,86,219,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <FileText size={26} strokeWidth={1.5} color="#1a56db" />
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-base)', marginBottom: 6 }}>Aucun document déposé</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20, maxWidth: 340, lineHeight: 1.6 }}>
-            Déposez un devis ou une facture pour le soumettre à la trésorerie pour validation et signature.
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-base)', marginBottom: 6 }}>
+            {isPrivileged ? 'Aucun document en attente' : 'Aucun document déposé'}
           </div>
-          <button onClick={onNew}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: '#0f2d5e', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
-            <Plus size={14} strokeWidth={2.5} /> Déposer mon premier document
-          </button>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: isPrivileged ? 0 : 20, maxWidth: 340, lineHeight: 1.6 }}>
+            {isPrivileged
+              ? 'Les devis et factures soumis par les membres apparaîtront ici pour traitement.'
+              : 'Déposez un devis ou une facture pour le soumettre à la trésorerie pour validation et signature.'
+            }
+          </div>
+          {!isPrivileged && (
+            <button onClick={onNew}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: '#0f2d5e', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              <Plus size={14} strokeWidth={2.5} /> Déposer mon premier document
+            </button>
+          )}
         </div>
       ) : sorted.length === 0 ? (
         <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
@@ -229,6 +239,9 @@ const DevisFactures = () => {
                         {df.titre || `${df.type} — ${df.emetteur}`}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>
+                        {isPrivileged && df.createdBy && (
+                          <span style={{ fontWeight: 600, color: 'var(--text-dim)' }}>{df.createdBy} · </span>
+                        )}
                         {df.emetteur && `${df.emetteur} → ${df.destinataire}`}
                         {df.soumisAt && ` · ${fmtDate(df.soumisAt)}`}
                       </div>
@@ -262,7 +275,7 @@ const DevisFactures = () => {
       )}
 
       {/* ── INFO TRÉSORERIE ── */}
-      {devisFactures.length > 0 && (
+      {!isPrivileged && devisFactures.length > 0 && (
         <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--bg-hover)', borderRadius: 10, border: '1px solid var(--border-light)' }}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
             La validation de vos documents est assurée par le <strong style={{ color: 'var(--text-dim)' }}>Pôle Trésorerie</strong>.

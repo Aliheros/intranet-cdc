@@ -22,7 +22,7 @@ const auditLog = async (req, { action, targetType = null, targetId = null, targe
         actorId:    req.user?.id    ?? null,
         actorNom:   req.user?.nom   ?? 'Système',
         action,
-        targetType,
+        targetType: targetType ?? '',
         targetId:   targetId ? Number(targetId) : null,
         targetNom:  targetNom ?? null,
         payload:    payload   ?? undefined,

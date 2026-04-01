@@ -535,8 +535,9 @@ export default function MyProfileModal({ currentUser, directory, setDirectory, a
                 { key: "taches",     label: "Tâches",                              desc: "Quand une tâche vous est assignée" },
                 { key: "messagerie", label: "Messagerie",                           desc: "Nouveaux messages dans vos conversations" },
                 { key: "evenements", label: "Événements",                           desc: "Rappels de séances et nouveaux événements" },
-                { key: "notesFrais", label: "Notes de frais",                       desc: "Validation ou rejet de vos notes de frais" },
-                { key: "missions",   label: "Missions",                             desc: "Résultat de vos candidatures à une mission" },
+                { key: "notesFrais",    label: "Notes de frais",    desc: "Validation ou rejet de vos notes de frais" },
+                { key: "missions",     label: "Missions",          desc: "Résultat de vos candidatures à une mission" },
+                { key: "devisFactures", label: "Devis & Factures", desc: "Mises à jour sur vos dépôts (signature, refus, demande de modification)" },
               ].map(({ key, label, desc }) => (
                 <label key={key} style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", padding: "8px 10px", borderRadius: 8, background: form.emailPreferences[key] ? "rgba(26,86,219,0.05)" : "var(--bg-hover)", border: `1px solid ${form.emailPreferences[key] ? "rgba(26,86,219,0.2)" : "var(--border-light)"}`, transition: "all 0.15s" }}>
                   <input

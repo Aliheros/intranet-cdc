@@ -31,6 +31,7 @@ model User {
   mustTakeTutorial   Boolean   @default(false)
   emailPerso        String?
   emailPreferences  Json      @default("{}")
+  notifEmail        Boolean   @default(true)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -325,28 +326,38 @@ model Faq {
 model DevisFacture {
   id              Int      @id @default(autoincrement())
   titre           String
-  description     String?  // contexte / justification de la demande
+  description     String?
   type            String   // "Devis" | "Facture"
-  categorie       String?  // ex: "Formation" | "Matériel" | "Prestation" | "Autre"
+  categorie       String?
   montant         Float
   emetteur        String
   destinataire    String
   horseBudget     Boolean  @default(false)
-  statut          String   @default("Brouillon") // Brouillon | Soumis | En traitement | Signé | Refusé
+  statut          String   @default("Brouillon") // Brouillon | Soumis | En traitement | Modif. demandée | Signé | Refusé
   signataire      String?
   signedAt        String?
-  fichier         String?  // random filename on disk
-  fichierOriginal String?  // original filename (display only)
+  fichiers        Json     @default("[]") // [{nom, url, taille, addedBy, addedAt}]
   soumisAt        String?
-  traitePar       String?  // who took charge (trésorerie)
+  traitePar       String?
   traiteAt        String?
-  motifRefus      String?  // obligatoire si Refusé
-  notes           String?  // notes internes trésorerie
+  motifRefus      String?
+  notes           String?
+  commentaires    Json     @default("[]") // [{id, auteur, contenu, date, isInternal}]
+  demandeModif    Json?    // {message, demandePar, demandeAt, statut, traitePar, traiteAt, motifRefus}
   historique      Json     @default("[]") // [{date, auteur, action, detail}]
   transactionId   Int?
   createdBy       String
+  createdById     Int?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model CategorieDF {
+  id        Int      @id @default(autoincrement())
+  label     String   @unique
+  actif     Boolean  @default(true)
+  ordre     Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 // Table d'audit immuable — append only, jamais de UPDATE ni DELETE

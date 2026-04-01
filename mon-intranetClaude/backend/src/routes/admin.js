@@ -4,6 +4,7 @@ const router = express.Router();
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { auditLog }    = require('../middleware/auditLogger');
+const log = require('../lib/logger');
 
 const requireAdmin = (req, res, next) => {
   if (req.user?.role !== 'Admin') return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
@@ -12,30 +13,39 @@ const requireAdmin = (req, res, next) => {
 
 // ─── JOURNAL D'AUDIT ──────────────────────────────────────────────────────────
 
-// GET /api/admin/audit?page=1&limit=50&acteur=&action=&dateFrom=&dateTo=
+// GET /api/admin/audit?page=1&limit=50&acteur=&action=&dateFrom=&dateTo=&targetType=&actionPrefix=
 router.get('/audit', requireAuth, requireAdmin, async (req, res) => {
-  const { page = 1, limit = 50, acteur, action, dateFrom, dateTo } = req.query;
-  const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
-  const where = {};
-  if (acteur) where.actorNom = { contains: acteur, mode: 'insensitive' };
-  if (action) where.action  = { contains: action,  mode: 'insensitive' };
-  if (dateFrom || dateTo) {
-    where.createdAt = {};
-    if (dateFrom) where.createdAt.gte = new Date(dateFrom);
-    if (dateTo)   where.createdAt.lte = new Date(dateTo + 'T23:59:59.999Z');
+  try {
+    const { page = 1, limit = 50, acteur, action, dateFrom, dateTo, targetType, actionPrefix } = req.query;
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 200);
+    const where = {};
+    if (acteur)       where.actorNom   = { contains: acteur,      mode: 'insensitive' };
+    if (action)       where.action     = { contains: action,       mode: 'insensitive' };
+    if (actionPrefix) where.action     = { startsWith: actionPrefix + '.', mode: 'insensitive' };
+    // action text filter takes precedence over prefix if both given
+    if (action && actionPrefix) where.action = { contains: action, mode: 'insensitive' };
+    if (targetType)   where.targetType = { equals: targetType,    mode: 'insensitive' };
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo)   where.createdAt.lte = new Date(dateTo + 'T23:59:59.999Z');
+    }
+
+    const [total, logs] = await prisma.$transaction([
+      prisma.auditLog.count({ where }),
+      prisma.auditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (Number(page) - 1) * safeLimit,
+        take:  safeLimit,
+      }),
+    ]);
+
+    res.json({ data: logs, total, page: Number(page), pages: Math.ceil(total / safeLimit) });
+  } catch (err) {
+    log.error({ err }, 'Erreur GET /admin/audit');
+    res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
-
-  const [total, logs] = await prisma.$transaction([
-    prisma.auditLog.count({ where }),
-    prisma.auditLog.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: (Number(page) - 1) * safeLimit,
-      take:  safeLimit,
-    }),
-  ]);
-
-  res.json({ data: logs, total, page: Number(page), pages: Math.ceil(total / safeLimit) });
 });
 
 // ─── STATISTIQUES SYSTÈME ────────────────────────────────────────────────────

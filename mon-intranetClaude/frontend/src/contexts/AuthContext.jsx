@@ -19,7 +19,8 @@ export function AuthProvider({ children }) {
           credentials: 'include',
         });
         if (!data.ok) throw new Error('Pas de session');
-        const { accessToken } = await data.json();
+        const text = await data.text();
+        const { accessToken } = text ? JSON.parse(text) : {};
         setAccessToken(accessToken);
         const user = await api.get('/auth/me');
         setCurrentUser(user);
@@ -51,10 +52,11 @@ export function AuthProvider({ children }) {
       body: JSON.stringify({ email, password }),
     });
     if (!data.ok) {
-      const err = await data.json();
+      const err = await data.json().catch(() => ({}));
       throw new Error(err.error || 'Identifiants invalides');
     }
-    const { accessToken, user, mustChangePassword } = await data.json();
+    const text = await data.text();
+    const { accessToken, user, mustChangePassword } = text ? JSON.parse(text) : {};
     setAccessToken(accessToken);
     setCurrentUser({ ...user, mustChangePassword: !!mustChangePassword });
     return { ...user, mustChangePassword: !!mustChangePassword };

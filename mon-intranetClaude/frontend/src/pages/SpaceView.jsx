@@ -172,7 +172,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const [ndfTab, setNdfTab] = useState("traiter");
   const [ndfSearch, setNdfSearch] = useState("");
   const [ndfSort, setNdfSort] = useState("date_desc");
-  // Filtres/tri Devis & Factures trésorerie
+  // Filtres/tri DF trésorerie
   const [dfTab, setDfTab] = useState("traiter");
   const [dfSearch, setDfSearch] = useState("");
   const [dfSort, setDfSort] = useState("date_desc");
@@ -1149,46 +1149,65 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
       })()}
       {/* --- ONGLET DEVIS & FACTURES (TRÉSORERIE) --- */}
       {activeTab === "df_treso" && subPage === "Trésorerie" && acc === "edit" && (() => {
-        const SC = {
-          Brouillon:       { bg: "rgba(148,163,184,0.1)", c: "#94a3b8" },
-          Soumis:          { bg: "rgba(26,86,219,0.1)",   c: "#1a56db" },
-          "En traitement": { bg: "rgba(217,119,6,0.1)",   c: "#d97706" },
-          Signé:           { bg: "rgba(22,163,74,0.1)",   c: "#16a34a" },
-          Refusé:          { bg: "rgba(230,57,70,0.1)",   c: "#e63946" },
+        const SC_DF = {
+          "Brouillon":         { bg: "var(--bg-alt)",              c: "var(--text-muted)" },
+          "Soumis":            { bg: "rgba(26,86,219,0.1)",        c: "#1a56db" },
+          "En traitement":     { bg: "rgba(217,119,6,0.1)",        c: "#d97706" },
+          "Modif. demandée":   { bg: "rgba(124,58,237,0.1)",       c: "#7c3aed" },
+          "Signé":             { bg: "rgba(22,163,74,0.1)",        c: "#16a34a" },
+          "Refusé":            { bg: "rgba(230,57,70,0.1)",        c: "#e63946" },
         };
 
-        const aTraiter  = devisFactures.filter(d => d.statut === "Soumis");
-        const enCours   = devisFactures.filter(d => d.statut === "En traitement");
-        const archives  = devisFactures.filter(d => ["Signé","Refusé"].includes(d.statut));
+        const aTraiterDF   = devisFactures.filter(d => d.statut === "Soumis");
+        const enTraitDF    = devisFactures.filter(d => d.statut === "En traitement");
+        const modifDF      = devisFactures.filter(d => d.statut === "Modif. demandée");
+        const signesDF     = devisFactures.filter(d => d.statut === "Signé");
+        const archivesDF   = devisFactures.filter(d => ["Signé","Refusé"].includes(d.statut));
 
-        const baseList = dfTab === "traiter" ? aTraiter : dfTab === "encours" ? enCours : dfTab === "archives" ? archives : devisFactures;
-
-        const q = dfSearch.toLowerCase().trim();
-        const filtered = baseList.filter(d =>
-          !q ||
-          (d.titre || "").toLowerCase().includes(q) ||
-          (d.createdBy || "").toLowerCase().includes(q) ||
-          (d.emetteur || "").toLowerCase().includes(q) ||
-          (d.categorie || "").toLowerCase().includes(q)
-        );
-
-        const sortedDf = [...filtered].sort((a, b) => {
-          if (dfSort === "montant_desc") return Number(b.montant) - Number(a.montant);
-          if (dfSort === "montant_asc")  return Number(a.montant) - Number(b.montant);
-          if (dfSort === "demandeur")    return (a.createdBy || "").localeCompare(b.createdBy || "");
-          return new Date(b.createdAt) - new Date(a.createdAt);
+        const now = new Date();
+        const signesMoisDF = signesDF.filter(d => {
+          const dt = d.signedAt ? new Date(d.signedAt) : null;
+          return dt && dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
         });
 
-        const pendingAmount = aTraiter.reduce((s, d) => s + Number(d.montant), 0);
-        const enCoursAmount = enCours.reduce((s, d) => s + Number(d.montant), 0);
-        const signedAmount  = devisFactures.filter(d => d.statut === "Signé").reduce((s, d) => s + Number(d.montant), 0);
-        const nbHB          = devisFactures.filter(d => d.horseBudget && ["Soumis","En traitement"].includes(d.statut)).length;
+        const baseDfList = dfTab === "traiter"  ? aTraiterDF
+          : dfTab === "encours"   ? enTraitDF
+          : dfTab === "modif"     ? modifDF
+          : devisFactures;
 
-        const TABS = [
-          { key: "traiter",  label: "À traiter",    count: aTraiter.length,       color: "#1a56db" },
-          { key: "encours",  label: "En traitement", count: enCours.length,        color: "#d97706" },
-          { key: "archives", label: "Archivés",      count: archives.length,       color: "#94a3b8" },
-          { key: "tous",     label: "Tout",          count: devisFactures.length,  color: "#0f2d5e" },
+        const qDf = dfSearch.toLowerCase().trim();
+        const filteredDf = baseDfList.filter(d =>
+          !qDf ||
+          (d.titre || "").toLowerCase().includes(qDf) ||
+          (d.createdBy || "").toLowerCase().includes(qDf) ||
+          (d.type || "").toLowerCase().includes(qDf) ||
+          (d.categorie || "").toLowerCase().includes(qDf) ||
+          (d.emetteur || "").toLowerCase().includes(qDf) ||
+          (d.destinataire || "").toLowerCase().includes(qDf)
+        );
+
+        const sortedDf = [...filteredDf].sort((a, b) => {
+          if (dfSort === "date_asc")      return new Date(a.createdAt) - new Date(b.createdAt);
+          if (dfSort === "montant_desc")  return Number(b.montant) - Number(a.montant);
+          if (dfSort === "montant_asc")   return Number(a.montant) - Number(b.montant);
+          if (dfSort === "demandeur")     return (a.createdBy || "").localeCompare(b.createdBy || "");
+          if (dfSort === "statut") {
+            const o = { "Soumis": 0, "En traitement": 1, "Modif. demandée": 2, "Brouillon": 3, "Signé": 4, "Refusé": 5 };
+            return (o[a.statut] ?? 9) - (o[b.statut] ?? 9);
+          }
+          return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
+        });
+
+        const aTraiterAmt  = aTraiterDF.reduce((s, d) => s + Number(d.montant), 0);
+        const enTraitAmt   = enTraitDF.reduce((s, d) => s + Number(d.montant), 0);
+        const modifAmt     = modifDF.reduce((s, d) => s + Number(d.montant), 0);
+        const signesMoisAmt = signesMoisDF.reduce((s, d) => s + Number(d.montant), 0);
+
+        const DF_TABS = [
+          { key: "traiter",  label: "À traiter",         count: aTraiterDF.length,  color: "#e63946" },
+          { key: "encours",  label: "En traitement",     count: enTraitDF.length,   color: "#d97706" },
+          { key: "modif",    label: "Modif. demandées",  count: modifDF.length,     color: "#7c3aed" },
+          { key: "toutes",   label: "Toutes",            count: devisFactures.length, color: "#0f2d5e" },
         ];
 
         return (
@@ -1196,10 +1215,10 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             {/* KPIs */}
             <div className="space-kpi-4">
               {[
-                { label: "À traiter",     val: `${pendingAmount.toFixed(2)} €`,  unit: `${aTraiter.length} dossier${aTraiter.length !== 1 ? "s" : ""}`, color: "#1a56db" },
-                { label: "En traitement", val: `${enCoursAmount.toFixed(2)} €`,  unit: `${enCours.length} dossier${enCours.length !== 1 ? "s" : ""}`,   color: "#d97706" },
-                { label: "Signés",        val: `${signedAmount.toFixed(2)} €`,   unit: `${devisFactures.filter(d => d.statut === "Signé").length} signé${devisFactures.filter(d => d.statut === "Signé").length !== 1 ? "s" : ""}`, color: "#16a34a" },
-                { label: "Hors budget ⚠️", val: nbHB,                            unit: "en attente", color: "#d97706" },
+                { label: "À traiter",          val: `${aTraiterAmt.toFixed(2)} €`,   unit: `${aTraiterDF.length} document${aTraiterDF.length !== 1 ? "s" : ""}`,  color: "#e63946" },
+                { label: "En traitement",      val: `${enTraitAmt.toFixed(2)} €`,    unit: `${enTraitDF.length} en cours`,    color: "#d97706" },
+                { label: "Modif. demandées",   val: `${modifAmt.toFixed(2)} €`,      unit: `${modifDF.length} en attente`,    color: "#7c3aed" },
+                { label: "Signés ce mois",     val: `${signesMoisAmt.toFixed(2)} €`, unit: `${signesMoisDF.length} signé${signesMoisDF.length !== 1 ? "s" : ""}`, color: "#16a34a" },
               ].map((k, i) => (
                 <div key={i} className="kc">
                   <div className="kl">{k.label}</div>
@@ -1211,8 +1230,13 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
 
             {/* Onglets */}
             <div style={{ display: "flex", gap: 2, borderBottom: "2px solid var(--border-light)", marginBottom: 14 }}>
-              {TABS.map(t => (
-                <button key={t.key} onClick={() => setDfTab(t.key)} style={{ padding: "7px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, color: dfTab === t.key ? t.color : "var(--text-muted)", borderBottom: dfTab === t.key ? `2px solid ${t.color}` : "2px solid transparent", marginBottom: -2, transition: "all 0.15s" }}>
+              {DF_TABS.map(t => (
+                <button key={t.key} onClick={() => setDfTab(t.key)} style={{
+                  padding: "7px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: 700,
+                  color: dfTab === t.key ? t.color : "var(--text-muted)",
+                  borderBottom: dfTab === t.key ? `2px solid ${t.color}` : "2px solid transparent",
+                  marginBottom: -2, transition: "all 0.15s",
+                }}>
                   {t.label}
                   <span style={{ marginLeft: 5, padding: "1px 6px", borderRadius: 10, fontSize: 9, background: dfTab === t.key ? `${t.color}18` : "var(--bg-alt)", color: dfTab === t.key ? t.color : "var(--text-muted)", fontWeight: 700 }}>{t.count}</span>
                 </button>
@@ -1223,15 +1247,19 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 180, position: "relative" }}>
                 <Search size={12} strokeWidth={1.8} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
-                <input value={dfSearch} onChange={e => setDfSearch(e.target.value)}
-                  placeholder="Rechercher titre, demandeur, émetteur…"
-                  style={{ width: "100%", padding: "7px 9px 7px 28px", borderRadius: 8, border: "1px solid var(--border-light)", background: "var(--bg-alt)", fontSize: 11, color: "var(--text-base)", boxSizing: "border-box" }} />
+                <input
+                  value={dfSearch} onChange={e => setDfSearch(e.target.value)}
+                  placeholder="Rechercher titre, demandeur, type, catégorie…"
+                  style={{ width: "100%", padding: "7px 9px 7px 28px", borderRadius: 8, border: "1px solid var(--border-light)", background: "var(--bg-alt)", fontSize: 11, color: "var(--text-base)", boxSizing: "border-box" }}
+                />
               </div>
               <select value={dfSort} onChange={e => setDfSort(e.target.value)} style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border-light)", background: "var(--bg-alt)", fontSize: 11, color: "var(--text-dim)", cursor: "pointer" }}>
                 <option value="date_desc">Date ↓</option>
+                <option value="date_asc">Date ↑</option>
                 <option value="montant_desc">Montant ↓</option>
                 <option value="montant_asc">Montant ↑</option>
-                <option value="demandeur">Demandeur</option>
+                <option value="statut">Par statut</option>
+                <option value="demandeur">Par demandeur</option>
               </select>
               <span style={{ display: "flex", alignItems: "center", fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{sortedDf.length} résultat{sortedDf.length !== 1 ? "s" : ""}</span>
             </div>
@@ -1240,15 +1268,15 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {sortedDf.length === 0 && (
                 <div className="empty" style={{ padding: 40 }}>
-                  {dfSearch ? "Aucun dossier ne correspond à la recherche." : "Aucun dossier dans cet onglet."}
+                  {dfSearch ? "Aucun document ne correspond à la recherche." : "Aucun document dans cet onglet."}
                 </div>
               )}
               {sortedDf.map(df => {
-                const meta = SC[df.statut] || SC["Brouillon"];
+                const meta = SC_DF[df.statut] || SC_DF["Brouillon"];
                 return (
                   <div key={df.id}
                     onClick={() => setDevisFactureModal(df)}
-                    style={{ background: "var(--bg-surface)", border: `1px solid ${df.horseBudget ? "rgba(217,119,6,0.3)" : "var(--border-light)"}`, borderLeft: `4px solid ${meta.c}`, borderRadius: 10, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "box-shadow 0.15s, transform 0.1s" }}
+                    style={{ background: "var(--bg-surface)", border: `1px solid ${df.statut === "Soumis" ? "rgba(26,86,219,0.25)" : "var(--border-light)"}`, borderLeft: `4px solid ${meta.c}`, borderRadius: 10, padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, transition: "box-shadow 0.15s, transform 0.1s" }}
                     onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 3px 12px rgba(0,0,0,0.07)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
                     onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
                   >
@@ -1257,19 +1285,19 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{df.titre}</span>
-                        <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "var(--bg-alt)", color: "var(--text-muted)" }}>{df.type}</span>
-                        {df.categorie && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "var(--bg-alt)", color: "var(--text-muted)" }}>{df.categorie}</span>}
-                        {df.horseBudget && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 6, background: "rgba(217,119,6,0.1)", color: "#d97706", fontWeight: 700 }}>⚠️ HB</span>}
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)" }}>{df.type}</span>
+                        {df.categorie && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>· {df.categorie}</span>}
+                        {df.horseBudget && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 7, background: "rgba(217,119,6,0.12)", color: "#d97706", fontWeight: 700 }}>⚠ Hors budget</span>}
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{df.titre || `${df.emetteur || ""} → ${df.destinataire || ""}`}</span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 10, color: "var(--text-muted)" }}>👤 {df.createdBy}</span>
-                        {df.soumisAt && <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{formatDateShort(df.soumisAt)}</span>}
-                        <span style={{ fontSize: 9, padding: "2px 7px", borderRadius: 10, fontWeight: 700, background: meta.bg, color: meta.c }}>{df.statut}</span>
+                        {df.createdBy && <span style={{ fontSize: 10, color: "var(--text-muted)" }}>👤 {df.createdBy}</span>}
+                        {(df.soumisAt || df.createdAt) && <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{formatDateShort(df.soumisAt || df.createdAt)}</span>}
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "var(--font-display)", color: meta.c, marginBottom: 3 }}>{Number(df.montant).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} €</div>
+                      <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "var(--font-display)", color: meta.c, marginBottom: 3 }}>{Number(df.montant).toFixed(2)} €</div>
+                      <span style={{ fontSize: 9, padding: "2px 8px", borderRadius: 10, fontWeight: 700, background: meta.bg, color: meta.c }}>{df.statut}</span>
                     </div>
                     <ChevronRight size={14} strokeWidth={1.8} color="var(--text-muted)" />
                   </div>
@@ -1279,6 +1307,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
           </div>
         );
       })()}
+
 
       {/* --- ONGLET SUIVI RH --- */}
       {activeTab === "rh_suivi" && subPage === "Ressources Humaines" && (() => {

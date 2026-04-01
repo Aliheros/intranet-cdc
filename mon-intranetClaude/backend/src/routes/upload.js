@@ -50,12 +50,33 @@ const ALLOWED_MIME_TYPES = new Set([
   'text/plain', 'text/csv',
 ]);
 
+// Extensions exécutables — refusées même si le MIME type semble correct
+const DANGEROUS_EXTENSIONS = new Set([
+  '.php', '.php3', '.php4', '.php5', '.phtml',
+  '.asp', '.aspx', '.jsp', '.jspx',
+  '.sh', '.bash', '.zsh', '.fish',
+  '.bat', '.cmd', '.ps1', '.psm1',
+  '.exe', '.dll', '.so', '.dylib',
+  '.py', '.rb', '.pl', '.cgi',
+  '.htaccess', '.htpasswd',
+  '.svg', // SVG peut embarquer du JS (XSS)
+  '.xml', // XXE possible
+  '.html', '.htm', '.xhtml',
+  '.js', '.mjs', '.ts',
+]);
+
 const upload = multer({
   storage,
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
+    // 1. Vérification MIME type (peut être falsifié, mais filtre les cas courants)
     if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
       return cb(new Error(`Type de fichier non autorisé : ${file.mimetype}`));
+    }
+    // 2. Vérification de l'extension (indépendante du MIME pour bloquer les fichiers renommés)
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (DANGEROUS_EXTENSIONS.has(ext)) {
+      return cb(new Error(`Extension de fichier non autorisée : ${ext}`));
     }
     cb(null, true);
   },
@@ -98,23 +119,39 @@ router.post('/avatar', requireAuth, uploadAvatar.single('avatar'), async (req, r
   });
 });
 
-// GET /api/upload/secure/:filename — accès authentifié à un fichier sensible (devis/factures)
+// GET /api/upload/secure/:filename — accès authentifié à un fichier (devis/factures)
 router.get('/secure/:filename', requireAuth, async (req, res) => {
   try {
     const { filename } = req.params;
-    // Protection contre path traversal
-    if (/[/\\]/.test(filename)) return res.status(400).json({ error: 'Nom de fichier invalide' });
 
+    // Protection path traversal : nom de fichier simple uniquement (pas de slashes, dots doubles, etc.)
+    if (!/^[\w\-. ]+$/.test(filename) || filename.includes('..')) {
+      return res.status(400).json({ error: 'Nom de fichier invalide' });
+    }
+
+    // Résolution et confinement au répertoire uploads (protection supplémentaire)
+    const filePath = path.resolve(UPLOAD_DIR, filename);
+    if (!filePath.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) {
+      return res.status(400).json({ error: 'Accès refusé' });
+    }
+
+    // Contrôle d'accès : Admin/Bureau voient tout — les autres uniquement leurs propres fichiers
     const isPrivileged = req.user.role === 'Admin' || req.user.role === 'Bureau';
     if (!isPrivileged) {
       const owned = await prisma.devisFacture.findFirst({
-        where: { fichier: filename, createdBy: req.user.nom },
+        where: {
+          fichier:   filename,
+          createdBy: req.user.nom,  // sera remplacé par createdById une fois le schéma migré
+        },
       });
       if (!owned) return res.status(403).json({ error: 'Accès refusé' });
     }
 
-    const filePath = path.join(UPLOAD_DIR, filename);
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Fichier introuvable' });
+
+    // Forcer le téléchargement sécurisé (ne pas exécuter dans le navigateur)
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(filename)}"`);
     res.sendFile(filePath);
   } catch (err) {
     console.error('Erreur GET upload secure:', err);

@@ -78,6 +78,7 @@ export function DataProvider({ children }) {
   const [notesFrais,      setNotesFrais]      = useState([]);
   const [faqs,            setFaqs]            = useState([]);
   const [devisFactures,   setDevisFactures]   = useState([]);
+  const [categoriesDF,    setCategoriesDF]    = useState([]);
   const [fichiersPrefaits, setFichiersPrefaits] = useState([]);
   const [ndfConfig,       setNdfConfig]       = useState({
     categories: [
@@ -126,7 +127,7 @@ export function DataProvider({ children }) {
           usersData, actionsData, eventsData, tasksData, taskReqData,
           transactionsData, budgetsData, missionsData, notesFraisData,
           notifsData, hoursData, convsData, spaceSettingsData,
-          faqData, devisFacturesData,
+          faqData, devisFacturesData, categoriesDFData,
         ] = await Promise.all([
           api.get('/users'),
           api.get('/actions'),
@@ -143,6 +144,7 @@ export function DataProvider({ children }) {
           api.get('/spaces/settings'),
           api.get('/faq').catch(() => []),
           api.get('/devis-factures').catch(() => []),
+          api.get('/categories-df').catch(() => []),
         ]);
         const contactsData = await api.get('/contacts').catch(() => []);
 
@@ -158,6 +160,7 @@ export function DataProvider({ children }) {
         setNotesFrais(notesFraisData || []);
         setFaqs(faqData || []);
         setDevisFactures(devisFacturesData || []);
+        setCategoriesDF(categoriesDFData || []);
         setNotifs(notifsData || []);
         // Initialiser notifLues depuis le serveur (ID ou nom de l'utilisateur dans lu[])
         // Fusionne avec le localStorage pour ne pas perdre les marques locales
@@ -1454,6 +1457,16 @@ export function DataProvider({ children }) {
     }
   };
 
+  const refreshDevisFacture = async (id) => {
+    try {
+      const updated = await api.get(`/devis-factures/${id}`);
+      setDevisFactures(prev => prev.map(d => d.id === id ? updated : d));
+      return updated;
+    } catch (err) {
+      console.error('refreshDevisFacture error:', err);
+    }
+  };
+
   const handleApprouverHorsBudget = async (txId) => {
     try {
       const updated = await api.post(`/tresorerie/transactions/${txId}/approuver-hors-budget`);
@@ -1487,7 +1500,7 @@ export function DataProvider({ children }) {
       volunteerHours, setVolunteerHours,
       missions, setMissions,
       notesFrais, setNotesFrais,
-      faqs, devisFactures,
+      faqs, devisFactures, categoriesDF,
       ndfConfig, setNdfConfig,
       spaceChats, setSpaceChats,
       docsData, setDocsData,
@@ -1542,6 +1555,7 @@ export function DataProvider({ children }) {
       handleCreateDevisFacture, handleUpdateDevisFacture, handleDeleteDevisFacture,
       handleSoumettreDevisFacture, handleDeposeDevisFacture,
       handlePrendreEnChargeDevisFacture, handleSignerDevisFacture,
+      refreshDevisFacture,
       // Handlers transactions
       handleSaveTransaction, deleteTransaction, validerTransaction, handleApprouverHorsBudget,
       // Handlers espaces

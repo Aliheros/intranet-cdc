@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { requireAuth } = require('../middleware/auth');
 const { auditLog } = require('../middleware/auditLogger');
 const prisma = require('../lib/prisma');
+const log = require('../lib/logger');
 
 const router = express.Router();
 
@@ -26,12 +27,22 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const includeDeleted = req.query.includeDeleted === 'true' && req.user.role === 'Admin';
     const where = includeDeleted ? {} : { isDeleted: false };
+    const isBureauOrAdmin = req.user.role === 'Admin' || req.user.role === 'Bureau';
 
     const users = await prisma.user.findMany({
       where,
       include: { permissions: true },
       orderBy: { nom: 'asc' },
     });
+
+    // RH access check : Admin/Bureau ou permission pôle RH non-nulle
+    let hasRHAccess = isBureauOrAdmin;
+    if (!hasRHAccess) {
+      const rhPerm = await prisma.permission.findFirst({
+        where: { userId: req.user.id, pole: 'Ressources Humaines' },
+      });
+      hasRHAccess = !!(rhPerm && rhPerm.level !== 'none');
+    }
 
     // Auto-sync statuts depuis les congés déclarés (uniquement pour les actifs)
     const updates = users
@@ -46,9 +57,12 @@ router.get('/', requireAuth, async (req, res) => {
       updates.forEach(({ u, newStatut }) => { u.statut = newStatut; });
     }
 
-    res.json(users.map(({ passwordHash, ...u }) => u));
+    res.json(users.map(({ passwordHash, notesRH, historiqueRH, commentairesRH, ...u }) => {
+      if (hasRHAccess) return { ...u, notesRH, historiqueRH, commentairesRH };
+      return u;
+    }));
   } catch (err) {
-    console.error('Erreur GET /users:', err);
+    log.error({ err, route: 'GET /users' }, 'Erreur récupération liste utilisateurs');
     res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
 });
@@ -56,15 +70,32 @@ router.get('/', requireAuth, async (req, res) => {
 // GET /api/users/:id
 router.get('/:id', requireAuth, async (req, res) => {
   try {
+    const targetId = Number(req.params.id);
+    const isBureauOrAdmin = req.user.role === 'Admin' || req.user.role === 'Bureau';
+
     const user = await prisma.user.findUnique({
-      where: { id: Number(req.params.id) },
+      where: { id: targetId },
       include: { permissions: true },
     });
     if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
-    const { passwordHash, ...userSafe } = user;
-    res.json(userSafe);
+
+    // RH access check
+    let hasRHAccess = isBureauOrAdmin;
+    if (!hasRHAccess) {
+      const rhPerm = await prisma.permission.findFirst({
+        where: { userId: req.user.id, pole: 'Ressources Humaines' },
+      });
+      hasRHAccess = !!(rhPerm && rhPerm.level !== 'none');
+    }
+
+    const { passwordHash, notesRH, historiqueRH, commentairesRH, ...userSafe } = user;
+    if (hasRHAccess) {
+      res.json({ ...userSafe, notesRH, historiqueRH, commentairesRH });
+    } else {
+      res.json(userSafe);
+    }
   } catch (err) {
-    console.error('Erreur GET /users/:id:', err);
+    log.error({ err, route: 'GET /users/:id' }, 'Erreur récupération utilisateur');
     res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
 });
@@ -195,7 +226,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const { passwordHash, ...safe } = updated;
     res.json(safe);
   } catch (err) {
-    console.error('Erreur PATCH /users/:id:', err);
+    log.error({ err, route: 'PATCH /users/:id' }, 'Erreur mise à jour utilisateur');
     res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
 });
@@ -216,7 +247,7 @@ router.post('/:id/reset-password', requireAuth, async (req, res) => {
     await auditLog(req, { action: 'user.resetPassword', targetType: 'User', targetId, targetNom: target?.nom });
     res.json({ code });
   } catch (err) {
-    console.error('Erreur POST /users/:id/reset-password:', err);
+    log.error({ err, route: 'POST /users/:id/reset-password' }, 'Erreur reset password');
     res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
 });
@@ -229,7 +260,7 @@ router.post('/:id/trigger-tutorial', requireAuth, async (req, res) => {
     await prisma.user.update({ where: { id: targetId }, data: { mustTakeTutorial: true } });
     res.json({ ok: true });
   } catch (err) {
-    console.error('Erreur POST /users/:id/trigger-tutorial:', err);
+    log.error({ err, route: 'POST /users/:id/trigger-tutorial' }, 'Erreur trigger tutorial');
     res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
 });
@@ -240,7 +271,7 @@ router.post('/me/tutorial-done', requireAuth, async (req, res) => {
     await prisma.user.update({ where: { id: req.user.id }, data: { mustTakeTutorial: false } });
     res.json({ ok: true });
   } catch (err) {
-    console.error('Erreur POST /users/me/tutorial-done:', err);
+    log.error({ err, route: 'POST /users/me/tutorial-done' }, 'Erreur tutorial done');
     res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
 });
@@ -278,7 +309,7 @@ router.post('/', requireAuth, async (req, res) => {
     const { passwordHash: _, ...safe } = user;
     res.status(201).json(safe);
   } catch (err) {
-    console.error('Erreur POST /users:', err);
+    log.error({ err, route: 'POST /users' }, 'Erreur création utilisateur');
     res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
 });
@@ -333,7 +364,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error('Erreur DELETE /users/:id:', err);
+    log.error({ err, route: 'DELETE /users/:id' }, 'Erreur désactivation utilisateur');
     res.status(500).json({ error: err.message || 'Erreur serveur' });
   }
 });
