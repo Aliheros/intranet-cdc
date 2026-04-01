@@ -70,10 +70,9 @@ const DevisFactures = () => {
   const onOpen = (df) => setDevisFactureModal(df);
   const onNew  = ()   => setDevisFactureModal({});
 
-  // Filtrer aux documents du user courant (comme NDF filtre par demandeurId)
+  // Filtrer aux documents du user courant (le backend stocke createdBy = user.nom)
   const devisFactures = (allDevisFactures || []).filter(d =>
-    d.createdById === currentUser?.id ||
-    d.createdBy   === currentUser?.nom
+    d.createdBy === currentUser?.nom
   );
 
   const [filter, setFilter] = useState('all');
