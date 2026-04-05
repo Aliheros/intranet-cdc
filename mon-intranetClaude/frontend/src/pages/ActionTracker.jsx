@@ -1,10 +1,11 @@
 // src/pages/ActionTracker.jsx
 import React, { useState, useEffect } from 'react';
+import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 import Badge from '../components/ui/Badge';
 import { TYPES_ACTION, STATUTS_ACTION, STATUT_STYLE, POLE_COLORS } from '../data/constants';
 import { AvatarInner, isAvatarUrl, findMemberByName } from '../components/ui/AvatarDisplay';
-import { formatDateShort, computeCompletionScore } from '../utils/utils';
-import { Archive, Calendar, ClipboardList, CheckCircle2, AlertTriangle, Zap, Pencil, Trash2, RotateCcw, Lock, Plus } from 'lucide-react';
+import { formatDateShort, computeCompletionScore, isTaskEffectivelyDone } from '../utils/utils';
+import { Archive, Calendar, ClipboardList, CheckCircle2, AlertTriangle, Zap, Pencil, Trash2, RotateCcw, Lock, Plus, Star, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
@@ -20,10 +21,46 @@ const ActionTracker = () => {
     actions, evenements, cycles, directory, isAdmin, isResponsable,
     toggleArchiveAction, deleteAction, handleUpdateActionStatus: onUpdateActionStatus,
     tasks, trash, restoreTrash, forceDeleteTrash,
+    handleSaveBilan,
   } = useDataContext();
+
+  // ─── Bilan post-action ────────────────────────────────────────────────────
+  const BILAN_EMPTY = { satisfaction: 0, beneficiaires: 0, pointsPositifs: '', difficultes: '', recommandations: '' };
+  const [bilanPending, setBilanPending] = useState(null); // { actionId, ...fields }
+  const [bilanSaving, setBilanSaving] = useState(false);
+
+  const handleStatutChange = (action, newStatut) => {
+    if (newStatut === 'Terminée' && action.statut !== 'Terminée') {
+      setBilanPending({ actionId: action.id, ...BILAN_EMPTY, beneficiaires: action.beneficiaires || 0 });
+    } else {
+      onUpdateActionStatus(action.id, newStatut);
+    }
+  };
+
+  const submitBilan = async (skip = false) => {
+    if (!bilanPending) return;
+    setBilanSaving(true);
+    try {
+      if (!skip) {
+        const bilan = {
+          satisfaction: bilanPending.satisfaction,
+          beneficiaires: bilanPending.beneficiaires,
+          pointsPositifs: bilanPending.pointsPositifs,
+          difficultes: bilanPending.difficultes,
+          recommandations: bilanPending.recommandations,
+          completedAt: new Date().toISOString(),
+        };
+        await handleSaveBilan(bilanPending.actionId, bilan);
+      }
+      onUpdateActionStatus(bilanPending.actionId, 'Terminée');
+      setBilanPending(null);
+    } finally {
+      setBilanSaving(false);
+    }
+  };
   // État pour filtres et tri
   const [actionsTab, setActionsTab] = useState("actifs");
-  const [actionsCycle, setActionsCycle] = useState(cycles[0]);
+  const [actionsCycle, setActionsCycle] = useState(cycles[0] || "Toutes");
   const [actionsSort, setActionsSort] = useState("date_desc");
   const [filterSearch, setFilterSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState("Tous");
@@ -39,12 +76,8 @@ const ActionTracker = () => {
     if (action.cycle && actionsCycle !== "Toutes" && action.cycle !== actionsCycle) setActionsCycle(action.cycle);
   }, [highlightedActionId]);
 
-  // Une tâche est considérée terminée si : status="Terminé" OU forceCompletedBy OU tous les assignés ont validé
-  const isTaskDone = (t) => {
-    if (t.status === "Terminé" || !!t.forceCompletedBy) return true;
-    const assignees = t.assignees || [];
-    return assignees.length > 0 && assignees.every(a => a.completed);
-  };
+  // Utilise le helper partagé depuis utils.js
+  const isTaskDone = isTaskEffectivelyDone;
 
   // Fonction pour calculer la progression des tâches pour une action
   const getTasksCompletion = (actionId) => {
@@ -142,7 +175,7 @@ const ActionTracker = () => {
 
       {/* Corbeille */}
       {actionsTab === "corbeille" && (() => {
-        const allTrashActions = trash.filter(t => t.type === "action").sort((a, b) => b.deletedAt - a.deletedAt);
+        const allTrashActions = trash.filter(t => t.type === "action").sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
         // Responsables voient tout ; membres ne voient que leur propre corbeille
         const trashActions = isResponsable
           ? allTrashActions
@@ -170,7 +203,7 @@ const ActionTracker = () => {
                 </div>
                 {restoreTrash && (isResponsable || item.deletedBy === currentUser?.nom) && (
                   <button
-                    onClick={() => restoreTrash(item)}
+                    onClick={() => restoreTrash(item.id)}
                     style={{ background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)", borderRadius: 6, padding: "5px 10px", cursor: "pointer", color: "#16a34a", display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}
                   >
                     <RotateCcw size={11} strokeWidth={1.8}/> Restaurer
@@ -308,7 +341,7 @@ const ActionTracker = () => {
                       <select
                         className="form-select"
                         value={a.statut}
-                        onChange={(e) => onUpdateActionStatus(a.id, e.target.value)}
+                        onChange={(e) => handleStatutChange(a, e.target.value)}
                         style={{ fontSize: 10, padding: "2px 6px", width: "auto", minWidth: 90, background: STATUT_STYLE[a.statut]?.bg || "var(--bg-alt)", color: STATUT_STYLE[a.statut]?.c || "var(--text-dim)", border: "none", borderRadius: 5, fontWeight: 700, cursor: "pointer" }}
                       >
                         {STATUTS_ACTION.map(s => <option key={s} value={s}>{s}</option>)}
@@ -326,6 +359,7 @@ const ActionTracker = () => {
                     )}
                   </td>
                   <td>
+                    <ErrorBoundary inline label="barre des tâches">
                     {(() => {
                       // Uniquement les tâches avec au moins un assigné (acceptées et assignées)
                       const actionTasks = tasks.filter(t =>
@@ -379,14 +413,14 @@ const ActionTracker = () => {
                                 return (
                                   <div
                                     key={t.id}
-                                    onClick={() => { navigate(spaceType, t.space); setHighlightedTaskId && setHighlightedTaskId(t.id); }}
-                                    style={{ cursor: "pointer", padding: "5px 7px", borderRadius: 6, background: "var(--bg-hover)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.25)" : "var(--border-light)"}`, borderLeft: `3px solid ${barColor}` }}
-                                    title={`${t.text} → ${t.space}`}
+                                    onClick={() => { if (t.space) { navigate(spaceType, t.space); } }}
+                                    style={{ cursor: t.space ? "pointer" : "default", padding: "5px 7px", borderRadius: 6, background: "var(--bg-hover)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.25)" : "var(--border-light)"}`, borderLeft: `3px solid ${barColor}` }}
+                                    title={`${t.text || ""}${t.space ? ` → ${t.space}` : ""}`}
                                   >
                                     <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
                                       <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 700, minWidth: 12, flexShrink: 0 }}>{i + 1}.</span>
                                       <span style={{ fontSize: 10, color: isDone ? "#16a34a" : isOverdue ? "#e63946" : "var(--text-base)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 110, textDecoration: isDone ? "line-through" : "none" }}>
-                                        {t.text}
+                                        {t.text || "—"}
                                       </span>
                                       {isOverdue && <AlertTriangle size={8} strokeWidth={2} style={{ color: "#e63946", flexShrink: 0 }} />}
                                     </div>
@@ -395,7 +429,7 @@ const ActionTracker = () => {
                                     </div>
                                     {assigneesList.length > 0 && (
                                       <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 2 }}>
-                                        {assigneesList.map(x => x.name.split(" ")[0]).join(", ")}
+                                        {assigneesList.map(x => (x.name || "").split(" ")[0]).filter(Boolean).join(", ")}
                                       </div>
                                     )}
                                   </div>
@@ -406,9 +440,30 @@ const ActionTracker = () => {
                         </div>
                       );
                     })()}
+                    </ErrorBoundary>
                   </td>
                   <td>
                     {a.notes ? <span title={a.notes} style={{ cursor: "help", borderBottom: "1px dotted var(--text-muted)", color: "var(--text-dim)", fontSize: 11 }}>{a.notes.length > 25 ? a.notes.substring(0, 25) + "..." : a.notes}</span> : <span style={{ color: "var(--text-dim)" }}>-</span>}
+                    {a.bilan && (() => {
+                      const b = typeof a.bilan === 'string' ? (() => { try { return JSON.parse(a.bilan); } catch { return { notes: a.bilan }; } })() : a.bilan;
+                      const stars = b.satisfaction > 0 ? '★'.repeat(b.satisfaction) + '☆'.repeat(5 - b.satisfaction) : null;
+                      const tooltip = [
+                        stars ? `Satisfaction : ${stars}` : null,
+                        b.beneficiaires ? `Bénéficiaires : ${b.beneficiaires}` : null,
+                        b.pointsPositifs ? `✓ ${b.pointsPositifs}` : null,
+                        b.difficultes ? `⚠ ${b.difficultes}` : null,
+                        b.recommandations ? `→ ${b.recommandations}` : null,
+                        b.notes || null,
+                      ].filter(Boolean).join('\n');
+                      return (
+                        <div style={{ marginTop: 6, fontSize: 10, color: "#16a34a", display: "flex", alignItems: "flex-start", gap: 4 }} title={tooltip}>
+                          <FileText size={10} strokeWidth={2} style={{ flexShrink: 0, marginTop: 1 }}/>
+                          <span style={{ cursor: "help" }}>
+                            Bilan{stars ? ` ${b.satisfaction}/5` : ''}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td>
                     {/* PROGRESSION DES TÂCHES */}
@@ -480,15 +535,15 @@ const ActionTracker = () => {
                               <div
                                 key={t.id}
                                 onClick={() => {
+                                  if (!t.space) return;
                                   const pageType = ["Relations Publiques","Ressources Humaines","Plaidoyer","Etudes","Développement Financier","Communication","Trésorerie"].includes(t.space) ? "pole" : "projet";
                                   navigate(pageType, t.space);
-                                  setHighlightedTaskId && setHighlightedTaskId(t.id);
                                 }}
-                                style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 6, background: "var(--bg-surface)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.3)" : "var(--border-light)"}`, borderLeft: isOverdue ? "3px solid #e63946" : "3px solid #1a56db", cursor: "pointer", fontSize: 11, maxWidth: 260 }}
+                                style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 6, background: "var(--bg-surface)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.3)" : "var(--border-light)"}`, borderLeft: isOverdue ? "3px solid #e63946" : "3px solid #1a56db", cursor: t.space ? "pointer" : "default", fontSize: 11, maxWidth: 260 }}
                               >
-                                <span style={{ fontWeight: 600, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.text}</span>
+                                <span style={{ fontWeight: 600, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.text || "—"}</span>
                                 {isOverdue && <span style={{ display:"inline-flex", color: "#e63946", flexShrink: 0 }}><AlertTriangle size={9} strokeWidth={2}/></span>}
-                                <span style={{ fontSize: 9, color: "var(--text-muted)", flexShrink: 0 }}>{(t.assignees || []).map(a => a.name.split(" ")[0]).join(", ")}</span>
+                                <span style={{ fontSize: 9, color: "var(--text-muted)", flexShrink: 0 }}>{(t.assignees || []).map(a => (a.name || "").split(" ")[0]).filter(Boolean).join(", ")}</span>
                               </div>
                             );
                           })}
@@ -503,6 +558,105 @@ const ActionTracker = () => {
           </tbody>
         </table>
       </div>}
+
+      {/* ── PANEL BILAN POST-ACTION ────────────────────────────────────────── */}
+      {bilanPending && (() => {
+        const action = actions.find(a => a.id === bilanPending.actionId);
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 12, padding: 28, width: '100%', maxWidth: 520, boxShadow: '0 8px 40px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#16a34a', marginBottom: 4 }}>Action terminée</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-base)' }}>{action?.etablissement}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Saisissez le bilan (optionnel — peut être rempli plus tard)</div>
+              </div>
+
+              {/* Satisfaction */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-base)', marginBottom: 8 }}>Satisfaction globale</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[1,2,3,4,5].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setBilanPending(f => ({ ...f, satisfaction: n }))}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, fontSize: 24, color: n <= bilanPending.satisfaction ? '#f59e0b' : 'var(--border-light)', transition: 'color 0.15s' }}
+                    >★</button>
+                  ))}
+                  {bilanPending.satisfaction > 0 && (
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', alignSelf: 'center', marginLeft: 4 }}>
+                      {['','Insuffisant','Passable','Bien','Très bien','Excellent'][bilanPending.satisfaction]}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Bénéficiaires */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-base)', display: 'block', marginBottom: 4 }}>
+                  Nombre de bénéficiaires (confirmer)
+                </label>
+                <input
+                  type="number" min="0"
+                  value={bilanPending.beneficiaires}
+                  onChange={e => setBilanPending(f => ({ ...f, beneficiaires: Number(e.target.value) }))}
+                  style={{ fontSize: 13, padding: '6px 10px', border: '1px solid var(--border-light)', borderRadius: 6, background: 'var(--bg-base)', width: 100 }}
+                />
+              </div>
+
+              {/* Points positifs */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', display: 'block', marginBottom: 4 }}>Ce qui a bien marché</label>
+                <textarea
+                  value={bilanPending.pointsPositifs}
+                  onChange={e => setBilanPending(f => ({ ...f, pointsPositifs: e.target.value }))}
+                  rows={2} placeholder="Points forts, moments marquants…"
+                  style={{ width: '100%', fontSize: 12, padding: '7px 9px', border: '1px solid var(--border-light)', borderRadius: 6, background: 'var(--bg-base)', resize: 'vertical', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* Difficultés */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#d97706', display: 'block', marginBottom: 4 }}>Difficultés rencontrées</label>
+                <textarea
+                  value={bilanPending.difficultes}
+                  onChange={e => setBilanPending(f => ({ ...f, difficultes: e.target.value }))}
+                  rows={2} placeholder="Obstacles, frictions, retards…"
+                  style={{ width: '100%', fontSize: 12, padding: '7px 9px', border: '1px solid var(--border-light)', borderRadius: 6, background: 'var(--bg-base)', resize: 'vertical', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* Recommandations */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#1a56db', display: 'block', marginBottom: 4 }}>Recommandations pour le prochain cycle</label>
+                <textarea
+                  value={bilanPending.recommandations}
+                  onChange={e => setBilanPending(f => ({ ...f, recommandations: e.target.value }))}
+                  rows={2} placeholder="Améliorations, idées, points d'attention…"
+                  style={{ width: '100%', fontSize: 12, padding: '7px 9px', border: '1px solid var(--border-light)', borderRadius: 6, background: 'var(--bg-base)', resize: 'vertical', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  style={{ fontSize: 11, padding: '6px 14px', background: 'none', border: '1px solid var(--border-light)', borderRadius: 6, cursor: 'pointer', color: 'var(--text-muted)' }}
+                  onClick={() => submitBilan(true)}
+                  disabled={bilanSaving}
+                >
+                  Passer — terminer sans bilan
+                </button>
+                <button
+                  className="btn-primary"
+                  style={{ fontSize: 11, padding: '6px 16px' }}
+                  onClick={() => submitBilan(false)}
+                  disabled={bilanSaving}
+                >
+                  {bilanSaving ? 'Sauvegarde…' : 'Enregistrer le bilan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 };

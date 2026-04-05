@@ -1,6 +1,7 @@
 // src/App.jsx — Shell léger (~300 lignes).
 // Tout l'état métier est dans DataContext ; tout l'état UI dans AppContext.
 import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { useAuth } from './contexts/AuthContext';
 import { useAppContext } from './contexts/AppContext';
 import { useDataContext } from './contexts/DataContext';
@@ -27,6 +28,7 @@ import NoteFrais     from './pages/NoteFrais';
 import FAQ           from './pages/FAQ';
 import DevisFactures from './pages/DevisFactures';
 import TresorerieDevisFactures from './pages/TresorerieDevisFactures';
+import Analytics from './pages/Analytics';
 
 // Modales
 import ProfileModal         from './components/modals/ProfileModal';
@@ -107,6 +109,7 @@ function App() {
     handleSoumettreDevisFacture, handleDeposeDevisFacture,
     handlePrendreEnChargeDevisFacture, handleSignerDevisFacture,
     refreshDevisFacture,
+    dfConfig,
   } = useDataContext();
 
   // ─── TUTORIEL — déclenche automatiquement si mustTakeTutorial ───────────────
@@ -135,9 +138,19 @@ function App() {
   const [bannerSlideDirection, setBannerSlideDirection] = useState('right');
   const [bannerHasAppeared,    setBannerHasAppeared]    = useState(false);
 
-  const isBannerActive = notifBannerVisible && visibleNotifs.length > 0;
+  // Seules les annonces non encore lues/fermées alimentent la bannière
+  const unreadVisibleNotifs = visibleNotifs.filter(n => !notifLues.includes(n.id));
+  const isBannerActive = notifBannerVisible && unreadVisibleNotifs.length > 0;
+  // Garde l'index du carousel dans les bornes si des annonces sont lues
+  const safeBannerIndex = unreadVisibleNotifs.length > 0
+    ? Math.min(bannerCarouselIndex, unreadVisibleNotifs.length - 1)
+    : 0;
 
   const handleCloseBanner = () => {
+    // Marquer toutes les annonces actuellement affichées comme lues
+    if (unreadVisibleNotifs.length > 0) {
+      setNotifLues(prev => [...new Set([...prev, ...unreadVisibleNotifs.map(n => n.id)])]);
+    }
     const outer = bannerOuterRef.current;
     const inner = bannerRef.current;
     if (!outer || !inner) { setNotifBannerVisible(false); return; }
@@ -156,7 +169,7 @@ function App() {
   useLayoutEffect(() => {
     if (!bannerOuterRef.current) return;
     setBannerHeight(isBannerActive ? bannerOuterRef.current.offsetHeight : 0);
-  }, [isBannerActive, visibleNotifs.length]);
+  }, [isBannerActive, unreadVisibleNotifs.length]);
 
   // ─── GARDE AUTH ────────────────────────────────────────────────────────────
   if (authLoading) {
@@ -190,23 +203,23 @@ function App() {
       `}</style>
 
       {/* ─── BANNIÈRE ANNONCES ─────────────────────────────────────────────── */}
-      {isBannerActive && visibleNotifs.length > 0 && (
+      {isBannerActive && unreadVisibleNotifs.length > 0 && (
         <div ref={bannerOuterRef} style={{ width: '100%', overflow: 'hidden', zIndex: 100 }}>
           <div ref={bannerRef} className={`banner-wrapper ${bannerTransitioning ? 'banner-animated' : ''}`}
-            style={{ width: '100%', zIndex: 100, background: visibleNotifs[bannerCarouselIndex]?.priorite === 'haute' ? 'linear-gradient(135deg, #e63946 0%, #d1495a 100%)' : 'linear-gradient(135deg, #0f2d5e 0%, #1a3a5c 100%)', color: '#fff', padding: 'clamp(12px,3vw,20px) clamp(14px,4vw,28px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 70, boxShadow: '0 6px 24px rgba(0,0,0,0.18)', overflow: 'hidden', position: 'relative' }}>
+            style={{ width: '100%', zIndex: 100, background: unreadVisibleNotifs[safeBannerIndex]?.priorite === 'haute' ? 'linear-gradient(135deg, #e63946 0%, #d1495a 100%)' : 'linear-gradient(135deg, #0f2d5e 0%, #1a3a5c 100%)', color: '#fff', padding: 'clamp(12px,3vw,20px) clamp(14px,4vw,28px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 70, boxShadow: '0 6px 24px rgba(0,0,0,0.18)', overflow: 'hidden', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: 1, minWidth: 0, position: 'relative' }}>
               <span style={{ flexShrink: 0, display: 'inline-flex' }}><Megaphone size={32} strokeWidth={1.5} /></span>
-              <div key={`notif-${bannerCarouselIndex}`} className={bannerTransitioning ? (bannerSlideDirection === 'right' ? 'banner-content-enter-right' : 'banner-content-enter-left') : 'banner-content-static'}>
-                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 6, letterSpacing: '-0.2px' }}>{visibleNotifs[bannerCarouselIndex]?.titre}</div>
-                <div style={{ fontSize: 14, opacity: 0.92, lineHeight: 1.5, fontWeight: 400 }}>{visibleNotifs[bannerCarouselIndex]?.contenu}</div>
+              <div key={`notif-${safeBannerIndex}`} className={bannerTransitioning ? (bannerSlideDirection === 'right' ? 'banner-content-enter-right' : 'banner-content-enter-left') : 'banner-content-static'}>
+                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 6, letterSpacing: '-0.2px' }}>{unreadVisibleNotifs[safeBannerIndex]?.titre}</div>
+                <div style={{ fontSize: 14, opacity: 0.92, lineHeight: 1.5, fontWeight: 400 }}>{unreadVisibleNotifs[safeBannerIndex]?.contenu}</div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-              {visibleNotifs.length > 1 && (
+              {unreadVisibleNotifs.length > 1 && (
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: 20 }}>
-                  <button onClick={() => { setBannerSlideDirection('left'); setBannerTransitioning(true); setBannerCarouselIndex(i => (i - 1 + visibleNotifs.length) % visibleNotifs.length); setTimeout(() => setBannerTransitioning(false), 600); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 16, padding: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
-                  <span style={{ fontSize: 12, fontWeight: 700, minWidth: 35, textAlign: 'center' }}>{bannerCarouselIndex + 1}/{visibleNotifs.length}</span>
-                  <button onClick={() => { setBannerSlideDirection('right'); setBannerTransitioning(true); setBannerCarouselIndex(i => (i + 1) % visibleNotifs.length); setTimeout(() => setBannerTransitioning(false), 600); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 16, padding: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+                  <button onClick={() => { setBannerSlideDirection('left'); setBannerTransitioning(true); setBannerCarouselIndex(i => (i - 1 + unreadVisibleNotifs.length) % unreadVisibleNotifs.length); setTimeout(() => setBannerTransitioning(false), 600); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 16, padding: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+                  <span style={{ fontSize: 12, fontWeight: 700, minWidth: 35, textAlign: 'center' }}>{safeBannerIndex + 1}/{unreadVisibleNotifs.length}</span>
+                  <button onClick={() => { setBannerSlideDirection('right'); setBannerTransitioning(true); setBannerCarouselIndex(i => (i + 1) % unreadVisibleNotifs.length); setTimeout(() => setBannerTransitioning(false), 600); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 16, padding: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
                 </div>
               )}
               {!isBannerClosing && (
@@ -248,6 +261,8 @@ function App() {
         onSelectEvent={(e) => { handleNav('coordination'); setActiveEventId(e.id); setHighlightedEventId(e.id); setTimeout(() => setHighlightedEventId(null), 3000); }}
         onSelectMission={() => { setAnnuaireInitialTab('missions'); handleNav('annuaire'); }}
       >
+        <ErrorBoundary label={`la page "${page}"`}>
+
         {page === 'dashboard' && <Dashboard />}
 
         {page === 'actions' && <ActionTracker />}
@@ -283,12 +298,16 @@ function App() {
         )}
         {page === 'admin' && isAdmin && <Admin />}
 
+        {page === 'analytics' && <Analytics />}
+
         {(page === 'pole' || page === 'projet') && (
           <SpaceView
             spaceWallContainerRef={spaceWallContainerRef}
             spaceFileRef={spaceFileRef}
           />
         )}
+
+        </ErrorBoundary>
       </Layout>
 
       {/* ─── CHANGEMENT DE MOT DE PASSE FORCÉ ─────────────────────────────── */}
@@ -395,31 +414,40 @@ function App() {
                   </div>
                 );
               })()}
-              {/* Annonces non lues */}
-              {visibleNotifs.filter(n => !notifLues.includes(n.id)).length > 0 && (
+              {/* Annonces — toutes (lues + non lues) */}
+              {visibleNotifs.length > 0 && (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Megaphone size={11} strokeWidth={1.8} /> Annonces
-                    {unreadCount > 0 && <span style={{ background: 'rgba(230,57,70,0.15)', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700, color: '#e63946' }}>{unreadCount} non lu{unreadCount > 1 ? 's' : ''}</span>}
+                    {unreadVisibleNotifs.length > 0 && <span style={{ background: 'rgba(230,57,70,0.15)', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700, color: '#e63946' }}>{unreadVisibleNotifs.length} non lu{unreadVisibleNotifs.length > 1 ? 'es' : 'e'}</span>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                    {visibleNotifs.filter(n => !notifLues.includes(n.id)).map(n => {
+                    {visibleNotifs.map(n => {
+                      const isRead   = notifLues.includes(n.id);
                       const isUrgent = n.priorite === 'haute';
-                      const color = isUrgent ? '#e63946' : '#1a56db';
+                      const color    = isRead ? '#94a3b8' : isUrgent ? '#e63946' : '#1a56db';
                       return (
-                        <div key={n.id} onClick={() => setNotifLues(prev => [...prev, n.id])} style={{ background: `${color}08`, border: `1px solid ${color}30`, borderLeft: `3px solid ${color}`, borderRadius: 8, padding: '11px 12px', cursor: 'pointer' }}>
+                        <div key={n.id}
+                          onClick={() => { if (!isRead) setNotifLues(prev => [...prev, n.id]); }}
+                          style={{ background: isRead ? 'var(--bg-hover)' : `${color}08`, border: `1px solid ${isRead ? 'var(--border-light)' : `${color}30`}`, borderLeft: `3px solid ${color}`, borderRadius: 8, padding: '11px 12px', cursor: isRead ? 'default' : 'pointer', opacity: isRead ? 0.65 : 1, transition: 'opacity 0.2s' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 5 }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.titre}</div>
+                              <div style={{ fontWeight: isRead ? 500 : 700, fontSize: 12, color: 'var(--text-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.titre}</div>
                               {n.cible !== 'tous' && <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 3 }}>{n.cible === 'pole' ? <MapPin size={9} strokeWidth={1.8} /> : <User size={9} strokeWidth={1.8} />}{n.cible === 'pole' ? n.targetPoles?.join(', ') : n.targetUsers?.join(', ')}</div>}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                              {isUrgent && <span style={{ fontSize: 9, background: '#e63946', color: '#fff', padding: '1px 6px', borderRadius: 20, fontWeight: 700 }}>URGENT</span>}
-                              <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, display: 'inline-block' }} />
+                              {isUrgent && !isRead && <span style={{ fontSize: 9, background: '#e63946', color: '#fff', padding: '1px 6px', borderRadius: 20, fontWeight: 700 }}>URGENT</span>}
+                              {isRead
+                                ? <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, padding: '1px 7px', borderRadius: 20, background: 'var(--bg-alt)' }}>Lu</span>
+                                : <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, display: 'inline-block' }} />
+                              }
                             </div>
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.55 }}>{n.contenu}</div>
-                          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6 }}>Par {n.auteur} · {n.date} · <em>Cliquer pour marquer comme lu</em></div>
+                          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6 }}>
+                            Par {n.auteur} · {n.date}
+                            {!isRead && <em> · Cliquer pour marquer comme lu</em>}
+                          </div>
                         </div>
                       );
                     })}
@@ -553,6 +581,7 @@ function App() {
           devisFactures={devisFactures}
           categories={categoriesDF}
           onRefreshDf={refreshDevisFacture}
+          dfConfig={dfConfig}
         />
       )}
 

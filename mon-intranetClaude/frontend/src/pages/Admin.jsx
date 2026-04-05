@@ -7,6 +7,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
 import Permissions from './Permissions';
 import NdfConfigPanel from '../components/admin/NdfConfigPanel';
+import DfConfigPanel  from '../components/admin/DfConfigPanel';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (d) => {
@@ -490,17 +491,23 @@ const ExportsTab = () => {
 // ─── Onglet Paramètres ────────────────────────────────────────────────────────
 const ParametresTab = () => {
   const { addToast, requestConfirm } = useAppContext();
-  const { ndfConfig, handleSaveNdfConfig, cycles, activeCycle, handleNextCycle, handleDeleteCycle } = useDataContext();
-  const [section, setSection] = useState('ndf'); // 'ndf' | 'cycles'
+  const {
+    ndfConfig, handleSaveNdfConfig,
+    dfConfig, handleSaveDfConfig,
+    refreshDevisFacture,
+    cycles, activeCycle, handleNextCycle, handleDeleteCycle,
+  } = useDataContext();
+  const [section, setSection] = useState('ndf'); // 'ndf' | 'df' | 'cycles'
 
   const canDeleteCycle = (c) => c !== activeCycle && cycles.length > 1;
 
   return (
     <div>
       {/* Sous-navigation */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
         {[
-          { id: 'ndf',    label: 'Configuration NDF' },
+          { id: 'ndf',    label: 'Notes de Frais' },
+          { id: 'df',     label: 'Devis & Factures' },
           { id: 'cycles', label: 'Cycles / Années' },
         ].map(s => (
           <button key={s.id} onClick={() => setSection(s.id)} style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${section === s.id ? '#1a56db' : 'var(--border-light)'}`, background: section === s.id ? 'rgba(26,86,219,0.08)' : 'var(--bg-hover)', color: section === s.id ? '#1a56db' : 'var(--text-dim)' }}>
@@ -513,7 +520,24 @@ const ParametresTab = () => {
       {section === 'ndf' && ndfConfig && (
         <NdfConfigPanel
           config={ndfConfig}
-          onSave={async (cfg) => { await handleSaveNdfConfig(cfg); addToast('Configuration NDF sauvegardée'); }}
+          onSave={async (cfg) => { await handleSaveNdfConfig(cfg); addToast('Configuration NDF sauvegardée.'); }}
+        />
+      )}
+
+      {/* Config DF */}
+      {section === 'df' && dfConfig && (
+        <DfConfigPanel
+          config={dfConfig}
+          onSave={async (cfg) => { await handleSaveDfConfig(cfg); addToast('Configuration Devis & Factures sauvegardée.'); }}
+          onCategoriesChange={() => {
+            // Force le rechargement des catégories dans DataContext
+            import('../api/apiClient').then(({ default: api }) => {
+              api.get('/categories-df').then(data => {
+                // On passe par un event custom pour éviter la dépendance circulaire
+                window.dispatchEvent(new CustomEvent('df-categories-updated'));
+              }).catch(() => {});
+            });
+          }}
         />
       )}
 

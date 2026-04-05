@@ -79,8 +79,10 @@ export function DataProvider({ children }) {
   const [faqs,            setFaqs]            = useState([]);
   const [devisFactures,   setDevisFactures]   = useState([]);
   const [categoriesDF,    setCategoriesDF]    = useState([]);
+  const [impactStudies,      setImpactStudies]      = useState([]);
+  const [seancePresences,    setSeancePresences]    = useState([]);
   const [fichiersPrefaits, setFichiersPrefaits] = useState([]);
-  const [ndfConfig,       setNdfConfig]       = useState({
+  const [ndfConfig, setNdfConfig] = useState({
     categories: [
       { label: 'Transport', plafond: '', note: '' },
       { label: 'Hébergement', plafond: '', note: '' },
@@ -93,6 +95,21 @@ export function DataProvider({ children }) {
     instructions: '',
     delaiJours: '30',
     plafondGlobal: '',
+    requireJustificatif: true,
+    allowKmCalculator: true,
+    notifSoumission: true,
+    notifMembre: true,
+    autoValidationMontant: '',
+    notifDelaiRemboursement: '',
+  });
+  const [dfConfig, setDfConfig] = useState({
+    instructions: '',
+    delaiTraitement: '15',
+    montantAlerteBudget: '',
+    requireJustificatif: true,
+    notifSoumission: true,
+    notifMembre: true,
+    alerteDelaiTraitement: false,
   });
 
   // ─── ESPACES ──────────────────────────────────────────────────────────────
@@ -127,7 +144,8 @@ export function DataProvider({ children }) {
           usersData, actionsData, eventsData, tasksData, taskReqData,
           transactionsData, budgetsData, missionsData, notesFraisData,
           notifsData, hoursData, convsData, spaceSettingsData,
-          faqData, devisFacturesData, categoriesDFData,
+          faqData, devisFacturesData, categoriesDFData, impactStudiesData,
+          seancePresencesData,
         ] = await Promise.all([
           api.get('/users'),
           api.get('/actions'),
@@ -145,6 +163,8 @@ export function DataProvider({ children }) {
           api.get('/faq').catch(() => []),
           api.get('/devis-factures').catch(() => []),
           api.get('/categories-df').catch(() => []),
+          api.get('/impact-studies').catch(() => []),
+          api.get('/seance-presences').catch(() => []),
         ]);
         const contactsData = await api.get('/contacts').catch(() => []);
 
@@ -161,6 +181,13 @@ export function DataProvider({ children }) {
         setFaqs(faqData || []);
         setDevisFactures(devisFacturesData || []);
         setCategoriesDF(categoriesDFData || []);
+        setImpactStudies(impactStudiesData || []);
+        setSeancePresences(seancePresencesData || []);
+        // Générer les présences manquantes puis re-fetch (toujours, pour avoir les validations à jour)
+        api.post('/seance-presences/generate')
+          .then(() => api.get('/seance-presences'))
+          .then(d => setSeancePresences(d || []))
+          .catch(() => {});
         setNotifs(notifsData || []);
         // Initialiser notifLues depuis le serveur (ID ou nom de l'utilisateur dans lu[])
         // Fusionne avec le localStorage pour ne pas perdre les marques locales
@@ -189,7 +216,8 @@ export function DataProvider({ children }) {
             if (keys.docs) docs[space] = keys.docs;
             if (keys.info) infos[space] = keys.info;
             if (keys.trash) allTrash.push(...keys.trash);
-            if (space === 'Trésorerie' && keys.ndf_config) setNdfConfig(keys.ndf_config);
+            if (space === 'Trésorerie' && keys.ndf_config) setNdfConfig(prev => ({ ...prev, ...keys.ndf_config }));
+            if (space === 'Trésorerie' && keys.df_config)  setDfConfig(prev => ({ ...prev, ...keys.df_config }));
             if (space === 'Global' && keys.fichiers_prefaits) setFichiersPrefaits(keys.fichiers_prefaits);
           }
           if (Object.keys(teams).length) setSpaceTeams(prev => ({ ...prev, ...teams }));
@@ -203,6 +231,13 @@ export function DataProvider({ children }) {
       }
     }
     loadAllData();
+
+    // Rechargement des catégories DF à la demande (ex: après modification dans Admin)
+    const refreshCatsDf = () => {
+      api.get('/categories-df').then(data => setCategoriesDF(data || [])).catch(() => {});
+    };
+    window.addEventListener('df-categories-updated', refreshCatsDf);
+    return () => window.removeEventListener('df-categories-updated', refreshCatsDf);
   }, [currentUser]);
 
   // ─── MOTEUR DE PERMISSIONS (RBAC) ─────────────────────────────────────────
@@ -485,7 +520,7 @@ export function DataProvider({ children }) {
 
   // ─── CORBEILLE & DOCS ─────────────────────────────────────────────────────
   const moveToTrash = (type, item, space) => {
-    const trashItem = { id: Date.now(), type, item, space, deletedAt: new Date().toISOString() };
+    const trashItem = { id: Date.now(), type, data: item, space, deletedBy: currentUser?.nom || '', deletedAt: new Date().toISOString() };
     setTrash(prev => [...prev, trashItem]);
     api.post(`/spaces/${encodeURIComponent(space)}/settings/trash`, trashItem).catch(console.error);
   };
@@ -494,9 +529,9 @@ export function DataProvider({ children }) {
     const item = trash.find(t => t.id === trashId);
     if (!item) return;
     setTrash(prev => prev.filter(t => t.id !== trashId));
-    if (item.type === 'doc') setDocsData(prev => ({ ...prev, [item.space]: [...(prev[item.space] || []), item.item] }));
-    else if (item.type === 'action') setActions(prev => [...prev, item.item]);
-    else if (item.type === 'event') setEvenements(prev => [...prev, item.item]);
+    if (item.type === 'doc') setDocsData(prev => ({ ...prev, [item.space]: [...(prev[item.space] || []), item.data] }));
+    else if (item.type === 'action') setActions(prev => [...prev, item.data]);
+    else if (item.type === 'event') setEvenements(prev => [...prev, item.data]);
     api.delete(`/spaces/${encodeURIComponent(item.space)}/settings/trash/${trashId}`).catch(console.error);
     addToast('Élément restauré');
   };
@@ -596,11 +631,15 @@ export function DataProvider({ children }) {
     }
     if (isFinished) {
       const now = new Date().toISOString();
+      const toComplete = [];
       setTasks(prev => prev.map(t => {
         if (t.actionId !== actionId || t.status === 'Terminé') return t;
-        api.put(`/tasks/${t.id}`, { status: 'Terminé', completedAt: now }).catch(console.error);
+        toComplete.push(t.id);
         return { ...t, status: 'Terminé', completedAt: now };
       }));
+      Promise.all(
+        toComplete.map(id => api.put(`/tasks/${id}`, { status: 'Terminé', completedAt: now }))
+      ).catch(err => addToast(`Erreur sync tâches : ${err?.message || 'serveur'}`, 'error'));
     }
     addToast(isFinished ? `Action terminée et archivée${linkedEv ? ' · événement synchronisé' : ''}` : 'Statut mis à jour');
   };
@@ -849,31 +888,51 @@ export function DataProvider({ children }) {
     setEventModal(null);
   };
 
-  const joinEventTeam = (eventId) => {
-    setEvenements(prev => prev.map(e => {
-      if (e.id !== eventId || (e.equipe || []).includes(currentUser.nom)) return e;
-      const updated = { ...e, equipe: [...(e.equipe || []), currentUser.nom] };
-      api.put(`/events/${eventId}`, updated).catch(console.error);
-      return updated;
-    }));
-    addToast("Vous avez rejoint l'équipe !");
+  const joinEventTeam = async (eventId) => {
+    const event = evenements.find(e => e.id === eventId);
+    if (!event || (event.equipe || []).includes(currentUser.nom)) return;
+    const newEquipe = [...(event.equipe || []), currentUser.nom];
+    setEvenements(prev => prev.map(e => e.id !== eventId ? e : { ...e, equipe: newEquipe }));
+    try {
+      await api.put(`/events/${eventId}`, { equipe: newEquipe });
+      addToast("Vous avez rejoint l'équipe !");
+    } catch (err) {
+      // Rollback
+      setEvenements(prev => prev.map(e => e.id !== eventId ? e : { ...e, equipe: event.equipe || [] }));
+      addToast(err.message || "Erreur lors de l'inscription à l'équipe", 'error');
+    }
   };
 
-  const removeEventTeamMember = (eventId, nom) => {
-    setEvenements(prev => prev.map(e => {
-      if (e.id !== eventId) return e;
-      const newEquipe  = (e.equipe || []).filter(m => m !== nom);
-      const newSeances = (e.seances || []).map(s => ({ ...s, inscrits: (s.inscrits || []).filter(n => n !== nom) }));
-      const updated = { ...e, equipe: newEquipe, seances: newSeances };
-      api.put(`/events/${eventId}`, { equipe: updated.equipe, seances: updated.seances }).catch(console.error);
-      return updated;
+  const removeEventTeamMember = async (eventId, nom) => {
+    const event = evenements.find(e => e.id === eventId);
+    if (!event) return;
+    const newEquipe   = (event.equipe  || []).filter(m => m !== nom);
+    const newSeances  = (event.seances || []).map(s => ({ ...s, inscrits: (s.inscrits || []).filter(n => n !== nom) }));
+    // Mise à jour optimiste locale (incl. cascade responsables — le backend fait pareil)
+    const newResponsables   = (event.responsables  || []).filter(m => m !== nom);
+    const newResponsableNom = event.responsableNom === nom ? null : event.responsableNom;
+    setEvenements(prev => prev.map(e => e.id !== eventId ? e : {
+      ...e, equipe: newEquipe, seances: newSeances, responsables: newResponsables, responsableNom: newResponsableNom,
     }));
+    try {
+      // N'envoyer que equipe + seances : le backend cascade responsables/responsableNom automatiquement
+      await api.put(`/events/${eventId}`, { equipe: newEquipe, seances: newSeances });
+    } catch (err) {
+      // Rollback
+      setEvenements(prev => prev.map(e => e.id !== eventId ? e : event));
+      addToast(err.message || "Erreur lors du retrait de l'équipe", 'error');
+    }
   };
 
   const toggleSeanceRegistration = (eventId, seanceId) => {
     const targetEvent  = evenements.find(e => e.id === eventId);
     const targetSeance = targetEvent ? (targetEvent.seances || []).find(s => s.id === seanceId) : null;
     const isCurrentlyIn = targetSeance ? (targetSeance.inscrits || []).includes(currentUser.nom) : false;
+    // Guard : on ne peut s'inscrire à une séance que si l'on est dans l'équipe
+    if (!isCurrentlyIn && !(targetEvent?.equipe || []).includes(currentUser.nom)) {
+      addToast('Rejoignez l\'équipe de l\'événement avant de vous inscrire à une séance.', 'error');
+      return;
+    }
     setEvenements(prev => prev.map(e => {
       if (e.id !== eventId) return e;
       return { ...e, seances: (e.seances || []).map(s => {
@@ -1028,6 +1087,11 @@ export function DataProvider({ children }) {
   const handleSaveNdfConfig = async (config) => {
     setNdfConfig(config);
     api.put(`/spaces/${encodeURIComponent('Trésorerie')}/settings/ndf_config`, { value: config }).catch(console.error);
+  };
+
+  const handleSaveDfConfig = async (config) => {
+    setDfConfig(config);
+    api.put(`/spaces/${encodeURIComponent('Trésorerie')}/settings/df_config`, { value: config }).catch(console.error);
   };
 
   const handleSaveNoteFrais = async (form) => {
@@ -1270,6 +1334,218 @@ export function DataProvider({ children }) {
     addToast('Budgets mis à jour');
   };
 
+  // ─── ANALYTICS CALCULATORS ────────────────────────────────────────────────
+  const analyticsStats = useMemo(() => {
+    const cycleActions = activeCycle === 'Toutes' ? actions : actions.filter(a => a.cycle === activeCycle);
+
+    // Actions par statut
+    const actionsByStatus = cycleActions.reduce((acc, a) => {
+      acc[a.statut] = (acc[a.statut] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Actions par type
+    const actionsByType = cycleActions.reduce((acc, a) => {
+      const t = a.type || 'Autre';
+      acc[t] = (acc[t] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Actions par pôle (une action peut concerner plusieurs pôles)
+    const actionsByPole = {};
+    POLES.forEach(p => { actionsByPole[p] = 0; });
+    cycleActions.forEach(a => {
+      (a.poles || []).forEach(p => { actionsByPole[p] = (actionsByPole[p] || 0) + 1; });
+    });
+
+    // Bénéficiaires totaux + par mois
+    const totalBeneficiaires = cycleActions.reduce((s, a) => s + (Number(a.beneficiaires) || 0), 0);
+    const beneficiairesPerMonth = {};
+    cycleActions.forEach(a => {
+      if (!a.date_debut) return;
+      const m = a.date_debut.slice(0, 7);
+      beneficiairesPerMonth[m] = (beneficiairesPerMonth[m] || 0) + (Number(a.beneficiaires) || 0);
+    });
+
+    // Heures bénévoles
+    const totalHours = volunteerHours.reduce((s, h) => s + (Number(h.hours) || 0), 0);
+    const hoursByPerson = volunteerHours.reduce((acc, h) => {
+      const name = h.user || h.userNomSnapshot || 'Inconnu';
+      acc[name] = (acc[name] || 0) + (Number(h.hours) || 0);
+      return acc;
+    }, {});
+    const hoursByType = volunteerHours.reduce((acc, h) => {
+      const type = h.type || 'Autre';
+      acc[type] = (acc[type] || 0) + (Number(h.hours) || 0);
+      return acc;
+    }, {});
+
+    // Charge tâches par bénévole (tâches actives non complétées)
+    const taskLoadByPerson = {};
+    tasks.forEach(t => {
+      (t.assignees || []).forEach(a => {
+        if (!a.completed) taskLoadByPerson[a.name] = (taskLoadByPerson[a.name] || 0) + 1;
+      });
+    });
+
+    // Budget vs exécuté par pôle
+    const budgetExecution = {};
+    POLES.forEach(p => {
+      const allocated = Number(budgets[p] || 0);
+      const spent = transactions
+        .filter(t => t.imputation === p && t.type === 'Dépense')
+        .reduce((s, t) => s + (Number(t.montant) || 0), 0);
+      budgetExecution[p] = { allocated, spent, pct: allocated > 0 ? Math.round((spent / allocated) * 100) : 0 };
+    });
+
+    // NDF par catégorie
+    const ndfByCategory = notesFrais.reduce((acc, n) => {
+      const cat = n.categorie || 'Autre';
+      acc[cat] = (acc[cat] || 0) + (Number(n.montant) || 0);
+      return acc;
+    }, {});
+
+    // Taux participation séances
+    const participationRates = [];
+    let seanceTotalCount = 0;
+    let seanceAnnuleeCount = 0;
+    evenements.forEach(e => {
+      (e.seances || []).forEach(s => {
+        seanceTotalCount++;
+        if (s.annulee) { seanceAnnuleeCount++; return; }
+        const teamSize = (e.equipe || []).length;
+        if (teamSize > 0) participationRates.push(((s.inscrits || []).length / teamSize) * 100);
+      });
+    });
+    const avgParticipation = participationRates.length > 0
+      ? Math.round(participationRates.reduce((a, b) => a + b, 0) / participationRates.length)
+      : 0;
+    const annulationRate = seanceTotalCount > 0
+      ? Math.round((seanceAnnuleeCount / seanceTotalCount) * 100)
+      : 0;
+
+    // ── Bilan satisfaction (bilan structuré sur actions terminées) ────────────
+    const bilanParsed = cycleActions
+      .filter(a => a.bilan)
+      .map(a => {
+        const b = typeof a.bilan === 'string'
+          ? (() => { try { return JSON.parse(a.bilan); } catch { return null; } })()
+          : a.bilan;
+        return b ? { id: a.id, etablissement: a.etablissement, beneficiaires: a.beneficiaires, bilanData: b } : null;
+      })
+      .filter(Boolean);
+    const bilanWithScore = bilanParsed.filter(a => Number(a.bilanData.satisfaction) > 0);
+    const avgBilanSatisfaction = bilanWithScore.length > 0
+      ? Math.round((bilanWithScore.reduce((s, a) => s + Number(a.bilanData.satisfaction), 0) / bilanWithScore.length) * 10) / 10
+      : null;
+    const bilanSatisfactionDist = [1, 2, 3, 4, 5].reduce((acc, n) => {
+      acc[n] = bilanWithScore.filter(a => Number(a.bilanData.satisfaction) === n).length;
+      return acc;
+    }, {});
+
+    // ── Annulations par raison ────────────────────────────────────────────────
+    const annulationByReason = {};
+    evenements.forEach(e => {
+      if (activeCycle !== 'Toutes' && e.cycle !== activeCycle) return;
+      (e.seances || []).forEach(s => {
+        if (!s.annulee) return;
+        const raison = s.raisonAnnulation || 'Non renseignée';
+        annulationByReason[raison] = (annulationByReason[raison] || 0) + 1;
+      });
+    });
+
+    // ── Velocity complétion (actions terminées par mois) ─────────────────────
+    const completionVelocity = {};
+    cycleActions.filter(a => a.statut === 'Terminée' && a.date_fin).forEach(a => {
+      const m = a.date_fin.slice(0, 7);
+      completionVelocity[m] = (completionVelocity[m] || 0) + 1;
+    });
+
+    // ── Ratios efficacité ─────────────────────────────────────────────────────
+    const benefParHeure = totalHours > 0 && totalBeneficiaires > 0
+      ? Math.round((totalBeneficiaires / totalHours) * 10) / 10
+      : null;
+    const totalNdfRemboursee = notesFrais
+      .filter(n => n.statut === 'Remboursée')
+      .reduce((s, n) => s + (Number(n.montant) || 0), 0);
+    const coutParBenef = totalBeneficiaires > 0 && totalNdfRemboursee > 0
+      ? Math.round((totalNdfRemboursee / totalBeneficiaires) * 10) / 10
+      : null;
+
+    // ── Top actions par bénéficiaires ─────────────────────────────────────────
+    const topActions = cycleActions
+      .filter(a => (a.beneficiaires || 0) > 0)
+      .sort((a, b) => (b.beneficiaires || 0) - (a.beneficiaires || 0))
+      .slice(0, 5);
+
+    // ── Alertes budget (pôles >= 80%) ─────────────────────────────────────────
+    const budgetAlerts = POLES.filter(p =>
+      budgetExecution[p]?.allocated > 0 && budgetExecution[p].pct >= 80
+    );
+
+    // ── Comparaison cycle précédent ───────────────────────────────────────────
+    const prevCycleIdx = cycles.indexOf(activeCycle);
+    const prevCycleName = prevCycleIdx > 0 ? cycles[prevCycleIdx - 1] : null;
+    const prevActions = prevCycleName ? actions.filter(a => a.cycle === prevCycleName) : [];
+    const prevTotalActions = prevActions.length;
+    const prevBeneficiaires = prevActions.reduce((s, a) => s + (Number(a.beneficiaires) || 0), 0);
+    const prevTerminees = prevActions.filter(a => a.statut === 'Terminée').length;
+    const prevCompletionRate = prevActions.length > 0 ? Math.round((prevTerminees / prevActions.length) * 100) : null;
+
+    // ── Breakdowns pédagogiques (nouveaux champs) ─────────────────────────────
+    // type_classe (niveau scolaire)
+    const byNiveau = {};
+    cycleActions.forEach(a => {
+      const v = a.type_classe;
+      if (v) byNiveau[v] = (byNiveau[v] || 0) + 1;
+    });
+
+    // Département géographique
+    const byDepartement = {};
+    cycleActions.forEach(a => {
+      const v = a.departement;
+      if (v) byDepartement[v] = (byDepartement[v] || 0) + 1;
+    });
+
+    // Label REP
+    const byLabelRep = { 'Hors REP': 0, 'REP': 0, 'REP+': 0 };
+    let labelRepTotal = 0;
+    cycleActions.forEach(a => {
+      if (a.labelRep && byLabelRep[a.labelRep] !== undefined) {
+        byLabelRep[a.labelRep]++;
+        labelRepTotal++;
+      }
+    });
+    const pctRep = labelRepTotal > 0
+      ? Math.round(((byLabelRep['REP'] + byLabelRep['REP+']) / labelRepTotal) * 100)
+      : null;
+
+    // Institution simulée (simulations uniquement)
+    const simActions = cycleActions.filter(a => a.type && (a.type.includes('Simulation') || a.type.includes('COP')));
+    const byInstitution = {};
+    simActions.forEach(a => {
+      const v = a.institutionSimulee;
+      if (v) byInstitution[v] = (byInstitution[v] || 0) + 1;
+    });
+
+    return {
+      cycleActions, actionsByStatus, actionsByType, actionsByPole,
+      totalBeneficiaires, beneficiairesPerMonth,
+      totalHours, hoursByPerson, hoursByType,
+      taskLoadByPerson, budgetExecution, ndfByCategory,
+      avgParticipation, annulationRate, seanceTotalCount, seanceAnnuleeCount,
+      // enrichissements
+      bilanParsed, bilanWithScore, avgBilanSatisfaction, bilanSatisfactionDist,
+      annulationByReason, completionVelocity,
+      benefParHeure, coutParBenef, totalNdfRemboursee,
+      topActions, budgetAlerts,
+      prevCycleName, prevTotalActions, prevBeneficiaires, prevCompletionRate,
+      byNiveau, byDepartement, byLabelRep, labelRepTotal, pctRep,
+      byInstitution, simActions,
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actions, volunteerHours, tasks, transactions, budgets, notesFrais, evenements, activeCycle, cycles]);
+
   // ─── SLICES CONTEXTUELS (pour abonnements fins, sans casser l'API existante) ──
 
   const userSlice = useMemo(() => ({
@@ -1323,7 +1599,9 @@ export function DataProvider({ children }) {
     budgets, setBudgets,
     notesFrais, setNotesFrais,
     ndfConfig, setNdfConfig,
-    handleSaveNdfConfig, handleSaveNoteFrais, handleUpdateNdfStatus,
+    dfConfig, setDfConfig,
+    handleSaveNdfConfig, handleSaveDfConfig,
+    handleSaveNoteFrais, handleUpdateNdfStatus,
     handleSignalJustificatifProblem, handleDeleteNoteFrais,
     handleRequestNdfDeletion, handleRejectNdfDeletion,
     handleSaveTransaction, deleteTransaction, validerTransaction,
@@ -1477,6 +1755,87 @@ export function DataProvider({ children }) {
     }
   };
 
+  // ─── BILAN POST-ACTION ───────────────────────────────────────────────────
+  const handleSaveBilan = async (actionId, bilan) => {
+    try {
+      setActions(prev => prev.map(a => a.id === actionId ? { ...a, bilan } : a));
+      await api.put(`/actions/${actionId}`, { bilan });
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Erreur sauvegarde bilan', 'error');
+      throw err;
+    }
+  };
+
+  // ─── ÉTUDES D'IMPACT ─────────────────────────────────────────────────────
+  const handleSaveImpactStudy = async (data) => {
+    try {
+      if (data.id) {
+        const updated = await api.put(`/impact-studies/${data.id}`, data);
+        setImpactStudies(prev => prev.map(s => s.id === data.id ? updated : s));
+        addToast('Étude d\'impact mise à jour.');
+        return updated;
+      } else {
+        const created = await api.post('/impact-studies', data);
+        setImpactStudies(prev => [created, ...prev]);
+        addToast('Étude d\'impact créée.');
+        return created;
+      }
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Erreur sauvegarde étude d\'impact', 'error');
+      throw err;
+    }
+  };
+
+  const handleDeleteImpactStudy = async (id) => {
+    try {
+      await api.delete(`/impact-studies/${id}`);
+      setImpactStudies(prev => prev.filter(s => s.id !== id));
+      addToast('Étude d\'impact supprimée.');
+    } catch (err) {
+      addToast(err.response?.data?.error || 'Erreur suppression', 'error');
+    }
+  };
+
+  // ─── PRÉSENCES SÉANCES ────────────────────────────────────────────────────
+  const fetchSeancePresences = async () => {
+    try {
+      const data = await api.get('/seance-presences');
+      setSeancePresences(data || []);
+    } catch {}
+  };
+
+  const refreshSeancePresences = async () => {
+    try {
+      await api.post('/seance-presences/generate');
+      await fetchSeancePresences();
+    } catch {}
+  };
+
+  const handleRespValidation = async (presenceId, statut) => {
+    try {
+      await api.patch(`/seance-presences/${presenceId}/resp`, { statut });
+      await fetchSeancePresences();
+      addToast(statut === 'present' ? 'Présence confirmée' : 'Absence enregistrée');
+    } catch (err) {
+      addToast(err.message || 'Erreur validation', 'error');
+    }
+  };
+
+  const handleRhValidation = async (presenceId, statut) => {
+    try {
+      await api.patch(`/seance-presences/${presenceId}/rh`, { statut });
+      await fetchSeancePresences();
+      if (statut === 'confirme') {
+        // Recharger les heures pour refléter la nouvelle Hour créée
+        const hours = await api.get('/hours');
+        if (hours) setVolunteerHours(hours);
+      }
+      addToast(statut === 'confirme' ? 'Heures validées et comptabilisées' : 'Heures rejetées');
+    } catch (err) {
+      addToast(err.message || 'Erreur validation RH', 'error');
+    }
+  };
+
   return (
     <UserSliceContext.Provider value={userSlice}>
     <SpaceSliceContext.Provider value={spaceSlice}>
@@ -1502,6 +1861,7 @@ export function DataProvider({ children }) {
       notesFrais, setNotesFrais,
       faqs, devisFactures, categoriesDF,
       ndfConfig, setNdfConfig,
+      dfConfig, setDfConfig,
       spaceChats, setSpaceChats,
       docsData, setDocsData,
       spaceInfos, setSpaceInfos,
@@ -1544,7 +1904,8 @@ export function DataProvider({ children }) {
       handleAddDossierPrefait, handleRenameDossierPrefait, handleDeleteDossierPrefait,
       handleAddFichierPrefait, handleDeleteFichierPrefait,
       // Handlers NDF
-      handleSaveNdfConfig, handleSaveNoteFrais, handleUpdateNdfStatus,
+      handleSaveNdfConfig, handleSaveDfConfig,
+      handleSaveNoteFrais, handleUpdateNdfStatus,
       handleSignalJustificatifProblem, handleDeleteNoteFrais,
       handleRequestNdfDeletion, handleRejectNdfDeletion,
       // Handlers calendrier
@@ -1560,6 +1921,13 @@ export function DataProvider({ children }) {
       handleSaveTransaction, deleteTransaction, validerTransaction, handleApprouverHorsBudget,
       // Handlers espaces
       handleSaveTeam, handleSaveSpaceInfo, handleSaveSection, handleSaveBudgets,
+      // Analytics
+      analyticsStats,
+      // Bilan post-action
+      handleSaveBilan,
+      // Études d'impact
+      impactStudies, handleSaveImpactStudy, handleDeleteImpactStudy,
+      seancePresences, refreshSeancePresences, handleRespValidation, handleRhValidation,
     }}>
       {children}
     </DataContext.Provider>

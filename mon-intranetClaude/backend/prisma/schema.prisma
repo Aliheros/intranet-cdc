@@ -83,6 +83,9 @@ model Action {
   projet              String?
   beneficiaires       Int       @default(0)
   type_classe         String?
+  departement         String?   // ex: "93", "75", "94"
+  labelRep            String?   // "Hors REP" | "REP" | "REP+"
+  institutionSimulee  String?   // ex: "Assemblée Nationale", "Sénat" — pour les simulations
   heures              Float     @default(0)
   isArchived          Boolean   @default(false)
   budgetPrevisionnel  Float     @default(0)
@@ -98,23 +101,53 @@ model Action {
 }
 
 model Evenement {
-  id          Int      @id @default(autoincrement())
-  titre       String
-  date        String
-  cycle       String
-  lieu        String?
-  actionId    Int?
-  description String?
-  poles       String[]
-  projet      String?
-  equipe      String[]
-  fichiers    Json     @default("[]")
-  statut      String
-  isArchived  Boolean  @default(false)
-  whatsappLink String?
-  seances     Json     @default("[]")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  titre          String
+  date           String
+  cycle          String
+  lieu           String?
+  actionId       Int?
+  description    String?
+  poles          String[]
+  projet         String?
+  equipe         String[]
+  responsables   String[] // Gestionnaires de l'évènement (sous-ensemble de equipe)
+  responsableNom String?  // Responsable désigné pour la validation 1ère instance (doit être dans equipe)
+  fichiers       Json     @default("[]")
+  statut         String
+  isArchived     Boolean  @default(false)
+  whatsappLink   String?
+  seances        Json     @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model SeancePresence {
+  id            Int      @id @default(autoincrement())
+  evenementId   Int
+  evenementTitre String
+  seanceId      String   // ID local de la séance dans le JSON
+  seanceDate    String   // date ISO de la séance
+  membreNom     String
+  heures        Float    // durée de la séance
+
+  // 1ère validation — responsable de l'événement
+  resp1Statut   String   @default("en_attente") // en_attente | present | absent
+  resp1Par      String?
+  resp1At       DateTime?
+
+  // 2ème validation — RH
+  rhStatut      String   @default("en_attente") // en_attente | confirme | rejete
+  rhPar         String?
+  rhAt          DateTime?
+
+  // ID de l'Hour créé si confirmé (pour éviter les doublons)
+  hourId        Int?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([evenementId, seanceId, membreNom])
 }
 
 model Task {
@@ -358,6 +391,46 @@ model CategorieDF {
   actif     Boolean  @default(true)
   ordre     Int      @default(0)
   createdAt DateTime @default(now())
+}
+
+model ImpactStudy {
+  id          Int      @id @default(autoincrement())
+  cycle       String
+  typeAction  String   @default("Simulation Parlementaire")
+
+  // Quantitatif (pré-rempli depuis l'intranet, ajustable)
+  nbBeneficiaires      Int    @default(0)
+  nbAteliers           Int    @default(0)
+  nbEtablissements     Int    @default(0)
+  heuresAccompagnement Float  @default(0)
+  heureMoyParBenef     Float  @default(0)
+  nbBenevoles          Int    @default(0)
+
+  // Enquête satisfaction élèves (%)
+  pctApprecie       Float?
+  pctTresApprecie   Float?
+  pctEmballeInitial Float?
+
+  // Impact avant/après (delta en points de %)
+  deltaConnaissanceDepute Float?
+  deltaConnaissanceAN     Float?
+  deltaVoteIntent         Float?
+  deltaEngagement         Float?
+
+  // Satisfaction bénévoles
+  pctBenevoleSatisfait        Float?
+  pctBenevoleTresSatisfait    Float?
+  pctBenevolesNouvellesCompet Float?
+  pctBenevolesParlePoliti     Float?
+
+  // Équipe
+  ageMoyenBenevoles Float?
+  pctNouvellesRecru Float?
+
+  notes     String?
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Table d'audit immuable — append only, jamais de UPDATE ni DELETE

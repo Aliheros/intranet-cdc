@@ -32,7 +32,7 @@ const getMondayOf = (date) => {
 
 const Planning = () => {
   const { currentUser } = useAuth();
-  const { handleNav, setHighlightedActionId, setActiveEventId, setHighlightedEventId } = useAppContext();
+  const { handleNav, setHighlightedActionId, setActiveEventId, setHighlightedEventId, setHighlightedTaskId } = useAppContext();
   const navigate = handleNav;
   const { actions, evenements, tasks, directory, handleCalendarUpdateAction, handleCalendarUpdateEvent, handleCalendarUpdateTask } = useDataContext();
   const [view, setView]           = useState('Mois');
@@ -197,7 +197,16 @@ const Planning = () => {
       setHighlightedActionId(item.entityId);
       setTimeout(() => setHighlightedActionId(null), 3000);
     } else if (item.type === 'Tâche') {
-      // Tâches : pas de page dédiée, on ignore ou on affiche dans planning
+      const task = item.raw;
+      if (!task?.space || !task?.id) return;
+      // Vérifie que la tâche existe toujours dans le store
+      const exists = tasks.some(t => t.id === task.id && t.space === task.space);
+      if (!exists) return;
+      const POLES = ["Relations Publiques","Ressources Humaines","Plaidoyer","Etudes","Développement Financier","Communication","Trésorerie"];
+      const pageType = POLES.includes(task.space) ? 'pole' : 'projet';
+      navigate(pageType, task.space);
+      setHighlightedTaskId(task.id);
+      setTimeout(() => setHighlightedTaskId(null), 3000);
     } else {
       navigate('coordination');
       setActiveEventId(item.entityId);
@@ -622,19 +631,45 @@ const Planning = () => {
       </div>
 
       {/* LÉGENDE */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>Légende :</span>
-        {[['Action', COLORS.Action], ['Séance', COLORS.Séance], ['Tâche', COLORS.Tâche], ['En retard', COLORS.Retard]].map(([label, color]) => (
-          <span key={label} style={{ fontSize: 11, color: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ color, fontSize: 14 }}>●</span> {label}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        {/* Groupe : Types d'éléments */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Type :</span>
+          <span style={{ fontSize: 11, color: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: COLORS.Action }} />
+            Action
           </span>
-        ))}
-        {/* Cas fusionné */}
-        <span style={{ fontSize: 11, color: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ display: 'inline-block', width: 14, height: 14, background: `${COLORS.Action}25`, border: `2px solid ${COLORS.Action}`, borderRight: `2px solid ${COLORS.Événement}`, borderRadius: 3 }} />
-          Action + Événement lié
-        </span>
-        <span style={{ fontSize: 11, color: '#d97706', display: 'flex', alignItems: 'center', gap: 4 }}>⚠ Alerte J-1</span>
+          <span style={{ fontSize: 11, color: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: COLORS.Événement }} />
+            Événement
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: COLORS.Séance }} />
+            Séance
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: COLORS.Tâche }} />
+            Tâche
+          </span>
+        </div>
+        {/* Séparateur */}
+        <span style={{ width: 1, height: 20, background: 'var(--border-light)', flexShrink: 0, alignSelf: 'center' }} />
+        {/* Groupe : Cas spéciaux */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Spécial :</span>
+          <span style={{ fontSize: 11, color: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ display: 'inline-block', width: 13, height: 13, background: `${COLORS.Action}20`, border: `2px solid ${COLORS.Action}`, borderRight: `2px solid ${COLORS.Événement}`, borderRadius: 3, flexShrink: 0 }} />
+            Action + Évén. lié
+          </span>
+          <span style={{ fontSize: 11, color: COLORS.Retard, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: COLORS.Retard }} />
+            En retard
+          </span>
+          <span style={{ fontSize: 11, color: '#d97706', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 13 }}>⚠</span>
+            Alerte J-1
+          </span>
+        </div>
       </div>
 
       {/* PANEL ALERTES */}

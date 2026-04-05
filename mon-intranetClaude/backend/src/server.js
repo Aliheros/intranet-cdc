@@ -26,6 +26,8 @@ const cyclesRoutes   = require('./routes/cycles');
 const faqRoutes          = require('./routes/faq');
 const devisFacturesRoutes = require('./routes/devis-factures');
 const categoriesDfRoutes  = require('./routes/categories-df');
+const impactStudiesRoutes    = require('./routes/impact-studies');
+const seancePresencesRoutes  = require('./routes/seance-presences');
 
 const app = express();
 
@@ -128,6 +130,8 @@ app.use('/api/cycles',  cyclesRoutes);
 app.use('/api/faq',            faqRoutes);
 app.use('/api/devis-factures', devisFacturesRoutes);
 app.use('/api/categories-df',  categoriesDfRoutes);
+app.use('/api/impact-studies',    impactStudiesRoutes);
+app.use('/api/seance-presences',  seancePresencesRoutes);
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'ok', message: 'Intranet API' }));

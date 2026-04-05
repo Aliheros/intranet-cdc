@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Badge from '../components/ui/Badge';
 import { POLE_COLORS, PROJET_COLORS, STATUT_STYLE, POLES, PROJETS } from '../data/constants';
-import { formatDateShort, isPastDate, sortTasksSmart } from '../utils/utils';
+import { formatDateShort, isPastDate, sortTasksSmart, isTaskActiveInFeed } from '../utils/utils';
 import api from '../api/apiClient';
 import { CheckCircle2, Calendar, Receipt, MapPin, User, Zap, Target, MessageCircle, Megaphone, Sparkles, Timer, ClipboardList, Users, Pencil, Trash2, Clock, Plus, HelpCircle } from 'lucide-react';
 import { StatusBadge, NDF_STATUS, MEMBER_STATUS } from '../components/ui/StatusIcon';
@@ -61,8 +61,7 @@ const Dashboard = () => {
   //   - assigné à moi (non complété) OU
   //   - responsable/direction du pôle/projet concerné (toutes les tâches du space)
   const visibleTasks = tasks.filter(t => {
-    if (t.status === "Terminé") return false;
-    if (t.forceCompletedBy) return false;
+    if (!isTaskActiveInFeed(t)) return false;
     const isAssigned = (t.assignees || []).some(a => a.name === currentUser.nom && !a.completed);
     const isManager  = managedSpaces.has(t.space);
     return isAssigned || isManager;
@@ -77,6 +76,7 @@ const Dashboard = () => {
 
   // Navigation vers une tâche dans son espace
   const navigateToTask = (t) => {
+    if (!t?.space) return;
     const pageType = PROJETS.includes(t.space) ? "projet" : "pole";
     navigate(pageType, t.space);
     setHighlightedTaskId(t.id);
@@ -258,8 +258,14 @@ const Dashboard = () => {
                             </div>
                           )}
                           <div style={{ display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
+                            {/* Complété par le responsable */}
+                            {t.forceCompletedBy && (
+                              <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(22,163,74,0.1)", color: "#16a34a", borderRadius: 4, padding: "1px 5px", display: "flex", alignItems: "center", gap: 2 }}>
+                                ✓ Validé par {String(t.forceCompletedBy).split(" ")[0]}
+                              </span>
+                            )}
                             {/* Statut */}
-                            {t.status === "En cours" && (
+                            {!t.forceCompletedBy && t.status === "En cours" && (
                               <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(26,86,219,0.1)", color: "#1a56db", borderRadius: 4, padding: "1px 5px" }}>En cours</span>
                             )}
                             {/* Cycle */}
@@ -267,13 +273,13 @@ const Dashboard = () => {
                               <span style={{ fontSize: 8, color: "var(--text-muted)", padding: "1px 0" }}>{t.cycle}</span>
                             )}
                             {/* Progression */}
-                            {totalCount > 1 && (
+                            {!t.forceCompletedBy && totalCount > 1 && (
                               <span style={{ fontSize: 8, color: allDone ? "#16a34a" : "var(--text-muted)", fontWeight: allDone ? 700 : 400 }}>
                                 {doneCount}/{totalCount} validé{doneCount > 1 ? "s" : ""}
                               </span>
                             )}
                             {/* Badge "pour moi" vs "je supervise" */}
-                            {!isMyTask && (
+                            {!isMyTask && !t.forceCompletedBy && (
                               <span style={{ fontSize: 8, fontWeight: 700, background: "rgba(148,163,184,0.15)", color: "var(--text-muted)", borderRadius: 4, padding: "1px 5px" }}>Supervisé</span>
                             )}
                           </div>

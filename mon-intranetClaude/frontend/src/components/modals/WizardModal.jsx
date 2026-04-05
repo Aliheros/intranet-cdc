@@ -1,11 +1,139 @@
 // src/components/modals/WizardModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { TYPES_ACTION, TYPES_CLASSE, PROJETS, POLES, POLE_COLORS, PROJET_COLORS } from '../../data/constants';
 import { AvatarInner, isAvatarUrl } from '../ui/AvatarDisplay';
 import { formatDateShort, generateAutoTasks } from '../../utils/utils';
-import { X, ClipboardList, Calendar, Users, CheckCircle2, Trash2, ChevronLeft, ChevronRight, Euro, Rocket } from 'lucide-react';
+import { X, ClipboardList, Calendar, Users, CheckCircle2, Trash2, ChevronLeft, ChevronRight, Euro, Rocket, MapPin, Search } from 'lucide-react';
 import { MEMBER_STATUS } from '../ui/StatusIcon';
 import { useModalClose } from '../../hooks/useModalClose';
+
+const DEPT_NAMES = {
+  "01":"Ain","02":"Aisne","03":"Allier","04":"Alpes-de-Haute-Provence","05":"Hautes-Alpes",
+  "06":"Alpes-Maritimes","07":"Ardèche","08":"Ardennes","09":"Ariège","10":"Aube",
+  "11":"Aude","12":"Aveyron","13":"Bouches-du-Rhône","14":"Calvados","15":"Cantal",
+  "16":"Charente","17":"Charente-Maritime","18":"Cher","19":"Corrèze","2A":"Corse-du-Sud",
+  "2B":"Haute-Corse","21":"Côte-d'Or","22":"Côtes-d'Armor","23":"Creuse","24":"Dordogne",
+  "25":"Doubs","26":"Drôme","27":"Eure","28":"Eure-et-Loir","29":"Finistère",
+  "30":"Gard","31":"Haute-Garonne","32":"Gers","33":"Gironde","34":"Hérault",
+  "35":"Ille-et-Vilaine","36":"Indre","37":"Indre-et-Loire","38":"Isère","39":"Jura",
+  "40":"Landes","41":"Loir-et-Cher","42":"Loire","43":"Haute-Loire","44":"Loire-Atlantique",
+  "45":"Loiret","46":"Lot","47":"Lot-et-Garonne","48":"Lozère","49":"Maine-et-Loire",
+  "50":"Manche","51":"Marne","52":"Haute-Marne","53":"Mayenne","54":"Meurthe-et-Moselle",
+  "55":"Meuse","56":"Morbihan","57":"Moselle","58":"Nièvre","59":"Nord",
+  "60":"Oise","61":"Orne","62":"Pas-de-Calais","63":"Puy-de-Dôme","64":"Pyrénées-Atlantiques",
+  "65":"Hautes-Pyrénées","66":"Pyrénées-Orientales","67":"Bas-Rhin","68":"Haut-Rhin","69":"Rhône",
+  "70":"Haute-Saône","71":"Saône-et-Loire","72":"Sarthe","73":"Savoie","74":"Haute-Savoie",
+  "75":"Paris","76":"Seine-Maritime","77":"Seine-et-Marne","78":"Yvelines","79":"Deux-Sèvres",
+  "80":"Somme","81":"Tarn","82":"Tarn-et-Garonne","83":"Var","84":"Vaucluse",
+  "85":"Vendée","86":"Vienne","87":"Haute-Vienne","88":"Vosges","89":"Yonne",
+  "90":"Territoire de Belfort","91":"Essonne","92":"Hauts-de-Seine","93":"Seine-Saint-Denis",
+  "94":"Val-de-Marne","95":"Val-d'Oise","971":"Guadeloupe","972":"Martinique",
+  "973":"Guyane","974":"La Réunion","976":"Mayotte",
+};
+
+const LABEL_REP = ["Hors REP", "REP", "REP+"];
+
+const GeoSearch = ({ ville, onSelect }) => {
+  const [query, setQuery]             = useState(ville || '');
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading]         = useState(false);
+  const [open, setOpen]               = useState(false);
+  const [confirmed, setConfirmed]     = useState(!!ville);
+  const [dropdownStyle, setDropdownStyle] = useState({});
+  const wrapRef  = useRef(null);
+  const timerRef = useRef(null);
+
+  useEffect(() => { setQuery(ville || ''); setConfirmed(!!ville); }, [ville]);
+
+  const computeDropdown = useCallback(() => {
+    if (!wrapRef.current) return;
+    const rect = wrapRef.current.getBoundingClientRect();
+    setDropdownStyle({ position: 'fixed', top: rect.bottom + 2, left: rect.left, width: rect.width, zIndex: 99999 });
+  }, []);
+
+  const doSearch = useCallback(async (q) => {
+    const t = q.trim();
+    if (t.length < 2) { setSuggestions([]); setOpen(false); return; }
+    setLoading(true);
+    try {
+      const isPostal = /^\d{2,5}$/.test(t);
+      const url = isPostal
+        ? `https://geo.api.gouv.fr/communes?codePostal=${encodeURIComponent(t)}&fields=nom,codeDepartement,codesPostaux&limit=10`
+        : `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(t)}&fields=nom,codeDepartement,codesPostaux&boost=population&limit=10`;
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+      setSuggestions(Array.isArray(data) ? data : []);
+      computeDropdown();
+      setOpen(true);
+    } catch { setSuggestions([]); } finally { setLoading(false); }
+  }, [computeDropdown]);
+
+  const handleChange = (e) => {
+    const v = e.target.value;
+    setQuery(v);
+    setConfirmed(false);
+    if (!v) { onSelect({ ville: '', departement: '' }); setSuggestions([]); setOpen(false); return; }
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => doSearch(v), 350);
+  };
+
+  const handleSelect = (commune) => {
+    const cp = commune.codesPostaux?.[0] || '';
+    setQuery(`${commune.nom}${cp ? ` (${cp})` : ''}`);
+    setConfirmed(true);
+    setOpen(false);
+    setSuggestions([]);
+    onSelect({ ville: commune.nom, departement: commune.codeDepartement });
+  };
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="text" className="form-input" value={query}
+          onChange={handleChange}
+          onFocus={() => { if (suggestions.length > 0) { computeDropdown(); setOpen(true); } }}
+          onBlur={() => setTimeout(() => setOpen(false), 180)}
+          placeholder="Ville ou code postal…" autoComplete="off"
+          style={{ paddingRight: 28 }}
+        />
+        <span style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+          {loading
+            ? <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)' }}>…</span>
+            : confirmed
+              ? <CheckCircle2 size={13} strokeWidth={2} style={{ color: '#4ade80' }} />
+              : <Search size={13} strokeWidth={1.8} style={{ color: 'rgba(255,255,255,0.4)' }} />
+          }
+        </span>
+      </div>
+      {open && suggestions.length > 0 && (
+        <div style={{ ...dropdownStyle, background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 8, boxShadow: '0 6px 20px rgba(0,0,0,0.18)', maxHeight: 230, overflowY: 'auto' }}>
+          {suggestions.map((c, i) => {
+            const cp = c.codesPostaux?.[0] || '';
+            const deptLabel = DEPT_NAMES[c.codeDepartement] || c.codeDepartement;
+            return (
+              <div key={i} onMouseDown={() => handleSelect(c)}
+                style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, borderBottom: i < suggestions.length - 1 ? '1px solid var(--border-light)' : 'none' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                onMouseLeave={e => e.currentTarget.style.background = ''}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+                  <MapPin size={11} strokeWidth={1.8} style={{ color: '#1a56db', flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nom}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 5, flexShrink: 0, alignItems: 'center' }}>
+                  {cp && <span style={{ fontSize: 10, color: 'var(--text-muted)', background: 'var(--bg-alt)', borderRadius: 4, padding: '1px 6px', fontWeight: 500 }}>{cp}</span>}
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#1a56db', background: 'rgba(26,86,219,0.08)', borderRadius: 4, padding: '1px 6px' }}>{c.codeDepartement} — {deptLabel}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CHECKLIST_TEMPLATE = {
   preparation: [
@@ -29,7 +157,7 @@ const CHECKLIST_TEMPLATE = {
 };
 
 const EMPTY_FORM = {
-  type: "", etablissement: "", ville: "", titreCoordination: "",
+  type: "", etablissement: "", ville: "", departement: "", labelRep: "", titreCoordination: "",
   contact_nom: "", contact_email: "", contact_tel: "",
   date_debut: "", date_fin: "",
   responsables: [], statut: "Planifiée",
@@ -156,47 +284,83 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
 
           {/* ÉTAPE 1 — Identification */}
           {step === 1 && (
-            <div className="form-2col">
-              <div style={{ gridColumn: "1/-1" }}>
-                <label className="form-label">Type d'action *</label>
-                <select className="form-select" value={form.type} onChange={e => set("type", e.target.value)}>
-                  <option value="">— Sélectionner —</option>
-                  {TYPES_ACTION.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              {[["etablissement", "Établissement *", "Lycée Jean Jaurès"], ["ville", "Ville *", "Montreuil"], ["contact_nom", "Nom du contact", "Mme Leclerc"], ["contact_email", "Email du contact", "contact@lycee.fr"], ["contact_tel", "Téléphone", "01 48 00 00 01"]].map(([k, l, p]) => (
-                <div key={k}>
-                  <label className="form-label">{l}</label>
-                  <input className="form-input" value={form[k]} onChange={e => set(k, e.target.value)} placeholder={p} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+              {/* Ligne 1 : Type + Cycle */}
+              <div className="form-2col">
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label className="form-label">Type d'action *</label>
+                  <select className="form-select" value={form.type} onChange={e => set("type", e.target.value)}>
+                    <option value="">— Sélectionner —</option>
+                    {TYPES_ACTION.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
                 </div>
-              ))}
-              <div style={{ gridColumn: "1/-1" }}>
-                <label className="form-label">
-                  Nom dans Coordination{" "}
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 400 }}>
-                    (laissez vide pour utiliser le nom de l'établissement)
-                  </span>
-                </label>
-                <input
-                  className="form-input"
-                  value={form.titreCoordination}
-                  onChange={e => set("titreCoordination", e.target.value)}
-                  placeholder={form.etablissement ? `Ex: Coordination — ${form.etablissement}` : "Ex: Coordination — Lycée Jean Jaurès"}
-                />
               </div>
+
+              {/* Ligne 2 : Établissement */}
               <div>
-                <label className="form-label">Cycle annuel</label>
-                <select className="form-select" value={form.cycle} onChange={e => set("cycle", e.target.value)}>
-                  {cycles.map(c => <option key={c} value={c}>{c}</option>)}
+                <label className="form-label">Établissement / Structure *</label>
+                <input className="form-input" value={form.etablissement} onChange={e => set("etablissement", e.target.value)} placeholder="Ex: Lycée Jean Jaurès" />
+              </div>
+
+              {/* Ligne 3 : Ville + Département */}
+              <div className="form-2col">
+                <div>
+                  <label className="form-label">
+                    Ville *
+                    <span style={{ fontSize: 10, fontWeight: 400, color: "rgba(255,255,255,0.4)", marginLeft: 6 }}>— ville ou code postal</span>
+                  </label>
+                  <GeoSearch
+                    ville={form.ville}
+                    onSelect={({ ville, departement }) => setForm(f => ({ ...f, ville, departement }))}
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Département</label>
+                  <input
+                    className="form-input"
+                    readOnly
+                    value={form.departement ? `${form.departement}${DEPT_NAMES[form.departement] ? ` — ${DEPT_NAMES[form.departement]}` : ''}` : ''}
+                    placeholder="Sélectionnez une ville d'abord"
+                    style={{ cursor: "not-allowed", opacity: 0.6 }}
+                  />
+                </div>
+              </div>
+
+              {/* Ligne 4 : Label REP */}
+              <div>
+                <label className="form-label">Label REP</label>
+                <select className="form-select" value={form.labelRep} onChange={e => set("labelRep", e.target.value)}>
+                  <option value="">Non renseigné</option>
+                  {LABEL_REP.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="form-label">Projet associé</label>
-                <select className="form-select" value={form.projet} onChange={e => set("projet", e.target.value)}>
-                  <option value="">— Aucun —</option>
-                  {PROJETS.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
+
+              {/* Ligne 5 : Contact */}
+              <div className="form-2col">
+                {[["contact_nom", "Nom du contact", "Mme Leclerc"], ["contact_email", "Email", "contact@lycee.fr"], ["contact_tel", "Téléphone", "01 48 00 00 01"]].map(([k, l, p]) => (
+                  <div key={k}>
+                    <label className="form-label">{l}</label>
+                    <input className="form-input" value={form[k]} onChange={e => set(k, e.target.value)} placeholder={p} />
+                  </div>
+                ))}
               </div>
+
+              {/* Ligne 6 : Coordination + Projet */}
+              <div className="form-2col">
+                <div>
+                  <label className="form-label">Nom dans Coordination <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 400 }}>(vide = établissement)</span></label>
+                  <input className="form-input" value={form.titreCoordination} onChange={e => set("titreCoordination", e.target.value)} placeholder={form.etablissement || "Ex: Lycée Jean Jaurès"} />
+                </div>
+                <div>
+                  <label className="form-label">Projet associé</label>
+                  <select className="form-select" value={form.projet} onChange={e => set("projet", e.target.value)}>
+                    <option value="">— Aucun —</option>
+                    {PROJETS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
+
             </div>
           )}
 
@@ -382,7 +546,7 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
               <div style={{ marginTop: 8, padding: 18, background: "linear-gradient(135deg, #0f2d5e11, #1a56db08)", borderRadius: 12, border: "1px solid #1a56db30" }}>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#1a56db", marginBottom: 12 }}>Récapitulatif</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, color: "var(--text-base)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}><ClipboardList size={13} strokeWidth={1.8} /> <strong>{form.type}</strong> — {form.etablissement} ({form.ville})</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}><ClipboardList size={13} strokeWidth={1.8} /> <strong>{form.type}</strong> — {form.etablissement} ({form.ville}{form.departement ? `, dép. ${form.departement}` : ''})</div>
                   {form.date_debut && <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Calendar size={13} strokeWidth={1.8} /> Du {formatDateShort(form.date_debut)}{form.date_fin && form.date_fin !== form.date_debut ? ` au ${formatDateShort(form.date_fin)}` : ""}</div>}
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Users size={13} strokeWidth={1.8} /> {form.responsables.length > 0 ? form.responsables.join(", ") : "Aucun responsable"}</div>
                   {config.budgetPrevisionnel > 0 && <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Euro size={13} strokeWidth={1.8} /> Prévision : {config.budgetPrevisionnel} €</div>}

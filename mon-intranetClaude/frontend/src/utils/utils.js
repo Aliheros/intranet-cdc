@@ -42,7 +42,52 @@ export const fmtHeure = () => {
   return `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
 };
 
-// ─── 1b. TRI INTELLIGENT DES TÂCHES ──────────────────────────────
+// ── Durée bénévole : parse "2h30" / "2h" / "30min" / "2.5" → nombre décimal
+export const parseDuree = (str) => {
+  if (!str && str !== 0) return 0;
+  const s = String(str).trim().toLowerCase();
+  // Déjà un nombre pur
+  if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+  // Format "Xh" ou "Xh30" ou "XhY"
+  const hm = s.match(/^(\d+)h(\d+)?$/);
+  if (hm) return parseInt(hm[1], 10) + (parseInt(hm[2] || 0, 10) / 60);
+  // Format "Xmin"
+  const min = s.match(/^(\d+)\s*min$/);
+  if (min) return parseInt(min[1], 10) / 60;
+  return parseFloat(s) || 0;
+};
+
+// ── Durée bénévole : formate 2.5 → "2h30", 1 → "1h", 0.5 → "0h30"
+export const formatDuree = (val) => {
+  const n = typeof val === 'number' ? val : parseDuree(val);
+  if (!n || n <= 0) return '';
+  const h = Math.floor(n);
+  const m = Math.round((n - h) * 60);
+  if (m === 0) return `${h}h`;
+  return `${h}h${String(m).padStart(2, '0')}`;
+};
+
+// ─── 1b. HELPERS TÂCHES PARTAGÉS ──────────────────────────────────
+
+export const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+// Tâche considérée terminée si : status="Terminé", forceCompletedBy, ou tous les assignés ont validé
+export const isTaskEffectivelyDone = (t) => {
+  if (t.status === "Terminé") return true;
+  if (t.forceCompletedBy) return true;
+  const ass = t.assignees || [];
+  return ass.length > 0 && ass.every(a => a.completed);
+};
+
+// Tâche encore visible dans le fil actif (pas archivée définitivement)
+export const isTaskActiveInFeed = (t) => {
+  if (!isTaskEffectivelyDone(t)) return true;        // pas terminée → active
+  if (t.manuallyArchived) return false;              // archivage manuel → disparition immédiate
+  if (!t.completedAt) return false;                  // pas de date de completion → archive
+  return (Date.now() - new Date(t.completedAt).getTime()) < THREE_DAYS_MS; // règle 3 jours
+};
+
+// ─── 1c. TRI INTELLIGENT DES TÂCHES ──────────────────────────────
 // Ordre : En cours en retard > À faire en retard > En cours urgent > À faire urgent
 //          > En cours normal > À faire normal > Terminé
 // À statut égal : deadline croissante ; "En cours" sans deadline : id décroissant (plus récente en tête)

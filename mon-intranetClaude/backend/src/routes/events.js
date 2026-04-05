@@ -31,22 +31,39 @@ router.get('/:id', requireAuth, async (req, res) => {
 function pickEventFields(body) {
   const {
     titre, date, cycle, lieu, actionId, description,
-    poles, projet, equipe, fichiers, statut, isArchived, whatsappLink, seances,
+    poles, projet, equipe, responsables, fichiers, statut, isArchived, whatsappLink, seances,
+    responsableNom,
   } = body;
   return {
     titre, date, cycle,
-    lieu:         lieu         || null,
-    actionId:     actionId     || null,
-    description:  description  || '',
-    poles:        poles        || [],
-    projet:       projet       || null,
-    equipe:       equipe       || [],
-    fichiers:     fichiers     || [],
-    statut:       statut       || 'En cours',
-    isArchived:   isArchived   || false,
-    whatsappLink: whatsappLink || null,
-    seances:      seances      || [],
+    lieu:           lieu           || null,
+    actionId:       actionId       || null,
+    description:    description    || '',
+    poles:          poles          || [],
+    projet:         projet         || null,
+    equipe:         equipe         || [],
+    responsables:   responsables   || [],
+    fichiers:       fichiers       || [],
+    statut:         statut         || 'En cours',
+    isArchived:     isArchived     || false,
+    whatsappLink:   whatsappLink   || null,
+    seances:        seances        || [],
+    responsableNom: responsableNom || null,
   };
+}
+
+function validateEventConstraints(data, existingEquipe) {
+  const equipe = data.equipe !== undefined ? (data.equipe || []) : (existingEquipe || []);
+  if (data.responsables !== undefined) {
+    const bad = (data.responsables || []).filter(r => !equipe.includes(r));
+    if (bad.length > 0) {
+      return `Les responsables suivants ne sont pas membres de l'équipe : ${bad.join(', ')}`;
+    }
+  }
+  if (data.responsableNom && !equipe.includes(data.responsableNom)) {
+    return 'Le responsable de validation doit être membre de l\'équipe de l\'événement.';
+  }
+  return null;
 }
 
 router.post('/', requireAuth, async (req, res) => {
@@ -67,6 +84,8 @@ router.post('/', requireAuth, async (req, res) => {
         error: `Champs requis manquants : ${['titre', 'date', 'cycle'].filter(f => !data[f]).join(', ')}`,
       });
     }
+    const err = validateEventConstraints(data, []);
+    if (err) return res.status(400).json({ error: err });
     const ev = await prisma.evenement.create({ data });
     res.status(201).json(ev);
     auditLog(req, {
@@ -171,6 +190,23 @@ router.put('/:id', requireAuth, async (req, res) => {
     Object.keys(req.body).forEach(k => { if (full[k] !== undefined) data[k] = full[k]; });
     // Préserver actionId si absent du body
     if (!('actionId' in req.body)) data.actionId = existing.actionId;
+
+    // Valider les contraintes équipe → responsables → responsableNom
+    const constraintErr = validateEventConstraints(data, existing.equipe);
+    if (constraintErr) return res.status(400).json({ error: constraintErr });
+
+    // Cascade automatique : si equipe change, nettoyer responsables et responsableNom
+    if ('equipe' in data) {
+      const finalEquipe = data.equipe || [];
+      if ('responsables' in data || existing.responsables) {
+        const currentResp = 'responsables' in data ? (data.responsables || []) : (existing.responsables || []);
+        data.responsables = currentResp.filter(r => finalEquipe.includes(r));
+      }
+      const currentRespNom = 'responsableNom' in data ? data.responsableNom : existing.responsableNom;
+      if (currentRespNom && !finalEquipe.includes(currentRespNom)) {
+        data.responsableNom = null;
+      }
+    }
 
     const ev = await prisma.evenement.update({ where: { id: eventId }, data });
     res.json(ev);

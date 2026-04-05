@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AvatarInner, isAvatarUrl } from '../ui/AvatarDisplay';
 import { POLE_COLORS, PROJET_COLORS } from '../../data/constants';
-import { LogOut, Moon, Sun, Settings, Search, X, Bell, ClipboardList, MessageCircle, LayoutDashboard, Zap, Users, Receipt, Crown, Shield, Calendar, User, Target, Menu, ExternalLink, HelpCircle, FileSignature } from 'lucide-react';
+import { LogOut, Moon, Sun, Settings, Search, X, Bell, ClipboardList, MessageCircle, LayoutDashboard, Zap, Users, Receipt, Crown, Shield, Calendar, User, Target, Menu, ExternalLink, HelpCircle, FileSignature, BarChart2 } from 'lucide-react';
 
 const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, darkMode, setDarkMode, currentUser, isAdmin = false, isBureau = false, accessiblePoles = [], accessibleProjets = [], myTeamSpaces = [], onOpenProfile, onOpenMyProfile, onRemoveAvatar, onLogout, globalQuery = "", setGlobalQuery, upcomingNotifications = [], notifBadgeCount = 0, onOpenNotifPanel, bannerHeight = 0, directory = [], actions = [], evenements = [], missions = [], onSelectMember, onSelectAction, onSelectEvent, onSelectMission }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -56,6 +56,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
       id: "gestion",
       label: "Gestion",
       items: [
+        { id: "analytics",      label: "Analytics",        IconComp: BarChart2 },
         { id: "notefrais",      label: "Notes de frais",   IconComp: Receipt },
         { id: "devisFactures",  label: "Devis & Factures", IconComp: FileSignature },
         { id: "faq",            label: "FAQ",              IconComp: HelpCircle },
@@ -93,7 +94,26 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
     setPage(p);
     setSubPage(sp);
     if (setActiveTab) setActiveTab(tab);
-    setSidebarOpen(false); // ferme le drawer sur mobile après navigation
+    setSidebarOpen(false);
+    // Sync hash sans rechargement
+    const hash = (!p || p === 'dashboard') ? '#dashboard'
+      : (p === 'pole' || p === 'projet') ? `#${p}/${encodeURIComponent(sp)}`
+      : `#${p}`;
+    if (window.location.hash !== hash) window.history.pushState(null, '', hash);
+  };
+
+  // Calcule le href pour un lien sidebar (permet clic droit → nouvel onglet)
+  const navHref = (p, sp = "") =>
+    (!p || p === 'dashboard') ? '#dashboard'
+    : (p === 'pole' || p === 'projet') ? `#${p}/${encodeURIComponent(sp)}`
+    : `#${p}`;
+
+  // Handler qui intercepte le clic simple (navigation SPA) tout en laissant
+  // clic droit / ctrl+clic / middle-clic ouvrir un vrai nouvel onglet
+  const navClick = (e, p, sp = "", tab = "contenu") => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return; // laisser le browser gérer
+    e.preventDefault();
+    handleNav(p, sp, tab);
   };
 
   const openProfile = onOpenMyProfile || onOpenProfile;
@@ -208,7 +228,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
                   <div style={{ paddingTop: 8 }} />
                 )}
                 {group.items.map((item) => (
-                  <div key={item.id} className={`ni ${page === item.id ? "active" : ""}`} onClick={() => handleNav(item.id)}>
+                  <a key={item.id} href={navHref(item.id)} className={`ni ${page === item.id ? "active" : ""}`} onClick={e => navClick(e, item.id)} style={{ textDecoration: 'none' }}>
                     <span style={{ display: "inline-flex", alignItems: "center", marginRight: 8, opacity: page === item.id ? 1 : 0.6 }}>
                       <item.IconComp size={15} strokeWidth={1.8} />
                     </span>
@@ -218,7 +238,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
                         {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
                       </span>
                     )}
-                  </div>
+                  </a>
                 ))}
               </div>
             ))}
@@ -241,9 +261,10 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
                 <div className="ns" style={{ marginTop: 14 }}>Mon espace</div>
                 {mySpaceEntries.map(({ space, role, type }) => {
                   const color = POLE_COLORS[space] || PROJET_COLORS[space] || '#94a3b8';
-                  const isActive = (type === 'pole' ? page === "pole" : page === "projet") && subPage === space;
+                  const pageType = type === 'pole' ? "pole" : "projet";
+                  const isActive = page === pageType && subPage === space;
                   return (
-                    <div key={space} className={`ni ${isActive ? "active" : ""}`} onClick={() => handleNav(type === 'pole' ? "pole" : "projet", space)}>
+                    <a key={space} href={navHref(pageType, space)} className={`ni ${isActive ? "active" : ""}`} onClick={e => navClick(e, pageType, space)} style={{ textDecoration: 'none' }}>
                       <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: color, marginRight: 8, flexShrink: 0 }} />
                       <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{space}</span>
                       {role && (
@@ -251,7 +272,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
                           {ROLE_LABEL_SHORT[role] || role}
                         </span>
                       )}
-                    </div>
+                    </a>
                   );
                 })}
               </>
@@ -261,9 +282,9 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
               <>
                 <div className="ns" style={{ marginTop: 14 }}>Pôles</div>
                 {extraPoles.map(p => (
-                  <div key={p} className={`ni ${page === "pole" && subPage === p ? "active" : ""}`} onClick={() => handleNav("pole", p, p === "Trésorerie" ? "tresorerie" : "contenu")}>
+                  <a key={p} href={navHref("pole", p)} className={`ni ${page === "pole" && subPage === p ? "active" : ""}`} onClick={e => navClick(e, "pole", p, p === "Trésorerie" ? "tresorerie" : "contenu")} style={{ textDecoration: 'none' }}>
                     <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: POLE_COLORS[p], marginRight: 8, flexShrink: 0 }} />{p}
-                  </div>
+                  </a>
                 ))}
               </>
             )}
@@ -272,9 +293,9 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
               <>
                 <div className="ns" style={{ marginTop: 14 }}>Projets</div>
                 {extraProjets.map(p => (
-                  <div key={p} className={`ni ${page === "projet" && subPage === p ? "active" : ""}`} onClick={() => handleNav("projet", p)}>
+                  <a key={p} href={navHref("projet", p)} className={`ni ${page === "projet" && subPage === p ? "active" : ""}`} onClick={e => navClick(e, "projet", p)} style={{ textDecoration: 'none' }}>
                     <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: PROJET_COLORS[p], marginRight: 8, flexShrink: 0 }} />{p}
-                  </div>
+                  </a>
                 ))}
               </>
             )}

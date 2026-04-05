@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Badge from '../components/ui/Badge';
 import { POLE_COLORS, PROJET_COLORS, STATUT_STYLE } from '../data/constants';
 import { formatDateShort, formatDateLong, isPastDate } from '../utils/utils';
-import { Archive, Pencil, Trash2, Calendar, MapPin, RefreshCw, Users, Lightbulb, Lock, Clock, Timer, ClipboardList, FileText, Link2, Zap, RotateCcw, Paperclip, Upload, Download, X, BookMarked, Plus, Settings } from 'lucide-react';
+import { Archive, Pencil, Trash2, Calendar, MapPin, RefreshCw, Users, Lightbulb, Lock, Clock, Timer, ClipboardList, FileText, Link2, Zap, RotateCcw, Paperclip, Upload, Download, X, BookMarked, Plus, Settings, Shield, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
@@ -25,6 +25,7 @@ const Coordination = () => {
     trash, restoreTrash, forceDeleteTrash,
     handleUpdateActionResponsables: onUpdateActionResponsables,
     handleSendActionReminder: onSendReminder,
+    seancePresences, handleRespValidation, refreshSeancePresences,
   } = useDataContext();
   const [eventsTab, setEventsTab] = useState("actifs");
   const [eventsCycle, setEventsCycle] = useState(cycles[0]);
@@ -70,8 +71,11 @@ const Coordination = () => {
 
   const activeEvent = finalEvents.find((e) => e.id === activeEventId) || finalEvents[0];
   const linkedAction = activeEvent ? actions.find((a) => a.id === activeEvent.actionId) : null;
-  const isActionResponsable = !!(linkedAction && (linkedAction.responsables || []).includes(currentUser?.nom));
-  const canEditEvent = (isAdmin || isActionResponsable) && !activeEvent?.isArchived;
+  const isActionResponsable  = !!(linkedAction && (linkedAction.responsables || []).includes(currentUser?.nom));
+  const isEventResponsable   = !!(activeEvent && (activeEvent.responsables  || []).includes(currentUser?.nom));
+  // Peut modifier / archiver / supprimer : Admin, Bureau, responsable d'espace, responsable action liée, ou responsable de l'évènement
+  const canManageEvent = isAdmin || isResponsable || isActionResponsable || isEventResponsable;
+  const canEditEvent   = canManageEvent && !activeEvent?.isArchived;
   // Peut gérer la bibliothèque : admin, responsable de pôle/projet, ou responsable de l'action liée
   const canManageBibliotheque = isResponsable || isActionResponsable;
 
@@ -164,6 +168,18 @@ const Coordination = () => {
     }));
   };
 
+  const handleSetResponsable = async (nom) => {
+    if (!activeEvent) return;
+    const equipe = activeEvent.equipe || [];
+    if (nom && !equipe.includes(nom)) return; // sécurité : doit être dans l'équipe
+    try {
+      const updated = await api.put(`/events/${activeEvent.id}`, { responsableNom: nom || null, equipe });
+      setEvenements(prev => prev.map(ev => ev.id === activeEvent.id ? { ...ev, responsableNom: updated.responsableNom } : ev));
+    } catch (err) {
+      console.error('Erreur mise à jour responsable:', err);
+    }
+  };
+
   const handleRemoveFile = (idx) => {
     if (!activeEvent) return;
     setEvenements(prev => prev.map(ev => {
@@ -225,7 +241,7 @@ const Coordination = () => {
 
       {/* CORBEILLE */}
       {eventsTab === "corbeille" && (() => {
-        const allTrashEvents = trash.filter(t => t.type === "event").sort((a, b) => b.deletedAt - a.deletedAt);
+        const allTrashEvents = trash.filter(t => t.type === "event").sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
         // Responsables voient tout ; membres ne voient que leur propre corbeille
         const trashEvents = isResponsable
           ? allTrashEvents
@@ -253,7 +269,7 @@ const Coordination = () => {
                 </div>
                 {restoreTrash && (isResponsable || item.deletedBy === currentUser?.nom) && (
                   <button
-                    onClick={() => restoreTrash(item)}
+                    onClick={() => restoreTrash(item.id)}
                     style={{ background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)", borderRadius: 6, padding: "5px 10px", cursor: "pointer", color: "#16a34a", display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}
                   >
                     <RotateCcw size={11} strokeWidth={1.8}/> Restaurer
@@ -314,41 +330,50 @@ const Coordination = () => {
             borderTop: highlightedEventId === activeEvent.id ? "2px solid rgba(26,86,219,0.5)" : "2px solid transparent",
             transition: "background 0.5s ease, box-shadow 0.6s ease, border-top 0.4s ease",
           }}>
-            {(isAdmin || canEditEvent) && (
+            {canManageEvent && (
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                {isAdmin && (
-                  <button className="btn-secondary" onClick={() => toggleArchiveEvent(activeEvent)}>
-                    <span style={{display:"inline-flex",alignItems:"center",gap:5}}><Archive size={12} strokeWidth={1.8}/> {activeEvent.isArchived ? "Désarchiver" : "Archiver"}</span>
-                  </button>
-                )}
+                <button className="btn-secondary" onClick={() => toggleArchiveEvent(activeEvent)}>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:5}}><Archive size={12} strokeWidth={1.8}/> {activeEvent.isArchived ? "Désarchiver" : "Archiver"}</span>
+                </button>
                 {canEditEvent && (
                   <button className="btn-secondary" onClick={() => setEventModal({ ...activeEvent })}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Pencil size={12} strokeWidth={1.8}/> Modifier</span></button>
                 )}
-                {isAdmin && !activeEvent.isArchived && (
+                {!activeEvent.isArchived && (
                   <button className="btn-secondary" style={{ color: "#e63946" }} onClick={() => deleteEvent(activeEvent)}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Trash2 size={12} strokeWidth={1.8}/> Supprimer</span></button>
                 )}
               </div>
             )}
 
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
-              <div>
+            {/* ── Titre + statut ── */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 {activeEvent.projet && (
-                  <span style={{ display: "inline-block", fontSize: 9, fontWeight: 700, padding: "2px 9px", borderRadius: 20, color: "#fff", background: PROJET_COLORS[activeEvent.projet] || "#888", marginBottom: 8 }}>
+                  <span style={{ display: "inline-block", fontSize: 9, fontWeight: 700, padding: "2px 9px", borderRadius: 20, color: "#fff", background: PROJET_COLORS[activeEvent.projet] || "#888", marginBottom: 6 }}>
                     {activeEvent.projet}
                   </span>
                 )}
-                <div className="event-title">{activeEvent.titre}</div>
+                <div className="event-title" style={{ wordBreak: "break-word" }}>{activeEvent.titre}</div>
               </div>
               <Badge label={activeEvent.statut} bg={STATUT_STYLE[activeEvent.statut]?.bg || "var(--bg-alt)"} c={STATUT_STYLE[activeEvent.statut]?.c || "var(--text-dim)"} size={11} />
             </div>
 
-            <div style={{ display: "flex", gap: 16, marginBottom: activeEvent.description ? 12 : 20, flexWrap: "wrap" }}>
+            {/* ── Métadonnées ── */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", marginBottom: 14, padding: "8px 12px", background: "var(--bg-hover)", borderRadius: 8, border: "1px solid var(--border-light)" }}>
               {activeEvent.date && <span style={{ fontSize: 12, color: "var(--text-dim)", display:"flex", alignItems:"center", gap:4 }}><Calendar size={11} strokeWidth={1.8}/> {formatDateShort(activeEvent.date)}</span>}
               {activeEvent.lieu && <span style={{ fontSize: 12, color: "var(--text-dim)", display:"flex", alignItems:"center", gap:4 }}><MapPin size={11} strokeWidth={1.8}/> {activeEvent.lieu}</span>}
-              {activeEvent.cycle && <span style={{ fontSize: 12, color: "var(--text-dim)", display:"flex", alignItems:"center", gap:4 }}><RefreshCw size={11} strokeWidth={1.8}/> Cycle {activeEvent.cycle}</span>}
+              {activeEvent.cycle && <span style={{ fontSize: 12, color: "var(--text-dim)", display:"flex", alignItems:"center", gap:4 }}><RefreshCw size={11} strokeWidth={1.8}/> {activeEvent.cycle}</span>}
+              {(activeEvent.poles || []).length > 0 && (
+                <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  {(activeEvent.poles || []).map((p, i) => (
+                    <span key={i} style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: POLE_COLORS[p] || "#888" }} title={p} />
+                  ))}
+                </span>
+              )}
             </div>
+
+            {/* ── Description ── */}
             {activeEvent.description && (
-              <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.6, marginBottom: 12, padding: "10px 14px", background: "var(--bg-alt)", borderRadius: 8, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.6, marginBottom: 14, padding: "10px 14px", background: "var(--bg-alt)", borderRadius: 8, whiteSpace: "pre-wrap", wordBreak: "break-word", borderLeft: "3px solid var(--border-light)" }}>
                 {activeEvent.description}
               </div>
             )}
@@ -387,7 +412,8 @@ const Coordination = () => {
                       ) : (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                           {equipe.map((nom, i) => (
-                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, background: nom === currentUser.nom ? "rgba(26,86,219,0.12)" : "var(--bg-alt)", color: nom === currentUser.nom ? "#1a56db" : "var(--text-base)", padding: "3px 9px", borderRadius: 20, fontWeight: nom === currentUser.nom ? 700 : 400, border: nom === currentUser.nom ? "1px solid #1a56db40" : "1px solid var(--border-light)" }}>
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, background: nom === activeEvent.responsableNom ? "rgba(22,163,74,0.12)" : nom === currentUser.nom ? "rgba(26,86,219,0.12)" : "var(--bg-alt)", color: nom === activeEvent.responsableNom ? "#16a34a" : nom === currentUser.nom ? "#1a56db" : "var(--text-base)", padding: "3px 9px", borderRadius: 20, fontWeight: nom === currentUser.nom ? 700 : 400, border: nom === activeEvent.responsableNom ? "1px solid rgba(22,163,74,0.3)" : nom === currentUser.nom ? "1px solid #1a56db40" : "1px solid var(--border-light)" }}>
+                              {nom === activeEvent.responsableNom && <Shield size={9} strokeWidth={2} />}
                               {nom}
                               {nom === currentUser.nom && <span style={{ fontSize: 9, opacity: 0.7 }}>· moi</span>}
                               {isAdmin && nom !== currentUser.nom && !activeEvent.isArchived && (
@@ -397,40 +423,90 @@ const Coordination = () => {
                           ))}
                         </div>
                       )}
+
+                      {/* ── Responsable de l'événement (inline) ── */}
+                      {equipe.length > 0 && (
+                        <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--border-light)" }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                            <Shield size={11} strokeWidth={2} /> Responsable validation présences
+                          </div>
+                          {canEditEvent ? (
+                            <>
+                              {(activeEvent.responsables || []).length === 0 ? (
+                                <div style={{ fontSize: 11, color: "#d97706", fontStyle: "italic" }}>Désignez d'abord des responsables ci-dessus.</div>
+                              ) : (
+                                <select
+                                  value={activeEvent.responsableNom || ""}
+                                  onChange={e => handleSetResponsable(e.target.value)}
+                                  style={{ fontSize: 11, padding: "5px 8px", borderRadius: 6, border: activeEvent.responsableNom ? "1px solid rgba(22,163,74,0.4)" : "1px solid #d97706", background: activeEvent.responsableNom ? "rgba(22,163,74,0.05)" : "rgba(217,119,6,0.05)", color: activeEvent.responsableNom ? "#16a34a" : "#d97706", cursor: "pointer", width: "100%", fontWeight: 600 }}
+                                >
+                                  <option value="">— Choisir parmi les responsables —</option>
+                                  {(activeEvent.responsables || []).map(nom => (
+                                    <option key={nom} value={nom}>{nom}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </>
+                          ) : (
+                            activeEvent.responsableNom
+                              ? <span style={{ fontSize: 12, color: "#16a34a", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}><Shield size={11} strokeWidth={2} />{activeEvent.responsableNom}</span>
+                              : <span style={{ fontSize: 11, color: "#d97706", fontStyle: "italic" }}>Aucun responsable désigné.</span>
+                          )}
+                          {!activeEvent.responsableNom && (
+                            <div style={{ fontSize: 10, color: "#d97706", marginTop: 4 }}>⚠ Requis pour valider les présences bénévoles.</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
 
-                {/* RESPONSABLES */}
-                {linkedAction && (isAdmin || isActionResponsable) && (() => {
-                  const responsables = linkedAction.responsables || [];
-                  const availableToAdd = (directory || []).map(m => m.nom).filter(nom => !responsables.includes(nom));
+                {/* RESPONSABLES DE L'ÉVÈNEMENT — visible par tous */}
+                {(() => {
+                  const evResponsables = activeEvent.responsables || [];
+                  const equipe = activeEvent.equipe || [];
+                  // Pour l'ajout inline, seuls les membres de l'équipe non déjà responsables
+                  const canAdd = equipe.filter(n => !evResponsables.includes(n));
                   return (
                     <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--border-light)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                         <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", display:"flex", alignItems:"center", gap:5 }}>
-                          <Users size={12} strokeWidth={1.8}/> Responsables ({responsables.length})
+                          <Shield size={12} strokeWidth={1.8}/> Responsables de l'évènement ({evResponsables.length})
                         </div>
-                        {isAdmin && onUpdateActionResponsables && availableToAdd.length > 0 && (
-                          <select className="form-select" value={newResponsable} onChange={e => { const nom = e.target.value; if (!nom) return; onUpdateActionResponsables(linkedAction.id, [...responsables, nom]); setNewResponsable(""); }} style={{ fontSize: 11, padding: "3px 8px", width: "auto", maxWidth: 160, border: "1px dashed var(--border-light)", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
+                        {canEditEvent && canAdd.length > 0 && (
+                          <select className="form-select" value={newResponsable} onChange={async e => {
+                            const nom = e.target.value;
+                            if (!nom) return;
+                            setNewResponsable("");
+                            try {
+                              const newList = [...evResponsables, nom];
+                              await api.put(`/events/${activeEvent.id}`, { responsables: newList, equipe });
+                              setEvenements(prev => prev.map(ev => ev.id === activeEvent.id ? { ...ev, responsables: newList } : ev));
+                            } catch (err) { console.error(err); }
+                          }} style={{ fontSize: 11, padding: "3px 8px", width: "auto", maxWidth: 160, border: "1px dashed var(--border-light)", background: "transparent", color: "var(--text-muted)", cursor: "pointer" }}>
                             <option value="">+ Ajouter…</option>
-                            {availableToAdd.map(nom => <option key={nom} value={nom}>{nom}</option>)}
+                            {canAdd.map(nom => <option key={nom} value={nom}>{nom}</option>)}
                           </select>
                         )}
                       </div>
-                      {responsables.length === 0 ? (
+                      {evResponsables.length === 0 ? (
                         <div style={{ fontSize: 11, color: "var(--text-muted)", fontStyle: "italic" }}>Aucun responsable désigné.</div>
                       ) : (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                          {responsables.map((nom, i) => (
-                            <div key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, background: nom === currentUser?.nom ? "rgba(26,86,219,0.1)" : "var(--bg-alt)", color: nom === currentUser?.nom ? "#1a56db" : "var(--text-base)", padding: "3px 9px", borderRadius: 20, fontWeight: nom === currentUser?.nom ? 700 : 400, border: nom === currentUser?.nom ? "1px solid rgba(26,86,219,0.25)" : "1px solid var(--border-light)" }}>
+                          {evResponsables.map((nom, i) => (
+                            <div key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, background: nom === currentUser?.nom ? "rgba(22,163,74,0.12)" : "var(--bg-alt)", color: nom === currentUser?.nom ? "#16a34a" : "var(--text-base)", padding: "3px 9px", borderRadius: 20, fontWeight: nom === currentUser?.nom ? 700 : 400, border: nom === currentUser?.nom ? "1px solid rgba(22,163,74,0.3)" : "1px solid var(--border-light)" }}>
+                              <Shield size={9} strokeWidth={2} style={{ opacity: 0.7 }} />
                               {nom}
                               {nom === currentUser?.nom && <span style={{ fontSize: 9, opacity: 0.6 }}>· moi</span>}
-                              {onSendReminder && !linkedAction.isArchived && (
-                                <button onClick={() => onSendReminder(nom, linkedAction.etablissement, activeEvent.titre)} title="Envoyer un rappel" style={{ background: "none", border: "none", color: "#d97706", cursor: "pointer", display: "inline-flex", alignItems: "center", padding: "0 1px", marginLeft: 1 }}><Clock size={10} strokeWidth={2}/></button>
-                              )}
-                              {isAdmin && onUpdateActionResponsables && (
-                                <button onClick={() => onUpdateActionResponsables(linkedAction.id, responsables.filter(r => r !== nom))} title="Retirer" style={{ background: "none", border: "none", color: "#e63946", cursor: "pointer", fontSize: 12, padding: "0 1px", lineHeight: 1 }}>✕</button>
+                              {canEditEvent && (
+                                <button onClick={async () => {
+                                  try {
+                                    const newList = evResponsables.filter(r => r !== nom);
+                                    const newResp = activeEvent.responsableNom === nom ? null : activeEvent.responsableNom;
+                                    await api.put(`/events/${activeEvent.id}`, { responsables: newList, equipe, responsableNom: newResp });
+                                    setEvenements(prev => prev.map(ev => ev.id === activeEvent.id ? { ...ev, responsables: newList, responsableNom: newResp } : ev));
+                                  } catch (err) { console.error(err); }
+                                }} title="Retirer" style={{ background: "none", border: "none", color: "#e63946", cursor: "pointer", fontSize: 12, padding: "0 1px", lineHeight: 1 }}>✕</button>
                               )}
                             </div>
                           ))}
@@ -653,12 +729,12 @@ const Coordination = () => {
               <div style={{ marginTop: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)" }}>Calendrier des séances</div>
-                  {isAdmin && (
+                  {canEditEvent && (
                     <button
                       onClick={() => setEventModal({ ...activeEvent, editingSeances: true })}
-                      style={{ fontSize: 10, fontWeight: 600, padding: "4px 10px", background: "#1a56db", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
+                      style={{ fontSize: 10, fontWeight: 600, padding: "4px 10px", background: "#1a56db", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
                     >
-                      <Pencil size={10} strokeWidth={1.8} style={{ marginRight: 4 }} /> Gérer
+                      <Pencil size={10} strokeWidth={1.8} /> Gérer
                     </button>
                   )}
                 </div>
@@ -776,6 +852,68 @@ const Coordination = () => {
                           </div>
                         )}
 
+                        {/* ── VALIDATION PRÉSENCES (responsable, séances passées) ── */}
+                        {isPast && !s.annulee && (s.inscrits || []).length > 0 && activeEvent.responsableNom === currentUser.nom && (() => {
+                          const seancePresencesForSeance = seancePresences.filter(
+                            p => p.evenementId === activeEvent.id && p.seanceId === String(s.id)
+                          );
+                          const allValidated = seancePresencesForSeance.length > 0 &&
+                            seancePresencesForSeance.every(p => p.resp1Statut !== 'en_attente');
+                          return (
+                            <div style={{ marginTop: 10, borderTop: '2px solid rgba(22,163,74,0.2)', paddingTop: 10 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                                <Shield size={11} strokeWidth={2} style={{ color: '#16a34a' }} />
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>Validation des présences — votre rôle de responsable</span>
+                                {allValidated && <span style={{ fontSize: 10, background: 'rgba(22,163,74,0.1)', color: '#16a34a', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>✓ Complète</span>}
+                                {!allValidated && seancePresencesForSeance.length === 0 && (
+                                  <button style={{ fontSize: 10, background: 'none', border: '1px solid #16a34a', color: '#16a34a', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
+                                    onClick={() => refreshSeancePresences()}>
+                                    Générer les fiches
+                                  </button>
+                                )}
+                              </div>
+                              {seancePresencesForSeance.length === 0 ? (
+                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                  Cliquez sur "Générer les fiches" pour créer les fiches de présence.
+                                </div>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                  {seancePresencesForSeance.map(p => (
+                                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: p.resp1Statut === 'present' ? 'rgba(22,163,74,0.06)' : p.resp1Statut === 'absent' ? 'rgba(220,38,38,0.05)' : 'var(--bg-card)', border: `1px solid ${p.resp1Statut === 'present' ? 'rgba(22,163,74,0.2)' : p.resp1Statut === 'absent' ? 'rgba(220,38,38,0.15)' : 'var(--border-light)'}`, borderRadius: 6, padding: '6px 10px' }}>
+                                      <span style={{ fontSize: 12, fontWeight: 600 }}>{p.membreNom}</span>
+                                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                        {p.resp1Statut === 'en_attente' ? (
+                                          <>
+                                            <button
+                                              style={{ fontSize: 10, padding: '3px 10px', borderRadius: 5, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)', color: '#16a34a', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                                              onClick={() => handleRespValidation(p.id, 'present')}
+                                            ><CheckCircle2 size={10} strokeWidth={2} /> Présent</button>
+                                            <button
+                                              style={{ fontSize: 10, padding: '3px 10px', borderRadius: 5, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#dc2626', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                                              onClick={() => handleRespValidation(p.id, 'absent')}
+                                            ><XCircle size={10} strokeWidth={2} /> Absent</button>
+                                          </>
+                                        ) : (
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ fontSize: 11, fontWeight: 700, color: p.resp1Statut === 'present' ? '#16a34a' : '#dc2626', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                              {p.resp1Statut === 'present' ? <CheckCircle2 size={11} strokeWidth={2} /> : <XCircle size={11} strokeWidth={2} />}
+                                              {p.resp1Statut === 'present' ? 'Présent' : 'Absent'}
+                                            </span>
+                                            <button style={{ fontSize: 9, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                                              onClick={() => handleRespValidation(p.id, p.resp1Statut === 'present' ? 'absent' : 'present')}>
+                                              Corriger
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         {/* ── ANNULATION OVERLAY ── */}
                         {s.annulee && (
                           <>
@@ -788,9 +926,12 @@ const Coordination = () => {
                             {/* Cancellation banner */}
                             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3, pointerEvents: "none" }}>
                               <div style={{ background: "#fff5f5", border: "1.5px solid #fca5a5", borderRadius: 8, padding: "8px 16px", maxWidth: "80%", textAlign: "center", boxShadow: "0 2px 12px rgba(220,38,38,0.15)" }}>
-                                <div style={{ fontSize: 10, fontWeight: 800, color: "#dc2626", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: s.commentaireAnnulation ? 4 : 0, display: "flex", alignItems: "center", gap: 5, justifyContent: "center" }}>
+                                <div style={{ fontSize: 10, fontWeight: 800, color: "#dc2626", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: (s.raisonAnnulation || s.commentaireAnnulation) ? 4 : 0, display: "flex", alignItems: "center", gap: 5, justifyContent: "center" }}>
                                   <span>✕</span> Séance annulée
                                 </div>
+                                {s.raisonAnnulation && (
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: "#dc2626", marginBottom: 2 }}>{s.raisonAnnulation}</div>
+                                )}
                                 {s.commentaireAnnulation && (
                                   <div style={{ fontSize: 11, color: "#991b1b", fontStyle: "italic", lineHeight: 1.4 }}>{s.commentaireAnnulation}</div>
                                 )}

@@ -4,8 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
 import { formatDateShort } from '../utils/utils';
-import { Car, Building2, Utensils, Package, BookOpen, Megaphone, Lightbulb, Receipt, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileText, Settings, Trash2, Search, SlidersHorizontal, Users, TrendingUp, ArrowUpDown } from 'lucide-react';
-import NdfConfigPanel from '../components/admin/NdfConfigPanel';
+import { Car, Building2, Utensils, Package, BookOpen, Megaphone, Lightbulb, Receipt, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileText, Trash2, Search, SlidersHorizontal, Users, TrendingUp, ArrowUpDown } from 'lucide-react';
 import { StatusBadge, NDF_STATUS } from '../components/ui/StatusIcon';
 
 const CAT_ICON = {
@@ -268,9 +267,6 @@ const NoteFrais = () => {
   const { notesFrais: allNotesFrais, hasPower, ndfConfig, handleSaveNdfConfig: onSaveNdfConfig } = useDataContext();
   const notesFrais = allNotesFrais.filter(n => n.demandeurId === currentUser?.id);
   const [filter, setFilter] = useState("all"); // "all" | "en_cours" | "archivees"
-  const [showConfig, setShowConfig] = useState(false);
-  const canConfig = hasPower && hasPower("manage_budgets");
-
   // notesFrais est déjà filtré au niveau de l'app — ce composant ne voit que les NDFs personnelles
   const enCours = notesFrais.filter(n => ["Brouillon", "Soumise", "En vérification"].includes(n.statut));
   const archivees = notesFrais.filter(n => ["Validée", "Remboursée", "Refusée"].includes(n.statut));
@@ -292,14 +288,6 @@ const NoteFrais = () => {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 10 }}>
         <div className="ptitle" style={{ marginBottom: 0 }}>Notes de frais</div>
         <div style={{ display: "flex", gap: 8 }}>
-          {canConfig && (
-            <button
-              onClick={() => setShowConfig(s => !s)}
-              style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 16px", background: showConfig ? "rgba(15,45,94,0.08)" : "var(--bg-hover)", color: showConfig ? "#0f2d5e" : "var(--text-dim)", border: `1px solid ${showConfig ? "rgba(15,45,94,0.2)" : "var(--border-light)"}`, borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all 0.15s" }}
-            >
-              <Settings size={14} strokeWidth={1.8} /> Configurer
-            </button>
-          )}
           <button
             onClick={onNewNoteFrais}
             style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", background: "#0f2d5e", color: "#fff", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 700, letterSpacing: "-0.01em" }}
@@ -309,10 +297,6 @@ const NoteFrais = () => {
         </div>
       </div>
 
-      {/* Panel de configuration (Responsable Trésorerie) */}
-      {showConfig && canConfig && ndfConfig && (
-        <NdfConfigPanel config={ndfConfig} onSave={onSaveNdfConfig} onClose={() => setShowConfig(false)} />
-      )}
 
       {/* ── INSTRUCTIONS TRÉSORERIE ────────────────────────────────── */}
       {ndfConfig?.instructions && (

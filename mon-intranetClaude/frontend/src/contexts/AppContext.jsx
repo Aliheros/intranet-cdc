@@ -1,22 +1,60 @@
 // src/contexts/AppContext.jsx
 // État UI global : navigation, toasts, boîte de confirmation, modales, panneau notifs.
 // Aucune dépendance aux données métier — peut être consommé par DataContext.
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+// ── Helpers hash URL ──────────────────────────────────────────────────────────
+// Format : #page  ou  #pole/NomEspace  ou  #projet/NomEspace
+const encodeHash = (page, subPage) => {
+  if (!page || page === 'dashboard') return '#dashboard';
+  if (page === 'pole' || page === 'projet') return `#${page}/${encodeURIComponent(subPage || '')}`;
+  return `#${page}`;
+};
+
+const decodeHash = (hash = '') => {
+  const h = hash.replace(/^#/, '');
+  if (!h || h === 'dashboard') return { page: 'dashboard', subPage: '' };
+  const slash = h.indexOf('/');
+  if (slash !== -1) {
+    const page = h.slice(0, slash);
+    const subPage = decodeURIComponent(h.slice(slash + 1));
+    return { page, subPage };
+  }
+  return { page: h, subPage: '' };
+};
 
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
   // ─── NAVIGATION ──────────────────────────────────────────────────────────
-  const [page, setPage]         = useState('dashboard');
-  const [subPage, setSubPage]   = useState('');
+  const initialNav = decodeHash(window.location.hash);
+  const [page, setPage]         = useState(initialNav.page);
+  const [subPage, setSubPage]   = useState(initialNav.subPage);
   const [activeTab, setActiveTab] = useState('contenu');
   const [globalQuery, setGlobalQuery] = useState('');
 
-  const handleNav = (newPage, newSubPage = null) => {
+  const handleNav = (newPage, newSubPage = null, newTab = 'contenu') => {
     setPage(newPage);
     if (newSubPage !== null) setSubPage(newSubPage);
-    setActiveTab('contenu');
+    setActiveTab(newTab);
+    // Sync URL hash (sans rechargement)
+    const newHash = encodeHash(newPage, newSubPage !== null ? newSubPage : '');
+    if (window.location.hash !== newHash) {
+      window.history.pushState(null, '', newHash);
+    }
   };
+
+  // Réagit au bouton Retour/Avant du navigateur
+  useEffect(() => {
+    const onPop = () => {
+      const { page: p, subPage: sp } = decodeHash(window.location.hash);
+      setPage(p);
+      setSubPage(sp);
+      setActiveTab('contenu');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   // ─── THÈME ───────────────────────────────────────────────────────────────
   const [darkMode, setDarkMode] = useState(false);

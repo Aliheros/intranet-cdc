@@ -11,10 +11,93 @@ import { useDataContext } from '../contexts/DataContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 import { POLE_COLORS, PROJET_COLORS, typeColor } from '../data/constants';
-import { isPastDate, formatDateShort, fmtHeure, sortTasksSmart } from '../utils/utils';
-import { CheckCircle2, XCircle, AlertTriangle, Clock, Calendar, Link2, User, Users, MapPin, Lock, Pencil, Trash2, Folder, BarChart2, Receipt, FileText, GraduationCap, BookOpen, Archive, ScrollText, Pin, Star, Car, Building2, Utensils, Package, Megaphone, Lightbulb, Zap, Target, Settings, ClipboardList, ChevronRight, RotateCcw, Download, Upload, Hexagon, Phone, Mail, Send, Plus, X, Search, Umbrella, CalendarRange } from 'lucide-react';
+import { isPastDate, formatDateShort, fmtHeure, sortTasksSmart, THREE_DAYS_MS, isTaskEffectivelyDone, isTaskActiveInFeed, formatDuree } from '../utils/utils';
+import { CheckCircle2, XCircle, AlertTriangle, Clock, Calendar, Link2, User, Users, MapPin, Lock, Pencil, Trash2, Folder, BarChart2, Receipt, FileText, GraduationCap, BookOpen, Archive, ScrollText, Pin, Star, Car, Building2, Utensils, Package, Megaphone, Lightbulb, Zap, Target, Settings, ClipboardList, ChevronRight, RotateCcw, Download, Upload, Hexagon, Phone, Mail, Send, Plus, X, Search, Umbrella, CalendarRange, TrendingUp, Compass, Navigation, Info, ExternalLink, Shield } from 'lucide-react';
 import { StatusBadge, MEMBER_STATUS, TASK_STATUS, NDF_STATUS, MISSION_STATUS, ACTION_STATUS } from '../components/ui/StatusIcon';
 const SV_CAT_ICON = { Transport: Car, Hébergement: Building2, Repas: Utensils, Fournitures: Package, "Matériel pédagogique": BookOpen, Communication: Megaphone, Autre: Lightbulb };
+
+// Logos distinctifs par pôle/projet
+const EuStars = () => (
+  <svg width="30" height="30" viewBox="0 0 30 30">
+    {Array.from({ length: 12 }, (_, i) => {
+      const a = (i * 30 - 90) * Math.PI / 180;
+      const x = 15 + 10.5 * Math.cos(a), y = 15 + 10.5 * Math.sin(a);
+      return <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" fontSize="5.5" fill="rgba(255,215,0,0.95)">★</text>;
+    })}
+  </svg>
+);
+const RadioWaves = () => (
+  <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round">
+    <circle cx="13" cy="13" r="2.5" fill="#fff" stroke="none"/>
+    <path d="M7.5 13 a5.5 5.5 0 0 1 5.5-5.5" opacity="0.6"/><path d="M18.5 13 a5.5 5.5 0 0 0-5.5-5.5" opacity="0.6"/>
+    <path d="M4 13 a9 9 0 0 1 9-9" opacity="0.35"/><path d="M22 13 a9 9 0 0 0-9-9" opacity="0.35"/>
+  </svg>
+);
+// Coffre-fort stylisé (Trésorerie)
+const VaultIcon = () => (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <rect x="2" y="3" width="24" height="21" rx="3" stroke="#fff" strokeWidth="1.6"/>
+    <rect x="22" y="10" width="4" height="8" rx="1" stroke="#fff" strokeWidth="1.4"/>
+    <circle cx="13" cy="13.5" r="5.5" stroke="#fff" strokeWidth="1.5"/>
+    <circle cx="13" cy="13.5" r="2" fill="rgba(255,255,255,0.4)" stroke="#fff" strokeWidth="1.2"/>
+    {[0,72,144,216,288].map((deg,i) => {
+      const a = (deg - 90) * Math.PI / 180;
+      return <line key={i} x1={13 + 3.5*Math.cos(a)} y1={13.5 + 3.5*Math.sin(a)} x2={13 + 5.5*Math.cos(a)} y2={13.5 + 5.5*Math.sin(a)} stroke="#fff" strokeWidth="1.3"/>;
+    })}
+    <line x1="13" y1="13.5" x2="15.8" y2="10.8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>
+);
+// Balance de la justice (Plaidoyer)
+const ScalesIcon = () => (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="14" y1="3" x2="14" y2="25"/>
+    <line x1="10" y1="25" x2="18" y2="25"/>
+    <line x1="5" y1="8" x2="23" y2="8"/>
+    <circle cx="14" cy="4.5" r="1.8" fill="#fff" stroke="none"/>
+    <path d="M5 8 L3 15 L7 15 Z" fill="rgba(255,255,255,0.25)"/>
+    <line x1="3" y1="15" x2="7" y2="15"/>
+    <path d="M23 8 L21 15 L25 15 Z" fill="rgba(255,255,255,0.15)"/>
+    <line x1="21" y1="15" x2="25" y2="15"/>
+  </svg>
+);
+// Réseau humain — personnes reliées (RH)
+const HumanNetwork = () => (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <circle cx="14" cy="6" r="3" stroke="#fff" strokeWidth="1.5"/>
+    <circle cx="5" cy="20" r="2.5" stroke="#fff" strokeWidth="1.5"/>
+    <circle cx="23" cy="20" r="2.5" stroke="#fff" strokeWidth="1.5"/>
+    <line x1="14" y1="9" x2="14" y2="13" stroke="#fff" strokeWidth="1.4"/>
+    <line x1="14" y1="13" x2="6" y2="18" stroke="#fff" strokeWidth="1.4"/>
+    <line x1="14" y1="13" x2="22" y2="18" stroke="#fff" strokeWidth="1.4"/>
+    <circle cx="14" cy="13" r="1.5" fill="rgba(255,255,255,0.5)" stroke="#fff" strokeWidth="1.2"/>
+    <line x1="7.5" y1="20" x2="20.5" y2="20" stroke="#fff" strokeWidth="1.2" strokeDasharray="2 2"/>
+  </svg>
+);
+// Parcours citoyen — chemin avec étapes
+const CitizenPath = () => (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <circle cx="6" cy="22" r="2.5" fill="rgba(255,255,255,0.5)" stroke="#fff" strokeWidth="1.4"/>
+    <circle cx="14" cy="14" r="2.5" fill="rgba(255,255,255,0.7)" stroke="#fff" strokeWidth="1.4"/>
+    <circle cx="22" cy="6" r="2.5" fill="#fff" stroke="#fff" strokeWidth="1.4"/>
+    <path d="M8 20.5 Q11 17 12 15" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    <path d="M16 13 Q19 10 20 7.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+    <path d="M19 4 L22 6 L20 9" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+  </svg>
+);
+const SPACE_LOGO = {
+  // Pôles
+  "Relations Publiques":     <Users size={24} strokeWidth={1.5} color="#fff" />,
+  "Ressources Humaines":     <HumanNetwork />,
+  "Plaidoyer":               <ScalesIcon />,
+  "Etudes":                  <GraduationCap size={24} strokeWidth={1.5} color="#fff" />,
+  "Développement Financier": <TrendingUp size={24} strokeWidth={1.5} color="#fff" />,
+  "Communication":           <RadioWaves />,
+  "Trésorerie":              <VaultIcon />,
+  // Projets
+  "Europe":                  <EuStars />,
+  "Parcours Citoyen":        <CitizenPath />,
+  "Orientation":             <Compass size={24} strokeWidth={1.5} color="#fff" />,
+};
 
 // --- MODALE DES TÂCHES (100% Sécurisée avec styles intégrés) ---
 const TaskModal = ({ task, onSave, onClose, teamMembers, actions = [], directory = [] }) => {
@@ -133,6 +216,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
     actions, evenements,
     contacts, setContacts,
     getSpaceAccess, handleUpdateActionStatus,
+    seancePresences, handleRhValidation,
   } = useDataContext();
 
   const accessObj = getSpaceAccess(subPage);
@@ -150,7 +234,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   };
   const onTaskComplete = (actionId) => {
     const actionTasks = tasks.filter(t => t.actionId === actionId);
-    const allDone = actionTasks.length > 0 && actionTasks.every(t => t.status === "Terminé" || !!t.forceCompletedBy);
+    const allDone = actionTasks.length > 0 && actionTasks.every(isTaskEffectivelyDone);
     if (allDone) {
       const action = actions.find(a => a.id === actionId);
       if (action && action.statut !== "Terminée") handleUpdateActionStatus(actionId, "Terminée");
@@ -163,6 +247,9 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const [taskRequestAssignModal, setTaskRequestAssignModal] = useState(null);
   const [taskRequestSelectedAssignees, setTaskRequestSelectedAssignees] = useState([]);
   const [showTaskArchive, setShowTaskArchive] = useState(false);
+  const [taskHistSearch, setTaskHistSearch] = useState("");
+  const [taskHistSort, setTaskHistSort] = useState("recent");
+  const [taskDetailModal, setTaskDetailModal] = useState(null);
   // Filtres/tri tableau RH
   const [rhFilterPole, setRhFilterPole] = useState("Tous");
   const [rhFilterStatut, setRhFilterStatut] = useState("Tous");
@@ -181,6 +268,20 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const [rpSollModal, setRpSollModal] = useState(null); // { contactId, soll? }
   const [rpSearch, setRpSearch] = useState("");
   const [rpFilterStatut, setRpFilterStatut] = useState("Tous");
+  // RH Missions (déplacé ici pour respecter les règles des hooks)
+  const [rhmView, setRhmView] = useState("missions");
+  const [rhmExpandedMission, setRhmExpandedMission] = useState(null);
+  const [rhmSearch, setRhmSearch] = useState("");
+  const [rhmFilterType, setRhmFilterType] = useState("Tous");
+  const [rhmFilterPole, setRhmFilterPole] = useState("Tous");
+  const [rhmFilterUrgence, setRhmFilterUrgence] = useState("Tous");
+  const [rhmFilterStatut, setRhmFilterStatut] = useState("actives");
+  const [rhmFilterCandStatut, setRhmFilterCandStatut] = useState("Toutes");
+  const [rhmSearchCand, setRhmSearchCand] = useState("");
+  const [rhmRefuseModal, setRhmRefuseModal] = useState(null);
+  const [rhmRefuseReason, setRhmRefuseReason] = useState("");
+  const [rhmApplyModal, setRhmApplyModal] = useState(null);
+  const [rhmApplyMsg, setRhmApplyMsg] = useState("");
 
   // Auto-réinitialise le surlignage après 2.5 secondes
   useEffect(() => {
@@ -235,7 +336,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             fontSize: 22, fontWeight: 800, color: "#fff", textTransform: "uppercase",
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
           }}>
-            {page === "pole" ? subPage.charAt(0) : <Hexagon size={24} strokeWidth={1.5} />}
+            {SPACE_LOGO[subPage] ?? (page === "pole" ? subPage.charAt(0) : <Hexagon size={24} strokeWidth={1.5} />)}
           </div>
 
           {/* Texte */}
@@ -295,7 +396,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             if (updatedTask.id) {
               setTasks((prev) => prev.map((t) => t.id === updatedTask.id ? updatedTask : t));
               const { createdAt, updatedAt, ...data } = updatedTask;
-              api.put(`/tasks/${updatedTask.id}`, data).catch(console.error);
+              api.put(`/tasks/${updatedTask.id}`, data).catch(err => addToast(`Erreur sauvegarde tâche : ${err?.message || 'serveur'}`, 'error'));
               // Recalcul score si actionId présent (ou si actionId a changé)
               if (updatedTask.actionId) onTaskComplete?.(updatedTask.actionId);
               const prevTask = tasks.find(t => t.id === updatedTask.id);
@@ -308,7 +409,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
               const { id: _id, ...taskData } = newTask;
               api.post('/tasks', taskData).then(created => {
                 if (created?.id) setTasks(prev => prev.map(t => t.id === tempId ? { ...t, id: created.id } : t));
-              }).catch(console.error);
+              }).catch(err => addToast(`Erreur création tâche : ${err?.message || 'serveur'}`, 'error'));
               if (updatedTask.actionId) onTaskComplete?.(updatedTask.actionId);
               addToast("Nouvelle tâche créée", "success");
             }
@@ -316,6 +417,146 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
           }}
         />
       )}
+
+      {/* --- MODAL DÉTAIL TÂCHE (historique) --- */}
+      {taskDetailModal && (() => {
+        const t = taskDetailModal;
+        const assignees = t.assignees || [];
+        const done = assignees.filter(a => a.completed);
+        const pending = assignees.filter(a => !a.completed);
+        const isForcedDone = !!t.forceCompletedBy;
+        const pct = assignees.length > 0 ? Math.round((done.length / assignees.length) * 100) : (t.status === "Terminé" ? 100 : 0);
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "taskModalOverlay 0.2s ease" }} onClick={() => setTaskDetailModal(null)}>
+            <div style={{ background: "var(--bg-surface)", borderRadius: 16, width: "100%", maxWidth: 520, maxHeight: "85vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.3)", animation: "taskModalPanel 0.35s cubic-bezier(0.34,1.56,0.64,1)" }} onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {(() => {
+                    const isDoneTask = isTaskEffectivelyDone(t);
+                    const now2 = new Date(); now2.setHours(0,0,0,0);
+                    const dl2 = t.deadline ? new Date(t.deadline + "T00:00:00") : null;
+                    const days2 = dl2 ? Math.ceil((dl2 - now2) / 86400000) : null;
+                    const isRetardTask = !isDoneTask && days2 !== null && days2 < 0;
+                    const isUrgentTask = !isDoneTask && days2 !== null && days2 >= 0 && days2 <= 3;
+                    const statusColor = isDoneTask ? "#16a34a" : isRetardTask ? "#e63946" : isUrgentTask ? "#d97706" : "#1a56db";
+                    const statusLabel = isDoneTask ? "Tâche terminée" : isRetardTask ? "En retard" : isUrgentTask ? `Urgent — J-${days2}` : t.status || "En cours";
+                    const StatusIcon = isDoneTask ? CheckCircle2 : isRetardTask ? AlertTriangle : isUrgentTask ? Clock : Zap;
+                    return (
+                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: statusColor, marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
+                        <StatusIcon size={10} strokeWidth={2}/> {statusLabel}
+                      </div>
+                    );
+                  })()}
+                  <div style={{ fontSize: 17, fontWeight: 800, color: "var(--text-base)", lineHeight: 1.3, textDecoration: isTaskEffectivelyDone(t) ? "line-through" : "none", textDecorationColor: "rgba(22,163,74,0.4)" }}>{t.text}</div>
+                </div>
+                <button onClick={() => setTaskDetailModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4, display: "flex" }}><X size={16}/></button>
+              </div>
+
+              <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 18 }}>
+                {/* Description */}
+                {t.description && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6 }}>Description</div>
+                    <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.6, background: "var(--bg-alt)", borderRadius: 8, padding: "10px 12px" }}>{t.description}</div>
+                  </div>
+                )}
+
+                {/* Progression */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>Progression des validations</div>
+                  <div style={{ height: 6, background: "var(--bg-alt)", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
+                    <div style={{ height: "100%", width: `${pct}%`, background: "#16a34a", borderRadius: 3 }}/>
+                  </div>
+                  {assignees.length > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {assignees.map((a, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: 7, background: a.completed ? "rgba(22,163,74,0.07)" : "var(--bg-hover)", border: `1px solid ${a.completed ? "rgba(22,163,74,0.2)" : "var(--border-light)"}`, animation: "taskDetailRow 0.25s ease both", animationDelay: `${0.15 + i * 0.06}s` }}>
+                          <div style={{ width: 26, height: 26, borderRadius: "50%", background: a.completed ? "rgba(22,163,74,0.15)" : "var(--bg-alt)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: a.completed ? "#16a34a" : "var(--text-muted)", flexShrink: 0 }}>
+                            {a.completed ? <CheckCircle2 size={13} strokeWidth={2} color="#16a34a"/> : (a.name || "?").charAt(0).toUpperCase()}
+                          </div>
+                          <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "var(--text-base)" }}>{a.name || "—"}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: a.completed ? "rgba(22,163,74,0.1)" : "var(--bg-alt)", color: a.completed ? "#16a34a" : "var(--text-muted)" }}>
+                            {a.completed ? "Validé ✓" : "En attente"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Aucun assigné enregistré.</div>
+                  )}
+                  {isForcedDone && (
+                    <div style={{ marginTop: 8, fontSize: 11, color: "#16a34a", fontStyle: "italic", display: "flex", alignItems: "center", gap: 4 }}>
+                      <CheckCircle2 size={11} strokeWidth={2}/> Complétée manuellement par <strong>{t.forceCompletedBy}</strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Métadonnées */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {[
+                    { label: "Créée par", value: t.createdBy || "—" },
+                    { label: "Espace", value: t.space || "—" },
+                    { label: "Deadline", value: t.deadline ? formatDateShort(t.deadline) : "—" },
+                    { label: "Cycle", value: t.cycle || "—" },
+                    { label: "Terminée le", value: t.completedAt ? formatDateShort(t.completedAt.split("T")[0]) : "—" },
+                    { label: "Verrouillée", value: t.lockedBy ? `Oui (${t.lockedBy})` : "Non" },
+                  ].map(({ label, value }, i) => (
+                    <div key={label} style={{ background: "var(--bg-alt)", borderRadius: 8, padding: "10px 12px", animation: "taskDetailRow 0.25s ease both", animationDelay: `${0.25 + i * 0.05}s` }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 3 }}>{label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-base)" }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Liens de navigation */}
+                {(() => {
+                  const linkedAction = t.actionId ? actions.find(a => a.id === t.actionId) : null;
+                  const linkedEvent  = linkedAction
+                    ? evenements.find(e => e.actionId === linkedAction.id)
+                    : null;
+
+                  if (!linkedAction && !linkedEvent) return null;
+                  return (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>Liens rapides</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {linkedAction && (
+                          <button
+                            onClick={() => { setTaskDetailModal(null); navigate("actions"); setHighlightedActionId(linkedAction.id); setTimeout(() => setHighlightedActionId(null), 3000); }}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.2)", borderRadius: 8, cursor: "pointer", textAlign: "left", animation: "taskDetailRow 0.25s ease both", animationDelay: "0.3s" }}
+                          >
+                            <ClipboardList size={14} strokeWidth={1.8} color="#16a34a" style={{ flexShrink: 0 }}/>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#16a34a", marginBottom: 1 }}>Action liée</div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{linkedAction.etablissement} — {linkedAction.type}</div>
+                            </div>
+                            <ExternalLink size={11} strokeWidth={1.8} color="#16a34a" style={{ flexShrink: 0 }}/>
+                          </button>
+                        )}
+                        {linkedEvent && (
+                          <button
+                            onClick={() => { setTaskDetailModal(null); navigate("coordination"); setActiveEventId(linkedEvent.id); setHighlightedEventId(linkedEvent.id); setTimeout(() => setHighlightedEventId(null), 3000); }}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "rgba(26,86,219,0.06)", border: "1px solid rgba(26,86,219,0.15)", borderRadius: 8, cursor: "pointer", textAlign: "left", animation: "taskDetailRow 0.25s ease both", animationDelay: "0.36s" }}
+                          >
+                            <Calendar size={14} strokeWidth={1.8} color="#1a56db" style={{ flexShrink: 0 }}/>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: "#1a56db", marginBottom: 1 }}>Événement lié</div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{linkedEvent.titre}</div>
+                              {linkedEvent.date && <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{formatDateShort(linkedEvent.date)}</div>}
+                            </div>
+                            <ExternalLink size={11} strokeWidth={1.8} color="#1a56db" style={{ flexShrink: 0 }}/>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* --- ONGLET PRINCIPAL : CONTENU (TÂCHES, ÉQUIPE, MUR, DOCS) --- */}
       {activeTab === "contenu" && (
@@ -328,12 +569,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             {(() => {
               const spaceTasksRaw = tasks.filter(t => t.space === subPage && (activeCycle === "Toutes" || t.cycle === activeCycle));
 
-              const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-              const activeTasks = spaceTasksRaw.filter(t => {
-                if (t.status !== "Terminé") return true;
-                if (!t.completedAt) return true; // pas de date → garde visible
-                return (Date.now() - new Date(t.completedAt).getTime()) < ONE_WEEK_MS;
-              });
+              const activeTasks = spaceTasksRaw.filter(isTaskActiveInFeed);
 
               const sortedActiveTasks = sortTasksSmart(activeTasks);
 
@@ -386,7 +622,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                     onClick={() => {
                                       const newLock = isLocked ? null : currentUser.nom;
                                       setTasks((prev) => prev.map((x) => x.id === t.id ? { ...x, lockedBy: newLock } : x));
-                                      api.put(`/tasks/${t.id}`, { lockedBy: newLock }).catch(console.error);
+                                      api.put(`/tasks/${t.id}`, { lockedBy: newLock }).catch(err => addToast(`Erreur verrou : ${err?.message || 'serveur'}`, 'error'));
                                       addToast(isLocked ? "Tâche déverrouillée" : "Tâche verrouillée", "success");
                                     }}
                                     style={{
@@ -404,9 +640,12 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                     disabled={isLocked && acc !== "edit"}
                                     onChange={(e) => {
                                       const val = e.target.checked ? currentUser.nom : null;
-                                      setTasks((prev) => prev.map((x) => x.id === t.id ? { ...x, forceCompletedBy: val } : x));
-                                      api.put(`/tasks/${t.id}`, { forceCompletedBy: val }).catch(console.error);
-                                      addToast(e.target.checked ? "Tâche marquée comme complétée" : "Complétion forcée annulée", "success");
+                                      const now = e.target.checked ? new Date().toISOString() : null;
+                                      // completedAt enregistré pour déclencher la règle des 3 jours
+                                      const update = { forceCompletedBy: val, ...(now ? { completedAt: now } : {}) };
+                                      setTasks((prev) => prev.map((x) => x.id === t.id ? { ...x, ...update } : x));
+                                      api.put(`/tasks/${t.id}`, update).catch(err => addToast(`Erreur validation : ${err?.message || 'serveur'}`, 'error'));
+                                      addToast(e.target.checked ? "Tâche complétée — archivage dans 3 jours" : "Complétion annulée", "success");
                                     }}
                                     style={{ marginTop: 2, cursor: "pointer", accentColor: "#16a34a" }}
                                     title="Forcer la complétion de la tâche"
@@ -420,17 +659,19 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                               </div>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                              <span style={{ cursor: "pointer", color: "var(--text-muted)", display:"inline-flex" }} onClick={() => setTaskDetailModal({ ...t, assignees: assigneesList })} title="Voir le détail"><Info size={12} strokeWidth={1.8}/></span>
                               {(acc === "edit" || myAssignement) && !isLocked && (
                                 <span style={{ cursor: "pointer", color: "var(--text-muted)", display:"inline-flex" }} onClick={() => setTaskModal({ ...t, assignees: assigneesList })} title="Modifier"><Pencil size={12} strokeWidth={1.8}/></span>
                               )}
                               {canManageSpace && !isFullyCompleted && !isLocked && (
                                 <span
                                   style={{ cursor: "pointer", color: "var(--text-muted)", display:"inline-flex" }}
-                                  title="Archiver (marquer terminé)"
+                                  title="Archiver immédiatement"
                                   onClick={() => {
                                     const now = new Date().toISOString();
-                                    setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: "Terminé", completedAt: now } : x));
-                                    api.put(`/tasks/${t.id}`, { ...t, assignees: assigneesList, status: "Terminé", completedAt: now }).catch(console.error);
+                                    // manuallyArchived → disparition immédiate du fil actif
+                                    setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: "Terminé", completedAt: now, manuallyArchived: true } : x));
+                                    api.put(`/tasks/${t.id}`, { ...t, assignees: assigneesList, status: "Terminé", completedAt: now, manuallyArchived: true }).catch(err => addToast(`Erreur archivage : ${err?.message || 'serveur'}`, 'error'));
                                     if (t.actionId) onTaskComplete?.(t.actionId);
                                     setShowTaskArchive(true);
                                     addToast("Tâche archivée");
@@ -445,7 +686,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                   title="Supprimer définitivement"
                                   onClick={() => requestConfirm(`Supprimer définitivement la tâche "${t.text}" ?`, () => {
                                     setTasks(prev => prev.filter(x => x.id !== t.id));
-                                    api.delete(`/tasks/${t.id}`).catch(console.error);
+                                    api.delete(`/tasks/${t.id}`).catch(err => addToast(`Erreur suppression : ${err?.message || 'serveur'}`, 'error'));
                                     if (t.actionId) onTaskComplete?.(t.actionId);
                                     addToast("Tâche supprimée");
                                   })}
@@ -457,6 +698,12 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                           </div>
 
                           {t.description && <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 6, marginLeft: 24, lineHeight: 1.5 }}>{t.description}</div>}
+
+                          {isForcedGlobalComplete && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, marginLeft: 24, fontSize: 11, color: "#16a34a", fontStyle: "italic" }}>
+                              <CheckCircle2 size={11} strokeWidth={2}/> Complétée par le responsable
+                            </div>
+                          )}
 
                           {t.actionId && (() => {
                             const relatedAction = actions?.find(a => a.id === t.actionId);
@@ -512,7 +759,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                             const now = new Date().toISOString();
                                             const newStatus = allDone ? "Terminé" : (x.status === "Terminé" ? "En cours" : x.status);
                                             const update = { assignees: newAssignees, status: newStatus, ...(allDone ? { completedAt: now } : { completedAt: null }) };
-                                            api.put(`/tasks/${t.id}`, update).catch(console.error);
+                                            api.put(`/tasks/${t.id}`, update).catch(err => addToast(`Erreur validation : ${err?.message || 'serveur'}`, 'error'));
                                             if (allDone && t.actionId) onTaskComplete?.(t.actionId);
                                             return { ...x, ...update };
                                           } return x;
@@ -522,11 +769,6 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                     >
                                       {myAssignement.completed ? "Annuler" : <span style={{display:"inline-flex",alignItems:"center",gap:4}}><CheckCircle2 size={11} strokeWidth={1.8}/> Valider</span>}
                                     </button>
-                                  )}
-                                  {isForcedGlobalComplete && !isCreator && (
-                                    <span style={{ fontSize: 9, color: "#16a34a", fontStyle: "italic", marginLeft: 8 }}>
-                                      <span style={{display:"inline-flex",alignItems:"center",gap:4}}><CheckCircle2 size={9} strokeWidth={1.8}/> Complétée par le responsable</span>
-                                    </span>
                                   )}
                                   {isLocked && !isCreator && (
                                     <span style={{ fontSize: 9, color: "#d97706", fontStyle: "italic", marginLeft: 8 }}>
@@ -542,53 +784,105 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                     })}
                   </div>
 
-                  {/* TOGGLE ARCHIVE */}
+                  {/* ── HISTORIQUE DES TÂCHES (dropdown) ── */}
                   {(() => {
-                    const archivedTasks = spaceTasksRaw
-                      .filter(t => t.status === "Terminé" && t.completedAt && (Date.now() - new Date(t.completedAt).getTime()) >= ONE_WEEK_MS)
-                      .sort((a, b) => new Date(b.completedAt || 0) - new Date(a.completedAt || 0));
-                    if (archivedTasks.length === 0) return null;
+                    const allDone = tasks.filter(t => {
+                      if (t.space !== subPage) return false;
+                      if (activeCycle !== "Toutes" && t.cycle !== activeCycle) return false;
+                      return !isTaskActiveInFeed(t) && isTaskEffectivelyDone(t);
+                    });
+                    if (allDone.length === 0) return null;
+
+                    const histFiltered = allDone.filter(t => {
+                      if (!taskHistSearch) return true;
+                      const q = taskHistSearch.toLowerCase();
+                      return (t.text || "").toLowerCase().includes(q) ||
+                        (t.assignees || []).some(a => (a.name || "").toLowerCase().includes(q)) ||
+                        (t.createdBy || "").toLowerCase().includes(q);
+                    });
+
+                    const histSorted = (() => {
+                      if (taskHistSort === "recent")   return [...histFiltered].sort((a, b) => new Date(b.completedAt || b.updatedAt || 0) - new Date(a.completedAt || a.updatedAt || 0));
+                      if (taskHistSort === "oldest")   return [...histFiltered].sort((a, b) => new Date(a.completedAt || a.updatedAt || 0) - new Date(b.completedAt || b.updatedAt || 0));
+                      if (taskHistSort === "az")       return [...histFiltered].sort((a, b) => (a.text || "").localeCompare(b.text || ""));
+                      if (taskHistSort === "assignee") return [...histFiltered].sort((a, b) => ((a.assignees?.[0]?.name) || "").localeCompare((b.assignees?.[0]?.name) || ""));
+                      return histFiltered;
+                    })();
+
                     return (
-                      <div style={{ marginTop: 8 }}>
+                      <div style={{ marginTop: 12, borderTop: "1px solid var(--border-light)", paddingTop: 10 }}>
+                        {/* Bouton toggle */}
                         <button
                           onClick={() => setShowTaskArchive(v => !v)}
-                          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "6px 0", width: "100%" }}
+                          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "var(--text-muted)", padding: "4px 0", width: "100%" }}
                         >
                           <ScrollText size={11} strokeWidth={1.8}/>
-                          Historique ({archivedTasks.length} tâche{archivedTasks.length > 1 ? "s" : ""} terminée{archivedTasks.length > 1 ? "s" : ""})
+                          Historique — {allDone.length} tâche{allDone.length > 1 ? "s" : ""} terminée{allDone.length > 1 ? "s" : ""}
                           <span style={{ marginLeft: "auto", fontSize: 10 }}>{showTaskArchive ? "▲" : "▼"}</span>
                         </button>
+
                         {showTaskArchive && (
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--border-light)" }}>
-                            {archivedTasks.map(t => (
-                              <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", opacity: 0.65, padding: "10px 14px", background: "var(--bg-hover)", borderRadius: 8, border: "1px solid var(--border-light)" }}>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 12, textDecoration: "line-through", color: "var(--text-base)", fontWeight: 500 }}>{t.text}</div>
-                                  <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
-                                    <User size={9} strokeWidth={1.8}/> {(t.assignees || []).map(a => a.name).join(", ") || "Équipe"}
-                                  </div>
-                                </div>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                                  <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-dim)", background: "var(--bg-alt)", padding: "3px 8px", borderRadius: 6 }}>
-                                    Archivée le {t.completedAt ? formatDateShort(t.completedAt.split("T")[0]) : "—"}
+                          <div style={{ marginTop: 10 }}>
+                            {/* Barre recherche + tri */}
+                            <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                              <input
+                                className="form-input"
+                                placeholder="Rechercher…"
+                                value={taskHistSearch}
+                                onChange={e => setTaskHistSearch(e.target.value)}
+                                style={{ flex: "1 1 auto", minWidth: 0, padding: "5px 10px", fontSize: 11 }}
+                              />
+                              <select
+                                className="form-select"
+                                value={taskHistSort}
+                                onChange={e => setTaskHistSort(e.target.value)}
+                                style={{ width: "auto", fontSize: 11, padding: "5px 8px" }}
+                              >
+                                <option value="recent">Récentes</option>
+                                <option value="oldest">Plus anciennes</option>
+                                <option value="az">A → Z</option>
+                                <option value="assignee">Par assigné</option>
+                              </select>
+                            </div>
+
+                            {/* Liste */}
+                            {histSorted.length === 0 && <div className="empty" style={{ fontSize: 11, padding: "8px 0" }}>Aucun résultat.</div>}
+                            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                              {histSorted.map(t => (
+                                <div key={t.id} onClick={() => setTaskDetailModal(t)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: "var(--bg-hover)", borderRadius: 8, border: "1px solid var(--border-light)", borderLeft: "3px solid #16a34a", opacity: 0.72, cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={e => e.currentTarget.style.opacity = "1"} onMouseLeave={e => e.currentTarget.style.opacity = "0.72"}>
+                                  <CheckCircle2 size={13} strokeWidth={1.8} color="#16a34a" style={{ flexShrink: 0 }} />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 12, textDecoration: "line-through", color: "var(--text-base)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.text || "—"}</div>
+                                    <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                      {(t.assignees || []).length > 0 && (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                          <User size={9} strokeWidth={1.8}/> {t.assignees.map(a => (a.name || "").split(" ")[0]).filter(Boolean).join(", ")}
+                                        </span>
+                                      )}
+                                      {t.completedAt && (
+                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                          <CheckCircle2 size={9} strokeWidth={1.8} color="#16a34a"/> {formatDateShort(t.completedAt.split("T")[0])}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                   {canManageSpace && (
                                     <span
-                                      style={{ cursor: "pointer", color: "#e63946", display:"inline-flex" }}
+                                      style={{ cursor: "pointer", color: "#e63946", display: "inline-flex", flexShrink: 0 }}
                                       title="Supprimer définitivement"
-                                      onClick={() => requestConfirm(`Supprimer définitivement la tâche "${t.text}" ?`, () => {
+                                      onClick={e => { e.stopPropagation(); requestConfirm(`Supprimer définitivement "${t.text}" ?`, () => {
                                         setTasks(prev => prev.filter(x => x.id !== t.id));
-                                        api.delete(`/tasks/${t.id}`).catch(console.error);
+                                        api.delete(`/tasks/${t.id}`).catch(err => addToast(`Erreur suppression : ${err?.message || 'serveur'}`, 'error'));
                                         if (t.actionId) onTaskComplete?.(t.actionId);
                                         addToast("Tâche supprimée");
-                                      })}
+                                      }); }}
                                     >
                                       <Trash2 size={11} strokeWidth={1.8}/>
                                     </span>
                                   )}
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -888,6 +1182,171 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
       )}
 
       {/* --- ONGLET CORBEILLE --- */}
+      {/* ─── ONGLET HISTORIQUE DES TÂCHES (supprimé, remplacé par dropdown inline) ─── */}
+      {false && (() => {
+        const allSpaceTasks = tasks.filter(t => t.space === subPage);
+
+        // Tri intelligent : actives en haut (par urgence/statut), terminées en bas (par date complétion)
+        const activeTasks = allSpaceTasks.filter(t => t.status !== "Terminé");
+        const doneTasks   = allSpaceTasks.filter(t => t.status === "Terminé");
+
+        const sortedActive = sortTasksSmart(activeTasks);
+        const sortedDone   = (() => {
+          const filtered = doneTasks.filter(t => {
+            if (!taskHistSearch) return true;
+            const q = taskHistSearch.toLowerCase();
+            return (t.text || "").toLowerCase().includes(q) ||
+              (t.assignees || []).some(a => (a.name || "").toLowerCase().includes(q)) ||
+              (t.createdBy || "").toLowerCase().includes(q);
+          });
+          if (taskHistSort === "recent")    return [...filtered].sort((a, b) => new Date(b.completedAt || b.updatedAt || 0) - new Date(a.completedAt || a.updatedAt || 0));
+          if (taskHistSort === "oldest")    return [...filtered].sort((a, b) => new Date(a.completedAt || a.updatedAt || 0) - new Date(b.completedAt || b.updatedAt || 0));
+          if (taskHistSort === "az")        return [...filtered].sort((a, b) => (a.text || "").localeCompare(b.text || ""));
+          if (taskHistSort === "assignee")  return [...filtered].sort((a, b) => ((a.assignees?.[0]?.name) || "").localeCompare((b.assignees?.[0]?.name) || ""));
+          return filtered;
+        })();
+
+        const allFiltered = sortedActive.filter(t => {
+          if (!taskHistSearch) return true;
+          const q = taskHistSearch.toLowerCase();
+          return (t.text || "").toLowerCase().includes(q) ||
+            (t.assignees || []).some(a => (a.name || "").toLowerCase().includes(q)) ||
+            (t.createdBy || "").toLowerCase().includes(q);
+        });
+
+        return (
+          <div style={{ maxWidth: 860 }}>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 4 }}>Tâches</div>
+              <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "var(--font-display)" }}>Historique des tâches</div>
+              <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
+                {activeTasks.length} en cours · {doneTasks.length} terminée{doneTasks.length !== 1 ? "s" : ""} · {allSpaceTasks.length} total
+              </div>
+            </div>
+
+            {/* Toolbar */}
+            <div className="toolbar-wrap" style={{ marginBottom: 20 }}>
+              <input
+                className="form-input"
+                placeholder="Rechercher une tâche, un assigné…"
+                value={taskHistSearch}
+                onChange={e => setTaskHistSearch(e.target.value)}
+                style={{ flex: "1 1 auto", maxWidth: 280 }}
+              />
+              <div className="toolbar-group" style={{ marginLeft: "auto", borderLeft: "1px solid var(--border-light)", paddingLeft: 12 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Trier&nbsp;:</span>
+                <select className="form-select" style={{ width: "auto", border: "none", background: "transparent", paddingLeft: 4 }} value={taskHistSort} onChange={e => setTaskHistSort(e.target.value)}>
+                  <option value="recent">Terminées récemment</option>
+                  <option value="oldest">Terminées (plus ancien)</option>
+                  <option value="az">Alphabétique</option>
+                  <option value="assignee">Par assigné</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Tâches actives */}
+            {allFiltered.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Zap size={11} strokeWidth={2} color="#d97706" /> En cours ({allFiltered.length})
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {allFiltered.map(t => {
+                    const isDone   = isTaskEffectivelyDone(t);
+                    const now      = new Date(); now.setHours(0,0,0,0);
+                    const dl       = t.deadline ? new Date(t.deadline + "T00:00:00") : null;
+                    const daysLeft = dl ? Math.ceil((dl - now) / 86400000) : null;
+                    const isRetard = daysLeft !== null && daysLeft < 0 && !isDone;
+                    const isUrgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 3 && !isDone;
+                    const pct = (t.assignees || []).length > 0
+                      ? Math.round((t.assignees.filter(a => a.completed).length / t.assignees.length) * 100)
+                      : (isDone ? 100 : 0);
+                    const barColor = isDone ? "#16a34a" : isRetard ? "#e63946" : isUrgent ? "#d97706" : "#1a56db";
+
+                    return (
+                      <div key={t.id} style={{ padding: "12px 16px", background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderLeft: `3px solid ${barColor}`, borderRadius: 8, display: "flex", alignItems: "flex-start", gap: 12 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: isDone ? "#16a34a" : "var(--text-base)", textDecoration: isDone ? "line-through" : "none", marginBottom: 4 }}>{t.text || "—"}</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                            {(t.assignees || []).length > 0 && (
+                              <span style={{ fontSize: 10, color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                <User size={9} strokeWidth={1.8}/> {t.assignees.map(a => (a.name || "").split(" ")[0]).filter(Boolean).join(", ")}
+                              </span>
+                            )}
+                            {t.deadline && (
+                              <span style={{ fontSize: 10, color: isRetard ? "#e63946" : isUrgent ? "#d97706" : "var(--text-muted)", fontWeight: isRetard || isUrgent ? 700 : 400, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                <CalendarRange size={9} strokeWidth={1.8}/>
+                                {isRetard ? `Retard ${Math.abs(daysLeft)}j` : daysLeft === 0 ? "Aujourd'hui" : daysLeft === 1 ? "Demain" : `J-${daysLeft}`}
+                              </span>
+                            )}
+                            {t.status && <span style={{ fontSize: 9, padding: "1px 7px", borderRadius: 10, background: isDone ? "rgba(22,163,74,0.1)" : "var(--bg-alt)", color: isDone ? "#16a34a" : "var(--text-dim)", fontWeight: 600 }}>{t.status}</span>}
+                          </div>
+                          {(t.assignees || []).length > 0 && (
+                            <div style={{ marginTop: 6, height: 3, background: "var(--bg-alt)", borderRadius: 2, overflow: "hidden" }}>
+                              <div style={{ height: "100%", width: `${pct}%`, background: barColor, borderRadius: 2, transition: "width 0.3s" }} />
+                            </div>
+                          )}
+                        </div>
+                        {(acc === "edit" || (t.assignees || []).some(a => a.name === currentUser.nom)) && (
+                          <span style={{ cursor: "pointer", color: "var(--text-muted)", display: "inline-flex", flexShrink: 0 }} onClick={() => setTaskModal({ ...t, assignees: t.assignees || [] })} title="Modifier">
+                            <Pencil size={12} strokeWidth={1.8}/>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Tâches terminées */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                <CheckCircle2 size={11} strokeWidth={2} color="#16a34a" /> Terminées ({sortedDone.length})
+              </div>
+              {sortedDone.length === 0 && (
+                <div className="empty" style={{ padding: "20px 0" }}>{taskHistSearch ? "Aucun résultat." : "Aucune tâche terminée."}</div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {sortedDone.map(t => (
+                  <div key={t.id} style={{ padding: "10px 16px", background: "var(--bg-hover)", border: "1px solid var(--border-light)", borderLeft: "3px solid #16a34a", borderRadius: 8, display: "flex", alignItems: "center", gap: 12, opacity: 0.75 }}>
+                    <CheckCircle2 size={14} strokeWidth={1.8} color="#16a34a" style={{ flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: "var(--text-base)", textDecoration: "line-through", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.text || "—"}</div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                        {(t.assignees || []).length > 0 && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                            <User size={9} strokeWidth={1.8}/> {t.assignees.map(a => (a.name || "").split(" ")[0]).filter(Boolean).join(", ")}
+                          </span>
+                        )}
+                        {t.completedAt && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                            <CheckCircle2 size={9} strokeWidth={1.8} color="#16a34a"/> {formatDateShort(t.completedAt.split("T")[0])}
+                          </span>
+                        )}
+                        {t.createdBy && <span>par {t.createdBy}</span>}
+                      </div>
+                    </div>
+                    {canManageSpace && (
+                      <span
+                        style={{ cursor: "pointer", color: "#e63946", display: "inline-flex", flexShrink: 0 }}
+                        title="Supprimer définitivement"
+                        onClick={() => requestConfirm(`Supprimer définitivement "${t.text}" ?`, () => {
+                          setTasks(prev => prev.filter(x => x.id !== t.id));
+                          api.delete(`/tasks/${t.id}`).catch(err => addToast(`Erreur suppression : ${err?.message || 'serveur'}`, 'error'));
+                        })}
+                      >
+                        <Trash2 size={11} strokeWidth={1.8}/>
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {activeTab === "corbeille" && (() => {
         const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace('/api', '');
         const commonTrash = spaceTrash.filter(t => t.type === "doc");
@@ -919,7 +1378,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                 </a>
               )}
               <button
-                onClick={() => restoreTrash(item)}
+                onClick={() => restoreTrash(item.id)}
                 style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "#16a34a", cursor: "pointer" }}
               >
                 <RotateCcw size={11} strokeWidth={1.8}/> Restaurer
@@ -1473,6 +1932,81 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
               </div>{/* end scroll wrapper */}
             </div>
 
+            {/* ── Validation RH des heures bénévoles ── */}
+            {(() => {
+              const pendingRh = seancePresences.filter(p => p.resp1Statut !== 'en_attente' && p.rhStatut === 'en_attente');
+              const recentRh  = seancePresences.filter(p => p.rhStatut !== 'en_attente').slice(-20);
+              if (pendingRh.length === 0 && recentRh.length === 0) return null;
+              return (
+                <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
+                  <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border-light)", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Shield size={13} strokeWidth={1.8} color="#1a56db" /> Validation RH — Heures bénévoles
+                    {pendingRh.length > 0 && (
+                      <span style={{ padding: "2px 8px", borderRadius: 10, background: "rgba(217,119,6,0.1)", color: "#d97706", fontSize: 11, fontWeight: 700 }}>
+                        {pendingRh.length} en attente
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ padding: 16 }}>
+                    {pendingRh.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
+                          À valider (avis responsable reçu)
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                          {pendingRh.map(p => (
+                            <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--bg-hover)", border: "1px solid var(--border-light)", borderRadius: 8, padding: "10px 14px", flexWrap: "wrap" }}>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-base)" }}>{p.membreNom}</div>
+                                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                                  {p.evenementTitre} · {new Date(p.seanceDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · {formatDuree(p.heures)}
+                                </div>
+                                <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: p.resp1Statut === 'present' ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.08)", color: p.resp1Statut === 'present' ? "#16a34a" : "#dc2626" }}>
+                                  {p.resp1Statut === 'present' ? <CheckCircle2 size={10} strokeWidth={2} /> : <XCircle size={10} strokeWidth={2} />}
+                                  Avis responsable : {p.resp1Statut === 'present' ? 'Présent' : 'Absent'}
+                                  {p.resp1Par && <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>— {p.resp1Par}</span>}
+                                </div>
+                              </div>
+                              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                                <button
+                                  style={{ fontSize: 11, padding: "5px 12px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", color: "#16a34a", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                                  onClick={() => handleRhValidation(p.id, 'confirme')}
+                                ><CheckCircle2 size={11} strokeWidth={2} /> Confirmer {formatDuree(p.heures)}</button>
+                                <button
+                                  style={{ fontSize: 11, padding: "5px 12px", borderRadius: 6, background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", color: "#dc2626", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                                  onClick={() => handleRhValidation(p.id, 'rejete')}
+                                ><XCircle size={11} strokeWidth={2} /> Rejeter</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {recentRh.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
+                          Historique récent
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                          {recentRh.map(p => (
+                            <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "7px 12px", borderRadius: 6, background: p.rhStatut === 'confirme' ? "rgba(22,163,74,0.04)" : "rgba(220,38,38,0.04)", border: `1px solid ${p.rhStatut === 'confirme' ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.1)"}` }}>
+                              <div>
+                                <span style={{ fontSize: 12, fontWeight: 600 }}>{p.membreNom}</span>
+                                <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{p.evenementTitre} · {formatDuree(p.heures)}</span>
+                              </div>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: p.rhStatut === 'confirme' ? "#16a34a" : "#dc2626", display: "flex", alignItems: "center", gap: 3 }}>
+                                {p.rhStatut === 'confirme' ? <><CheckCircle2 size={10} /> Validées</> : <><XCircle size={10} /> Rejetées</>}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* ── Congés ── */}
             {(() => {
               const today = new Date().toISOString().split('T')[0];
@@ -1574,20 +2108,20 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
       {activeTab === "rh_missions" && subPage === "Ressources Humaines" && (() => {
         const isRH = hasPower("view_rh") || (currentUser?.pole === "Ressources Humaines");
 
-        // ── State ──────────────────────────────────────────────────────────────
-        const [mView, setMView] = React.useState("missions");
-        const [expandedMission, setExpandedMission] = React.useState(null);
-        const [search, setSearch] = React.useState("");
-        const [filterType, setFilterType] = React.useState("Tous");
-        const [filterPole, setFilterPole] = React.useState("Tous");
-        const [filterUrgence, setFilterUrgence] = React.useState("Tous");
-        const [filterStatut, setFilterStatut] = React.useState("actives");
-        const [filterCandStatut, setFilterCandStatut] = React.useState("Toutes");
-        const [searchCand, setSearchCand] = React.useState("");
-        const [refuseModal, setRefuseModal] = React.useState(null);
-        const [refuseReason, setRefuseReason] = React.useState("");
-        const [applyModal, setApplyModal] = React.useState(null);
-        const [applyMsg, setApplyMsg] = React.useState("");
+        // ── Aliases locaux (state déclaré en haut du composant) ───────────────
+        const mView = rhmView, setMView = setRhmView;
+        const expandedMission = rhmExpandedMission, setExpandedMission = setRhmExpandedMission;
+        const search = rhmSearch, setSearch = setRhmSearch;
+        const filterType = rhmFilterType, setFilterType = setRhmFilterType;
+        const filterPole = rhmFilterPole, setFilterPole = setRhmFilterPole;
+        const filterUrgence = rhmFilterUrgence, setFilterUrgence = setRhmFilterUrgence;
+        const filterStatut = rhmFilterStatut, setFilterStatut = setRhmFilterStatut;
+        const filterCandStatut = rhmFilterCandStatut, setFilterCandStatut = setRhmFilterCandStatut;
+        const searchCand = rhmSearchCand, setSearchCand = setRhmSearchCand;
+        const refuseModal = rhmRefuseModal, setRefuseModal = setRhmRefuseModal;
+        const refuseReason = rhmRefuseReason, setRefuseReason = setRhmRefuseReason;
+        const applyModal = rhmApplyModal, setApplyModal = setRhmApplyModal;
+        const applyMsg = rhmApplyMsg, setApplyMsg = setRhmApplyMsg;
 
         // ── Data ───────────────────────────────────────────────────────────────
         const URGENCE_COLOR = { haute: "#e63946", normale: "#d97706", basse: "#16a34a" };

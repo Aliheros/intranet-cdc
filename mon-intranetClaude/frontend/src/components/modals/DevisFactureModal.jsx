@@ -64,6 +64,7 @@ export default function DevisFactureModal({
   addToast,
   categories = [],
   devisFactures = [],
+  dfConfig = {},
 }) {
   const { isClosing, handleClose } = useModalClose(onClose);
 
@@ -203,6 +204,9 @@ export default function DevisFactureModal({
     ? categories.map(c => c.label)
     : ['Formation', 'Matériel', 'Prestation', 'Communication', 'Transport', 'Hébergement', 'Autre'];
 
+  const justifRequired = dfConfig.requireJustificatif !== false;
+  const delaiTraitement = dfConfig.delaiTraitement ? Number(dfConfig.delaiTraitement) : null;
+
   const isManaging = canManage && !isNew && df?.statut !== 'Brouillon';
   const pubComments = commentaires.filter(c => !c.isInternal);
 
@@ -241,6 +245,20 @@ export default function DevisFactureModal({
 
         {/* ── Scrollable body ── */}
         <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto', flex: 1 }}>
+
+          {/* Instructions trésorerie (création ou brouillon) */}
+          {isEditable && dfConfig.instructions && (
+            <div style={{ padding: '10px 14px', background: 'rgba(26,86,219,0.05)', border: '1px solid rgba(26,86,219,0.15)', borderRadius: 8, fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.6 }}>
+              {dfConfig.instructions}
+            </div>
+          )}
+          {/* SLA de traitement (création) */}
+          {isNew && delaiTraitement && (
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <CheckCircle2 size={11} strokeWidth={2} color="#16a34a" />
+              Délai de traitement cible : <strong style={{ color: 'var(--text-dim)' }}>{delaiTraitement} jour{delaiTraitement > 1 ? 's' : ''}</strong>
+            </div>
+          )}
 
           {/* Derniers dépôts (création) */}
           {isNew && mesDepots.length > 0 && (
@@ -418,7 +436,9 @@ export default function DevisFactureModal({
           {!isManaging && (
             <div>
               <label className="form-label">
-                Documents joints{isEditable && <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}> (au moins 1 requis pour soumettre)</span>}
+                Documents joints
+                {isEditable && justifRequired && <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}> (obligatoire)</span>}
+                {isEditable && !justifRequired && <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}> (optionnel)</span>}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {fichiers.map((f, i) => (
@@ -649,10 +669,10 @@ export default function DevisFactureModal({
                   onClick={() => run(() => onSaveDraft(form), 'Brouillon sauvegardé.')}>
                   Brouillon
                 </button>
-                <button className="btn-primary" disabled={saving || uploading || !validBase || (!fichiers.length && !form._pendingFile)}
+                <button className="btn-primary" disabled={saving || uploading || !validBase || (justifRequired && !fichiers.length && !form._pendingFile)}
                   onClick={() => {
                     if (!validBase) { addToast?.('Tous les champs requis sont obligatoires.', 'error'); return; }
-                    if (!fichiers.length && !form._pendingFile) { addToast?.('Un justificatif est obligatoire.', 'error'); return; }
+                    if (justifRequired && !fichiers.length && !form._pendingFile) { addToast?.('Un fichier joint est obligatoire.', 'error'); return; }
                     run(() => onDepose({ ...form }), 'Demande transmise à la trésorerie.');
                   }}
                   style={{ background: '#0f2d5e', transition: 'opacity 0.15s' }}>
@@ -667,7 +687,7 @@ export default function DevisFactureModal({
                   onClick={() => run(() => onUpdate(df.id, form), 'Brouillon mis à jour.')}>
                   {saving ? 'Enreg…' : 'Enregistrer'}
                 </button>
-                <button className="btn-primary" disabled={saving || !validBase || fichiers.length === 0}
+                <button className="btn-primary" disabled={saving || !validBase || (justifRequired && fichiers.length === 0)}
                   onClick={() => run(() => onSoumettre(df.id), 'Demande transmise à la trésorerie.')}
                   style={{ background: '#0f2d5e' }}>
                   <Upload size={13} strokeWidth={2} /> Soumettre
