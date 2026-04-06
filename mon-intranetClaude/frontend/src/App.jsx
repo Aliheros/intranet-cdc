@@ -86,7 +86,7 @@ function App() {
   const {
     directory, setDirectory,
     actions, setActions, evenements, setEvenements, tasks,
-    missions, notesFrais, volunteerHours,
+    missions, notesFrais, volunteerHours, seancePresences,
     spaceTeams, spaceInfos, taskRequests, setTaskRequests,
     notifs, notifLues, setNotifLues, cycles,
     isAdmin, isBureau, hasPower,
@@ -516,7 +516,7 @@ function App() {
 
       {showMyProfileModal && <MyProfileModal currentUser={currentUser} directory={directory} setDirectory={setDirectory} addToast={addToast} onClose={() => setShowMyProfileModal(false)} updateCurrentUser={updateCurrentUser} />}
 
-      {rhProfileModal && <RHProfileModal member={directory.find(m => m.id === rhProfileModal?.id) || rhProfileModal} onClose={() => setRhProfileModal(null)} volunteerHours={volunteerHours} missions={missions} tasks={tasks} actions={actions} currentUser={currentUser} directory={directory} setDirectory={setDirectory} addToast={addToast} />}
+      {rhProfileModal && <RHProfileModal member={directory.find(m => m.id === rhProfileModal?.id) || rhProfileModal} onClose={() => setRhProfileModal(null)} volunteerHours={volunteerHours} seancePresences={seancePresences} evenements={evenements} missions={missions} tasks={tasks} actions={actions} currentUser={currentUser} directory={directory} setDirectory={setDirectory} addToast={addToast} />}
 
       {transactionModal && <TransactionModal isOpen={true} transaction={transactionModal} onChange={setTransactionModal} onSave={() => handleSaveTransaction(transactionModal)} onClose={() => setTransactionModal(null)} devisFactures={devisFactures} />}
 

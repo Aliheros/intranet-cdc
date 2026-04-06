@@ -856,30 +856,6 @@ export function DataProvider({ children }) {
           });
         });
       }
-      const newlyBilanned = seances.filter(s => {
-        if (!s.bilan?.trim()) return false;
-        const prev = prevSeances.find(p => p.id === s.id);
-        return !prev?.bilan?.trim();
-      });
-      if (newlyBilanned.length > 0) {
-        const equipe = finalForm.equipe || [];
-        newlyBilanned.forEach(s => {
-          const hours = s.duree ? parseFloat(s.duree) : 2;
-          equipe.forEach(memberNom => {
-            const alreadyExists = volunteerHours.some(h => h.eventId === form.id && h.user === memberNom && h.date === s.date);
-            if (!alreadyExists) {
-              const memberProfile = directory.find(m => m.nom === memberNom);
-              const hourData = { eventId: form.id, actionId: finalForm.actionId || null, type: 'Événement', hours, date: s.date, status: 'En attente', user: memberNom, userId: memberProfile?.id || null };
-              const tempId = Date.now() + Math.random();
-              setVolunteerHours(prev => [...prev, { id: tempId, ...hourData }]);
-              api.post('/hours', hourData).then(created => {
-                if (created?.id) setVolunteerHours(prev => prev.map(h => h.id === tempId ? { ...h, id: created.id } : h));
-              }).catch(console.error);
-            }
-          });
-        });
-        if (newlyBilanned.length > 0) addToast(`Heures bénévoles créées pour ${(finalForm.equipe || []).length} membre(s)`);
-      }
       addToast(finalForm.statut === 'Terminée' && form.statut !== 'Terminée' ? 'Événement terminé — toutes les séances ont un bilan' : 'Événement mis à jour');
     } else {
       const newEventId = Date.now();
@@ -958,16 +934,6 @@ export function DataProvider({ children }) {
         const isIn = (s.inscrits || []).includes(currentUser.nom);
         return { ...s, inscrits: isIn ? s.inscrits.filter(n => n !== currentUser.nom) : [...(s.inscrits || []), currentUser.nom] };
       }) }).catch(console.error);
-    }
-    if (targetEvent && targetSeance && !isCurrentlyIn) {
-      const hours = targetSeance.duree ? parseFloat(targetSeance.duree) : 2;
-      const hourData = { eventId, actionId: targetEvent.actionId || null, type: 'Événement', hours, date: targetSeance.date, status: 'En attente', user: currentUser.nom, userId: currentUser.id };
-      const tempId = Date.now();
-      setVolunteerHours(prev => [...prev, { id: tempId, ...hourData }]);
-      api.post('/hours', hourData).then(created => {
-        if (created?.id) setVolunteerHours(prev => prev.map(h => h.id === tempId ? { ...h, id: created.id } : h));
-      }).catch(console.error);
-      addToast(`+${hours}h bénévoles ajoutées en attente de validation`);
     }
   };
 

@@ -8,7 +8,7 @@ import api from '../../api/apiClient';
 
 import { useModalClose } from '../../hooks/useModalClose';
 
-export default function RHProfileModal({ member, onClose, volunteerHours = [], missions = [], tasks = [], actions = [], currentUser, directory, setDirectory, addToast }) {
+export default function RHProfileModal({ member, onClose, volunteerHours = [], seancePresences = [], evenements = [], missions = [], tasks = [], actions = [], currentUser, directory, setDirectory, addToast }) {
   const { isClosing, handleClose } = useModalClose(onClose);
   const [tab, setTab] = useState("profil"); // "profil" | "activite" | "notes"
   const [newComment, setNewComment] = useState("");
@@ -23,6 +23,38 @@ export default function RHProfileModal({ member, onClose, volunteerHours = [], m
 
   const poleColor = POLE_COLORS[member.pole] || "#1a56db";
   const commentairesRH = member.commentairesRH || [];
+
+  // ── Cross-reference: enrich each hour with seancePresence context ────────
+  const enrichHour = (h) => {
+    // Validated hours are linked via hourId on SeancePresence
+    const presence = seancePresences.find(p => p.hourId === h.id && p.membreNom === member.nom);
+    if (presence) {
+      const ev = evenements.find(e => e.id === presence.evenementId);
+      const seance = ev ? (ev.seances || []).find(s => String(s.id) === String(presence.seanceId)) : null;
+      const action = ev?.actionId ? actions.find(a => a.id === ev.actionId) : null;
+      return {
+        ...h,
+        _evenementTitre: presence.evenementTitre || ev?.titre || null,
+        _seanceLibelle: seance?.libelle || null,
+        _seanceDate: presence.seanceDate || null,
+        _actionEtablissement: action?.etablissement || null,
+        _resp1Par: presence.resp1Par || null,
+        _rhPar: presence.rhPar || null,
+      };
+    }
+    // Fallback: try to match by eventId
+    const ev = h.eventId ? evenements.find(e => e.id === h.eventId) : null;
+    const action = ev?.actionId ? actions.find(a => a.id === ev.actionId) : null;
+    return {
+      ...h,
+      _evenementTitre: ev?.titre || null,
+      _actionEtablissement: action?.etablissement || null,
+      _seanceLibelle: null,
+      _seanceDate: null,
+      _resp1Par: null,
+      _rhPar: null,
+    };
+  };
 
   // ── Stats ────────────────────────────────────────────────────────────────
   const memberHours = volunteerHours.filter(h => h.user === member.nom);
@@ -349,16 +381,53 @@ export default function RHProfileModal({ member, onClose, volunteerHours = [], m
               {memberHours.length > 0 && (
                 <div>
                   <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8, letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 5 }}><Clock size={10} strokeWidth={1.8} /> Journal des heures ({memberHours.length})</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 220, overflowY: "auto" }}>
-                    {[...memberHours].sort((a, b) => (b.date || "").localeCompare(a.date || "")).map((h, i) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 12px", background: "var(--bg-alt)", borderRadius: 6, border: "1px solid var(--border-light)", borderLeft: `3px solid ${h.status === "Validé" ? "#1a56db" : "#d97706"}`, fontSize: 11 }}>
-                        <span style={{ fontWeight: 800, color: h.status === "Validé" ? "#1a56db" : "#d97706", minWidth: 34, flexShrink: 0 }}>{h.hours}h</span>
-                        <span style={{ flex: 1, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.type || "Bénévolat"}</span>
-                        {h.description && <span style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>{h.description}</span>}
-                        <span style={{ fontSize: 10, color: "var(--text-muted)", flexShrink: 0 }}>{fmtDateShort(h.date)}</span>
-                        <span style={{ fontSize: 9, padding: "2px 7px", borderRadius: 10, background: h.status === "Validé" ? "rgba(26,86,219,0.1)" : "rgba(217,119,6,0.12)", color: h.status === "Validé" ? "#1a56db" : "#d97706", fontWeight: 700, flexShrink: 0 }}>{h.status}</span>
-                      </div>
-                    ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
+                    {[...memberHours].sort((a, b) => (b.date || "").localeCompare(a.date || "")).map((h, i) => {
+                      const eh = enrichHour(h);
+                      const isValidated = h.status === "Validé";
+                      const borderColor = isValidated ? "#1a56db" : "#d97706";
+                      return (
+                        <div key={i} style={{ padding: "9px 12px", background: "var(--bg-alt)", borderRadius: 8, border: "1px solid var(--border-light)", borderLeft: `3px solid ${borderColor}`, fontSize: 11 }}>
+                          {/* Ligne principale */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontWeight: 800, color: borderColor, minWidth: 34, flexShrink: 0 }}>{h.hours}h</span>
+                            <span style={{ flex: 1, fontWeight: 600, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {eh._evenementTitre || h.type || "Bénévolat"}
+                            </span>
+                            <span style={{ fontSize: 10, color: "var(--text-muted)", flexShrink: 0 }}>{fmtDateShort(eh._seanceDate || h.date)}</span>
+                            <span style={{ fontSize: 9, padding: "2px 7px", borderRadius: 10, background: isValidated ? "rgba(26,86,219,0.1)" : "rgba(217,119,6,0.12)", color: borderColor, fontWeight: 700, flexShrink: 0 }}>{h.status}</span>
+                          </div>
+                          {/* Détails contextuels */}
+                          <div style={{ marginTop: 5, display: "flex", flexWrap: "wrap", gap: "3px 10px" }}>
+                            {eh._actionEtablissement && (
+                              <span style={{ fontSize: 10, color: "#0891b2", display: "flex", alignItems: "center", gap: 3 }}>
+                                <ClipboardList size={9} strokeWidth={1.8} /> {eh._actionEtablissement}
+                              </span>
+                            )}
+                            {eh._seanceLibelle && (
+                              <span style={{ fontSize: 10, color: "var(--text-dim)", display: "flex", alignItems: "center", gap: 3 }}>
+                                <CalendarRange size={9} strokeWidth={1.8} /> Séance : {eh._seanceLibelle}
+                              </span>
+                            )}
+                            {!eh._seanceLibelle && eh._seanceDate && (
+                              <span style={{ fontSize: 10, color: "var(--text-dim)", display: "flex", alignItems: "center", gap: 3 }}>
+                                <CalendarRange size={9} strokeWidth={1.8} /> Séance du {fmtDateShort(eh._seanceDate)}
+                              </span>
+                            )}
+                            {eh._resp1Par && (
+                              <span style={{ fontSize: 10, color: "#16a34a", display: "flex", alignItems: "center", gap: 3 }}>
+                                <CheckCircle2 size={9} strokeWidth={1.8} /> Responsable : {eh._resp1Par}
+                              </span>
+                            )}
+                            {eh._rhPar && (
+                              <span style={{ fontSize: 10, color: "#7c3aed", display: "flex", alignItems: "center", gap: 3 }}>
+                                <Award size={9} strokeWidth={1.8} /> RH : {eh._rhPar}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
