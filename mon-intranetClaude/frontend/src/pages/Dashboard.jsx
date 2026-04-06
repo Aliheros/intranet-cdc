@@ -35,6 +35,7 @@ const Dashboard = () => {
     faqs,
     handleApplyMission: onApplyMission,
     notifs, notifLues, setNotifLues,
+    seancePresences,
   } = useDataContext();
   const onEndCongeNow = handleEndCongeNow;
   const onEditConge = ({ id, ...updatedConge }) => handleEditConge(id, updatedConge);
@@ -107,6 +108,24 @@ const Dashboard = () => {
   const pendingHorsBudget = (transactions || []).filter(t => t.horseBudget && !t.horseBudgetApprovedBy);
   const recentFaqs     = (faqs || []).slice(0, 3);
 
+  // ─── Séances à valider (responsableNom = moi, séance passée, présences en_attente) ──
+  const seancesAValider = [];
+  evenements.filter(e => !e.isArchived && e.responsableNom === currentUser.nom).forEach(e => {
+    (e.seances || []).forEach(s => {
+      if (!s.date || s.annulee) return;
+      const [y, m, d] = s.date.split("-");
+      const sd = new Date(+y, +m - 1, +d);
+      if (sd >= today) return; // séance pas encore passée
+      const presences = (seancePresences || []).filter(
+        p => p.evenementId === e.id && p.seanceId === String(s.id) && p.resp1Statut === 'en_attente'
+      );
+      if (presences.length > 0) {
+        seancesAValider.push({ event: e, seance: s, seanceDate: sd, count: presences.length });
+      }
+    });
+  });
+  seancesAValider.sort((a, b) => a.seanceDate - b.seanceDate);
+
   return (
     <>
       <div className="eyebrow">Cité des Chances</div>
@@ -157,7 +176,49 @@ const Dashboard = () => {
             <div className="kd" style={{ color: '#e63946' }}>dépense(s) à approuver</div>
           </div>
         )}
+        {seancesAValider.length > 0 && (
+          <div className="kc" style={{ cursor: 'pointer', borderColor: '#d97706' }} onClick={() => navigate('coordination')}>
+            <div className="kl">Présences à valider</div>
+            <div className="kv" style={{ color: '#d97706' }}>{seancesAValider.length}</div>
+            <div className="kd" style={{ color: '#d97706' }}>séance{seancesAValider.length > 1 ? 's' : ''} en attente</div>
+          </div>
+        )}
       </div>
+
+      {/* ── ALERTE PRÉSENCES À VALIDER ────────────────────────────────────── */}
+      {seancesAValider.length > 0 && (
+        <div style={{ marginBottom: 20, padding: "14px 18px", background: "rgba(217,119,6,0.06)", border: "1px solid rgba(217,119,6,0.3)", borderLeft: "4px solid #d97706", borderRadius: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <Clock size={15} strokeWidth={2} color="#d97706" />
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#92400e" }}>
+              Présences à valider — vous êtes responsable de {seancesAValider.length} séance{seancesAValider.length > 1 ? 's' : ''} passée{seancesAValider.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {seancesAValider.map(({ event, seance, seanceDate, count }, i) => (
+              <div key={i}
+                onClick={() => { navigate('coordination'); setActiveEventId(event.id); }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "var(--bg-surface)", border: "1px solid rgba(217,119,6,0.2)", borderRadius: 8, cursor: "pointer", gap: 10 }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 12, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {seance.titre || event.titre}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                    {event.titre} · {seanceDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#d97706", background: "rgba(217,119,6,0.12)", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  {count} présence{count > 1 ? 's' : ''} à confirmer
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 11, color: "var(--text-muted)" }}>
+            Rendez-vous dans <span style={{ color: "#1a56db", cursor: "pointer", fontWeight: 600 }} onClick={() => navigate('coordination')}>Coordination</span> pour valider les présences.
+          </div>
+        </div>
+      )}
 
       {recentFaqs.length > 0 && (
         <div className="sc" style={{ marginBottom: 16, cursor: 'pointer' }} onClick={() => navigate('faq')}>

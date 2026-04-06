@@ -243,6 +243,10 @@ const ActionModal = ({ action, onClose, onSave, directory, cycles, onTaskRequest
                 />
               </div>
             </div>
+            <div>
+              <label className="form-label">Adresse précise <span style={{ fontSize: 10, fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>(optionnel — ex: 15 rue de la Paix)</span></label>
+              <input type="text" className="form-input" value={form.adresse || ""} onChange={(e) => set("adresse", e.target.value)} placeholder="Ex: 15 rue de la Paix, Bâtiment A" />
+            </div>
             <div style={{ marginTop: 2 }}>
               <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <School size={12} strokeWidth={1.8} /> Label REP

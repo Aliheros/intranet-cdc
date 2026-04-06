@@ -331,15 +331,31 @@ const Coordination = () => {
             transition: "background 0.5s ease, box-shadow 0.6s ease, border-top 0.4s ease",
           }}>
             {canManageEvent && (
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                <button className="btn-secondary" onClick={() => toggleArchiveEvent(activeEvent)}>
-                  <span style={{display:"inline-flex",alignItems:"center",gap:5}}><Archive size={12} strokeWidth={1.8}/> {activeEvent.isArchived ? "Désarchiver" : "Archiver"}</span>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginBottom: 16 }}>
+                <button
+                  title={activeEvent.isArchived ? "Désarchiver l'événement" : "Archiver l'événement"}
+                  onClick={() => toggleArchiveEvent(activeEvent)}
+                  style={{ background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-dim)", flexShrink: 0 }}
+                >
+                  <Archive size={14} strokeWidth={1.8} />
                 </button>
                 {canEditEvent && (
-                  <button className="btn-secondary" onClick={() => setEventModal({ ...activeEvent })}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Pencil size={12} strokeWidth={1.8}/> Modifier</span></button>
+                  <button
+                    title="Modifier l'événement"
+                    onClick={() => setEventModal({ ...activeEvent })}
+                    style={{ background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-dim)", flexShrink: 0 }}
+                  >
+                    <Pencil size={14} strokeWidth={1.8} />
+                  </button>
                 )}
                 {!activeEvent.isArchived && (
-                  <button className="btn-secondary" style={{ color: "#e63946" }} onClick={() => deleteEvent(activeEvent)}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Trash2 size={12} strokeWidth={1.8}/> Supprimer</span></button>
+                  <button
+                    title="Supprimer l'événement"
+                    onClick={() => deleteEvent(activeEvent)}
+                    style={{ background: "rgba(230,57,70,0.06)", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#e63946", flexShrink: 0 }}
+                  >
+                    <Trash2 size={14} strokeWidth={1.8} />
+                  </button>
                 )}
               </div>
             )}
@@ -721,6 +737,15 @@ const Coordination = () => {
               <div onClick={() => { navigate("actions"); setHighlightedActionId(linkedAction.id); setTimeout(() => setHighlightedActionId(null), 3000); }} style={{ marginTop: 20, background: "linear-gradient(135deg, #0f2d5e, #1a56db)", borderRadius: 12, padding: "18px 22px", cursor: "pointer" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 6, display:"flex", alignItems:"center", gap:4 }}><Link2 size={9} strokeWidth={1.8}/> Lié au suivi terrain</div>
                 <div style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 800, color: "#fff" }}>{linkedAction.etablissement}</div>
+                {(linkedAction.adresse || linkedAction.ville) && (
+                  <div style={{ marginTop: 6, display: "flex", alignItems: "flex-start", gap: 5 }}>
+                    <span style={{ fontSize: 9, flexShrink: 0, marginTop: 1 }}>📍</span>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.85)", lineHeight: 1.4 }}>
+                      {linkedAction.adresse && <div style={{ fontWeight: 600 }}>{linkedAction.adresse}</div>}
+                      {linkedAction.ville && <div style={{ opacity: 0.75 }}>{linkedAction.ville}{linkedAction.departement ? ` (${linkedAction.departement})` : ''}</div>}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -30,30 +30,39 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 function pickActionFields(body) {
-  const {
-    type, etablissement, ville, contact_nom, contact_email, contact_tel,
-    date_debut, date_fin, cycle, responsables, statut, notes, projet,
-    beneficiaires, type_classe, heures, isArchived, budgetPrevisionnel,
-    depensesReelles, transactionId, polesNotifies, checklist, bilan,
-    timeline, completionScore,
-  } = body;
-  return {
-    type, etablissement, ville: ville || null, contact_nom, contact_email, contact_tel,
-    date_debut: date_debut || null, date_fin: date_fin || null, cycle,
-    responsables: responsables || [],
-    statut: statut || 'Planifiée',
-    notes, projet, beneficiaires: parseInt(beneficiaires, 10) || 0,
-    type_classe, heures: parseFloat(heures) || 0,
-    isArchived: isArchived || false,
-    budgetPrevisionnel: budgetPrevisionnel || 0,
-    depensesReelles: depensesReelles || 0,
-    transactionId: transactionId || null,
-    polesNotifies: polesNotifies || [],
-    checklist: checklist || null,
-    bilan: bilan || null,
-    timeline: timeline || [],
-    completionScore: completionScore || 0,
-  };
+  // Only include fields that are explicitly present in the body.
+  // Using `'field' in body` prevents partial updates (e.g. status-only)
+  // from wiping optional fields like ville, date_debut, date_fin.
+  const data = {};
+
+  if ('type'               in body) data.type               = body.type;
+  if ('etablissement'      in body) data.etablissement      = body.etablissement;
+  if ('ville'              in body) data.ville              = body.ville || null;
+  if ('adresse'            in body) data.adresse            = body.adresse || null;
+  if ('contact_nom'        in body) data.contact_nom        = body.contact_nom;
+  if ('contact_email'      in body) data.contact_email      = body.contact_email;
+  if ('contact_tel'        in body) data.contact_tel        = body.contact_tel;
+  if ('date_debut'         in body) data.date_debut         = body.date_debut || null;
+  if ('date_fin'           in body) data.date_fin           = body.date_fin || null;
+  if ('cycle'              in body) data.cycle              = body.cycle;
+  if ('responsables'       in body) data.responsables       = body.responsables || [];
+  if ('statut'             in body) data.statut             = body.statut || 'Planifiée';
+  if ('notes'              in body) data.notes              = body.notes;
+  if ('projet'             in body) data.projet             = body.projet;
+  if ('beneficiaires'      in body) data.beneficiaires      = parseInt(body.beneficiaires, 10) || 0;
+  if ('type_classe'        in body) data.type_classe        = body.type_classe;
+  if ('heures'             in body) data.heures             = parseFloat(body.heures) || 0;
+  if ('isArchived'         in body) data.isArchived         = body.isArchived || false;
+  if ('budgetPrevisionnel' in body) data.budgetPrevisionnel = body.budgetPrevisionnel || 0;
+  if ('depensesReelles'    in body) data.depensesReelles    = body.depensesReelles || 0;
+  if ('transactionId'      in body) data.transactionId      = body.transactionId || null;
+  if ('polesNotifies'      in body) data.polesNotifies      = body.polesNotifies || [];
+  if ('checklist'          in body) data.checklist          = body.checklist || null;
+  if ('bilan'              in body) data.bilan              = body.bilan || null;
+  if ('timeline'           in body) data.timeline           = body.timeline || [];
+  if ('completionScore'    in body) data.completionScore    = body.completionScore || 0;
+
+  return data;
 }
 
 router.post('/', requireAuth, async (req, res) => {

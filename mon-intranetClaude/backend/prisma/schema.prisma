@@ -71,6 +71,7 @@ model Action {
   type                String
   etablissement       String
   ville               String?
+  adresse             String?   // Adresse précise (ex: "15 rue de la Paix")
   contact_nom         String?
   contact_email       String?
   contact_tel         String?

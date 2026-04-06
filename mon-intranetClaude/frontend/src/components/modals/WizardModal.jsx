@@ -157,7 +157,7 @@ const CHECKLIST_TEMPLATE = {
 };
 
 const EMPTY_FORM = {
-  type: "", etablissement: "", ville: "", departement: "", labelRep: "", titreCoordination: "",
+  type: "", etablissement: "", ville: "", departement: "", labelRep: "", adresse: "", titreCoordination: "",
   contact_nom: "", contact_email: "", contact_tel: "",
   date_debut: "", date_fin: "",
   responsables: [], statut: "Planifiée",
@@ -325,6 +325,12 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
                     style={{ cursor: "not-allowed", opacity: 0.6 }}
                   />
                 </div>
+              </div>
+
+              {/* Ligne 3b : Adresse précise */}
+              <div>
+                <label className="form-label">Adresse précise <span style={{ fontSize: 10, fontWeight: 400, color: "rgba(255,255,255,0.4)", marginLeft: 6 }}>(optionnel — ex: 15 rue de la Paix)</span></label>
+                <input className="form-input" value={form.adresse} onChange={e => set("adresse", e.target.value)} placeholder="Ex: 15 rue de la Paix, Bâtiment A" />
               </div>
 
               {/* Ligne 4 : Label REP */}

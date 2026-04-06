@@ -1,7 +1,7 @@
 # CLAUDE.md — Intranet CDC (Cité des Chances)
 
 Référence permanente du projet. À lire en début de session pour avoir le contexte complet.
-Mise à jour : 2026-04-05
+Mise à jour : 2026-04-06
 
 ---
 
@@ -83,6 +83,7 @@ isDeleted
 ### Action
 ```
 id, etablissement, ville, departement, labelRep, institutionSimulee
+adresse            ← adresse précise (ex: "15 rue de la Paix") — optionnel
 type, type_classe, statut, cycle
 date_debut, date_fin
 responsables[]   (noms, pas IDs)
@@ -180,6 +181,7 @@ notes
 ### Dashboard
 - Vue synthétique : KPIs cycle en cours, alertes, dernières actions/tâches
 - Raccourcis vers les sections principales
+- **Alerte présences** : si `responsableNom === currentUser` sur un événement et qu'une séance passée a des présences `en_attente`, une KPI card orange + un bloc d'alerte s'affichent avec lien vers Coordination
 
 ### ActionTracker — Suivi des actions
 - **Création** via `WizardModal` (4 étapes guidées) :
@@ -191,6 +193,7 @@ notes
 - **Champs géographiques** :
   - `ville` : `GeoSearch` (API `geo.api.gouv.fr`) — recherche par nom ou code postal
   - `departement` : auto-rempli depuis GeoSearch, **toujours en lecture seule** (`<input readOnly>`), affiché `"93 — Seine-Saint-Denis"` via `DEPT_NAMES`
+  - `adresse` : champ texte libre optionnel après ville/département (ex: "15 rue de la Paix, Bâtiment A") — affiché dans le raccourci terrain de Coordination
   - `labelRep` : Hors REP / REP / REP+
   - `institutionSimulee` : visible uniquement si `type` contient "Simulation" ou "COP"
 - **Cycle** : assigné automatiquement = `cycles[0]`, jamais exposé à l'utilisateur dans le wizard
@@ -446,3 +449,9 @@ isTaskEffectivelyDone(t)        // true si terminé ou tous assignés validés
 13. **responsableNom doit être dans equipe** : validé backend. Le sélecteur dans Coordination propose uniquement les membres de `responsables[]` (pas toute l'équipe).
 
 14. **NDF config** : accessible uniquement depuis Admin. Le bouton config a été retiré de NoteFrais.jsx.
+
+15. **pickActionFields est partial-update safe** : la fonction backend utilise `'field' in body` pour n'inclure que les champs présents dans la requête. En particulier `ville`, `date_debut`, `date_fin` ne sont inclus que si présents — évite que des mises à jour partielles (ex: status-only) écrasent ces champs avec `null` dans Prisma.
+
+16. **Boutons archive/modifier/supprimer en Coordination** : rendu sous forme d'icônes carrées 32×32px avec `title` tooltip. Pas de texte.
+
+17. **Notification présences Dashboard** : calculée client-side depuis `seancePresences` + `evenements`. Cherche les séances passées non annulées où `event.responsableNom === currentUser.nom` et il existe des présences `resp1Statut === 'en_attente'`. Affiche KPI card orange + bloc alerte avec liste des séances concernées.
