@@ -207,25 +207,36 @@ const Analytics = () => {
     }
   };
 
-  // ── Alertes intelligentes ───────────────────────────────────────────────────
+  // ── Alertes stratégiques (KPIs structurels, pas d'opérationnel individuel) ──
   const alerts = [];
+
+  // Taux annulation séances — signal de qualité terrain
   if (annulationRate >= 25)
-    alerts.push({ level: 'warn', msg: `Taux d'annulation élevé : ${annulationRate}% des séances annulées.` });
+    alerts.push({ level: 'warn', msg: `Taux d'annulation séances : ${annulationRate}% — impacte la régularité du programme.` });
+
+  // Budget — signal financier critique
   if (budgetAlerts.some(p => budgetExecution[p]?.pct >= 100))
-    alerts.push({ level: 'danger', msg: `Dépassement budgétaire : ${budgetAlerts.filter(p => budgetExecution[p]?.pct >= 100).join(', ')}.` });
+    alerts.push({ level: 'danger', msg: `Dépassement budgétaire sur : ${budgetAlerts.filter(p => budgetExecution[p]?.pct >= 100).join(', ')}.` });
   else if (budgetAlerts.length > 0)
-    alerts.push({ level: 'warn', msg: `Budget ≥ 80% : ${budgetAlerts.join(', ')}.` });
-  const overloadedMembers = Object.entries(taskLoadByPerson).filter(([, c]) => c >= 6).map(([n]) => n);
-  if (overloadedMembers.length > 0)
-    alerts.push({ level: 'warn', msg: `Surcharge tâches : ${overloadedMembers.join(', ')} (6+ tâches actives).` });
+    alerts.push({ level: 'warn', msg: `Consommation budget ≥ 80% sur : ${budgetAlerts.join(', ')}.` });
+
+  // NDF backlog — signal de gestion financière
   const ndfPending = notesFrais.filter(n => ['Soumise', 'En vérification'].includes(n.statut));
   if (ndfPending.length >= 5)
-    alerts.push({ level: 'info', msg: `${ndfPending.length} NDF en attente de traitement.` });
+    alerts.push({ level: 'info', msg: `Backlog NDF : ${ndfPending.length} dossiers en attente de traitement — montant potentiel ${ndfPending.reduce((s,n) => s+(Number(n.montant)||0),0).toFixed(0)}€.` });
+
+  // Taux de complétion des actions — signal programme
   const actionsEnRetard = cycleActions.filter(a =>
     a.statut !== 'Terminée' && a.statut !== 'Annulée' && a.date_fin && new Date(a.date_fin) < new Date()
   );
-  if (actionsEnRetard.length > 0)
-    alerts.push({ level: 'danger', msg: `${actionsEnRetard.length} action${actionsEnRetard.length > 1 ? 's' : ''} en retard sur la date de fin prévue.` });
+  const actionsActives = cycleActions.filter(a => a.statut !== 'Terminée' && a.statut !== 'Annulée');
+  const tauxRetard = actionsActives.length > 0 ? Math.round((actionsEnRetard.length / actionsActives.length) * 100) : 0;
+  if (tauxRetard >= 30 && actionsEnRetard.length >= 2)
+    alerts.push({ level: 'warn', msg: `${tauxRetard}% des actions en cours dépassent leur deadline (${actionsEnRetard.length} sur ${actionsActives.length}).` });
+
+  // Faible couverture bilan — signal qualité rapportage
+  if (termineeCount >= 3 && bilanWithScore.length / termineeCount < 0.5)
+    alerts.push({ level: 'info', msg: `Couverture bilan faible : ${bilanWithScore.length}/${termineeCount} actions terminées ont un bilan renseigné (${Math.round(bilanWithScore.length/termineeCount*100)}%).` });
 
   const TABS = [
     { id: 'overview',  label: 'Vue d\'ensemble', icon: BarChart2 },
