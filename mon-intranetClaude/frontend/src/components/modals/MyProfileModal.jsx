@@ -255,7 +255,7 @@ export default function MyProfileModal({ currentUser, directory, setDirectory, a
             const activeConge = conges.find(c => c.debut <= today && (!c.fin || c.fin >= today));
             const upcomingConges = conges.filter(c => c.debut > today).sort((a, b) => a.debut.localeCompare(b.debut));
             const pastConges = conges.filter(c => c.fin && c.fin < today).sort((a, b) => b.fin.localeCompare(a.fin));
-            const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+            const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
             const addConge = () => {
               if (!newConge.debut) return;

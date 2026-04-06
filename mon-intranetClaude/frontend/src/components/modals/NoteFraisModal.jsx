@@ -185,7 +185,7 @@ const NoteFraisModal = ({
                     return (
                       <div key={n.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11 }}>
                         <span style={{ color: "var(--text-muted)", whiteSpace: "nowrap", flexShrink: 0, minWidth: 60 }}>
-                          {new Date(n.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+                          {new Date(n.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                         </span>
                         <span style={{ fontWeight: 600, color: "var(--text-base)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {n.description || n.categorie}
@@ -212,7 +212,7 @@ const NoteFraisModal = ({
                 {(form.historique || []).map((h, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 11 }}>
                     <span style={{ color: "var(--text-muted)", whiteSpace: "nowrap", flexShrink: 0 }}>
-                      {new Date(h.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+                      {new Date(h.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                     </span>
                     <span style={{ padding: "1px 8px", borderRadius: 12, fontWeight: 700, background: STATUT_COLORS[h.statut]?.bg || "var(--bg-alt)", whiteSpace: "nowrap", flexShrink: 0 }}>
                       <StatusBadge map={NDF_STATUS} value={h.statut} size={10} />

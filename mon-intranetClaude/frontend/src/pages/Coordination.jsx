@@ -886,13 +886,13 @@ const Coordination = () => {
                           );
                           const allValidated = seancePresencesForSeance.length > 0 &&
                             seancePresencesForSeance.every(p => p.resp1Statut !== 'en_attente');
-                          const isCollapsed = collapsedPresences[s.id];
+                          const isCollapsed = collapsedPresences[s.id] !== false;
                           return (
                             <div style={{ marginTop: 10, borderTop: '2px solid rgba(22,163,74,0.2)', paddingTop: 10 }}>
                               {/* Header repliable */}
                               <div
                                 style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: isCollapsed ? 0 : 8, cursor: 'pointer', userSelect: 'none' }}
-                                onClick={() => setCollapsedPresences(prev => ({ ...prev, [s.id]: !prev[s.id] }))}
+                                onClick={() => setCollapsedPresences(prev => ({ ...prev, [s.id]: prev[s.id] === false ? true : false }))}
                               >
                                 <Shield size={11} strokeWidth={2} style={{ color: '#16a34a' }} />
                                 <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', flex: 1 }}>Validation des présences</span>

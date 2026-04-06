@@ -14,13 +14,14 @@ import {
 
 // ─── Composants graphiques CSS ────────────────────────────────────────────────
 
-const BarRow = ({ label, value, max, color = '#1a56db', suffix = '', small = false }) => {
+const BarRow = ({ label, value, max, color = '#1a56db', suffix = '', small = false, display }) => {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  const displayVal = display !== undefined ? display : (typeof value === 'number' && !Number.isInteger(value) ? value.toFixed(1) : value) + suffix;
   return (
     <div style={{ marginBottom: small ? 8 : 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
         <span style={{ fontSize: small ? 11 : 12, color: 'var(--text-base)', fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{label}</span>
-        <span style={{ fontSize: small ? 10 : 11, fontWeight: 700, color, flexShrink: 0 }}>{typeof value === 'number' && !Number.isInteger(value) ? value.toFixed(1) : value}{suffix}</span>
+        <span style={{ fontSize: small ? 10 : 11, fontWeight: 700, color, flexShrink: 0 }}>{displayVal}</span>
       </div>
       <div style={{ height: small ? 5 : 7, background: 'var(--border-light)', borderRadius: 4, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 4, transition: 'width 0.5s ease' }} />
@@ -353,7 +354,7 @@ const Analytics = () => {
               <div className="sc">
                 <SectionTitle icon={Clock}>Heures bénévoles par type</SectionTitle>
                 {Object.entries(hoursByType).sort(([, a], [, b]) => b - a).map(([type, h]) => (
-                  <BarRow key={type} label={type} value={h} max={totalHours} color="#0891b2" suffix="h" small />
+                  <BarRow key={type} label={type} value={h} max={totalHours} color="#0891b2" display={formatDuree(h)} small />
                 ))}
               </div>
             )}
@@ -604,7 +605,7 @@ const Analytics = () => {
               <SectionTitle icon={Clock}>Heures enregistrées par bénévole (top 10)</SectionTitle>
               {hoursRanking.length === 0 ? <EmptyState msg="Aucune heure bénévole enregistrée." /> : (
                 hoursRanking.map(([name, h]) => (
-                  <BarRow key={name} label={name} value={h} max={maxHours} color="#0891b2" suffix="h" small />
+                  <BarRow key={name} label={name} value={h} max={maxHours} color="#0891b2" display={formatDuree(h)} small />
                 ))
               )}
             </div>
@@ -653,7 +654,7 @@ const Analytics = () => {
               <div className="sc">
                 <SectionTitle icon={Layers}>Heures par type d'activité</SectionTitle>
                 {Object.entries(hoursByType).sort(([, a], [, b]) => b - a).map(([type, h]) => (
-                  <BarRow key={type} label={type} value={h} max={totalHours || 1} color="#7c3aed" suffix={`h (${totalHours > 0 ? Math.round((h / totalHours) * 100) : 0}%)`} small />
+                  <BarRow key={type} label={type} value={h} max={totalHours || 1} color="#7c3aed" display={`${formatDuree(h)} (${totalHours > 0 ? Math.round((h / totalHours) * 100) : 0}%)`} small />
                 ))}
                 {benefParHeure != null && (
                   <div style={{ marginTop: 14, padding: '10px 12px', background: 'rgba(22,163,74,0.06)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

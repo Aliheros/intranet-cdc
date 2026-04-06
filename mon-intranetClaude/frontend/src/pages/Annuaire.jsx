@@ -140,7 +140,7 @@ const MemberCard = ({ m, onClick, memberships = [], highlightPole }) => {
               const conges = Array.isArray(m.conges) ? m.conges : [];
               const active = conges.find(c => c.debut <= today && (!c.fin || c.fin >= today));
               const upcoming = conges.filter(c => c.debut > today).sort((a, b) => a.debut.localeCompare(b.debut))[0];
-              const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : null;
+              const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
               if (active) return (
                 <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(249,115,22,0.12)", color: "#f97316" }}>
                   {active.fin ? `Retour ${fmt(active.fin)}` : "Retour non défini"}

@@ -173,7 +173,7 @@ const ProfileModal = ({ isOpen, onClose, userProfile, actions = [], tasks = [], 
             const upcoming = conges.filter(c => c.debut > today).sort((a, b) => a.debut.localeCompare(b.debut));
             const past = conges.filter(c => c.fin && c.fin < today).sort((a, b) => b.fin.localeCompare(a.fin)).slice(0, 3);
             if (!active && !upcoming.length && !past.length) return null;
-            const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+            const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
             return (
               <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--border-light)" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 5 }}>

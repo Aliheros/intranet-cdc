@@ -18,7 +18,7 @@ const Dashboard = () => {
   const {
     requestConfirm, addToast, handleNav,
     setActiveEventId, highlightedTaskId, setHighlightedTaskId, setHighlightedActionId, setHighlightedEventId,
-    setNoteFraisModal,
+    setNoteFraisModal, openMemberProfile,
   } = useAppContext();
   const onNewNoteFrais = () => setNoteFraisModal({});
   const navigate = handleNav;
@@ -205,7 +205,7 @@ const Dashboard = () => {
                     {seance.titre || event.titre}
                   </div>
                   <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                    {event.titre} · {seanceDate.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
+                    {event.titre} · {seanceDate.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                   </div>
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#d97706", background: "rgba(217,119,6,0.12)", borderRadius: 6, padding: "3px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -358,6 +358,7 @@ const Dashboard = () => {
                                   <div
                                     key={a.name}
                                     title={`${a.name}${a.completed ? " ✓" : ""}`}
+                                    onClick={() => openMemberProfile(member)}
                                     style={{
                                       width: 20, height: 20, borderRadius: "50%",
                                       background: a.completed ? "#16a34a" : isAvatarUrl(member?.avatar) ? "transparent" : bg,
@@ -365,7 +366,7 @@ const Dashboard = () => {
                                       marginLeft: idx === 0 ? 0 : -6,
                                       display: "flex", alignItems: "center", justifyContent: "center",
                                       fontSize: 7, fontWeight: 700, color: "#fff",
-                                      overflow: "hidden", flexShrink: 0,
+                                      overflow: "hidden", flexShrink: 0, cursor: member ? "pointer" : "default",
                                     }}
                                   >
                                     {a.completed ? "✓" : <AvatarInner avatar={member?.avatar} nom={a.name} />}
@@ -605,7 +606,7 @@ const Dashboard = () => {
             const conges = Array.isArray(myDir?.conges) ? myDir.conges : [];
             const activeConge = conges.find(c => c.debut <= today && (!c.fin || c.fin >= today));
             const upcomingConge = conges.filter(c => c.debut > today).sort((a, b) => a.debut.localeCompare(b.debut))[0];
-            const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+            const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const openNewCongeForm = () => {
               setEditCongeId(null);
               setCongeForm({ debut: "", fin: "", motif: "" });

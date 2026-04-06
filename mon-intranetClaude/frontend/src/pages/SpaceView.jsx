@@ -200,7 +200,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
     setEditSpaceModal, setManageTeamModal, setSectionModal,
     setTransactionModal,
     setMissionModal, setNoteFraisModal, setDevisFactureModal,
-    setRhProfileModal,
+    setRhProfileModal, openMemberProfile,
   } = useAppContext();
   const {
     directory,
@@ -274,16 +274,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
       return next;
     });
   };
-  const [rhValidationCollapsed, setRhValidationCollapsedRaw] = useState(() => {
-    try { return localStorage.getItem('rh_validation_collapsed') === 'true'; } catch { return false; }
-  });
-  const setRhValidationCollapsed = (updater) => {
-    setRhValidationCollapsedRaw(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      try { localStorage.setItem('rh_validation_collapsed', String(next)); } catch {}
-      return next;
-    });
-  };
+  const [rhValidationCollapsed, setRhValidationCollapsed] = useState(true);
   // Filtres/tri NDF trésorerie
   const [ndfTab, setNdfTab] = useState("traiter");
   const [ndfSearch, setNdfSearch] = useState("");
@@ -763,7 +754,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                     {assigneesList.filter(a => findMemberByName(directory, a.name)).map((a, i) => {
                                       const m = findMemberByName(directory, a.name);
                                       return (
-                                        <div key={a.name} title={a.name} style={{
+                                        <div key={a.name} title={a.name} onClick={e => { e.stopPropagation(); if (m) openMemberProfile(m); }} style={{
                                           width: 24, height: 24, borderRadius: "50%",
                                           background: a.completed ? "#16a34a" : isAvatarUrl(m?.avatar) ? "transparent" : (m ? POLE_COLORS[m.pole] : "#0f2d5e"),
                                           color: "#fff", fontSize: 9, fontWeight: 700,
@@ -1093,7 +1084,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                     const avatarVal = memberObj ? memberObj.avatar : m.nom.charAt(0);
                     return (
                       <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "var(--bg-hover)", border: "1px solid var(--border-light)", borderRadius: 20 }}>
-                        <div style={{ width: 22, height: 22, borderRadius: "50%", background: isAvatarUrl(avatarVal) ? "transparent" : color, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                        <div onClick={() => openMemberProfile(memberObj)} style={{ width: 22, height: 22, borderRadius: "50%", background: isAvatarUrl(avatarVal) ? "transparent" : color, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", cursor: memberObj ? "pointer" : "default" }}>
                           <AvatarInner avatar={avatarVal} nom={m.nom} />
                         </div>
                         <div style={{ fontSize: 12, fontWeight: 600 }}>{m.nom}</div>
@@ -1113,7 +1104,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                     const isMe = m.auteur === currentUser.nom;
                     return (
                       <div key={m.id} className={`msg-row ${isMe ? "mine" : ""}`}>
-                        <div className="msg-av" style={{ background: isAvatarUrl(m.avatar) ? "transparent" : color, overflow: "hidden", padding: 0 }}>
+                        <div className="msg-av" onClick={() => openMemberProfile(findMemberByName(directory, m.auteur))} style={{ background: isAvatarUrl(m.avatar) ? "transparent" : color, overflow: "hidden", padding: 0, cursor: "pointer" }}>
                           <AvatarInner avatar={m.avatar} nom={m.auteur} />
                         </div>
                         <div className="msg-bubble">
@@ -1391,7 +1382,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
               </div>
               <div style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Trash2 size={9} strokeWidth={1.8}/> Supprimé par <strong>{item.deletedBy}</strong></span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Calendar size={9} strokeWidth={1.8}/> {new Date(item.deletedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Calendar size={9} strokeWidth={1.8}/> {new Date(item.deletedAt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                 {item.data.taille && <span>{item.data.taille}</span>}
               </div>
             </div>
@@ -1870,8 +1861,8 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
               {[
                 { label: "Membres actifs", val: directory.filter(m => m.statut === "Actif").length, unit: "membres", color: "#16a34a" },
                 { label: "En congé", val: directory.filter(m => { const t = new Date().toISOString().split('T')[0]; return (m.conges || []).some(c => c.debut <= t && c.fin >= t); }).length, unit: "actuellement", color: "#f97316" },
-                { label: "Heures validées", val: totalHours, unit: "h", color: "#1a56db" },
-                { label: "Heures en attente", val: pendingHours, unit: "h", color: "#d97706" },
+                { label: "Heures validées", val: formatDuree(totalHours), unit: "", color: "#1a56db" },
+                { label: "Heures en attente", val: formatDuree(pendingHours), unit: "", color: "#d97706" },
                 { label: "Missions ouvertes", val: openMissions.length, unit: "missions", color: "#7c3aed" },
                 { label: "Candidatures", val: pendingCandidatures.length, unit: "à traiter", color: "#e63946" },
               ].map((k, i) => (
@@ -1954,7 +1945,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                   >
                     {/* Membre */}
                     <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: isAvatarUrl(m.avatar) ? "transparent" : (POLE_COLORS[m.pole] || "#1a56db") + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, overflow: "hidden" }}>
+                      <div onClick={e => { e.stopPropagation(); openMemberProfile(m); }} style={{ width: 30, height: 30, borderRadius: "50%", background: isAvatarUrl(m.avatar) ? "transparent" : (POLE_COLORS[m.pole] || "#1a56db") + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, overflow: "hidden", cursor: "pointer" }}>
                         <AvatarInner avatar={m.avatar} nom={m.nom} />
                       </div>
                       <div style={{ minWidth: 0 }}>
@@ -1967,9 +1958,9 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                     {/* Pôle */}
                     <div style={{ fontSize: 11, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.pole}</div>
                     {/* Heures validées */}
-                    <div style={{ fontSize: 13, fontWeight: 800, color: m.hValidated > 0 ? "#1a56db" : "var(--text-muted)" }}>{m.hValidated}h</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: m.hValidated > 0 ? "#1a56db" : "var(--text-muted)" }}>{m.hValidated > 0 ? formatDuree(m.hValidated) : "—"}</div>
                     {/* Heures en attente */}
-                    <div style={{ fontSize: 11, color: m.hPending > 0 ? "#d97706" : "var(--text-muted)", fontWeight: m.hPending > 0 ? 700 : 400 }}>{m.hPending > 0 ? `+${m.hPending}h` : "—"}</div>
+                    <div style={{ fontSize: 11, color: m.hPending > 0 ? "#d97706" : "var(--text-muted)", fontWeight: m.hPending > 0 ? 700 : 400 }}>{m.hPending > 0 ? `+${formatDuree(m.hPending)}` : "—"}</div>
                     {/* Tâches — détail enrichi */}
                     <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
                       {m.activeTasks === 0 && m.doneTasks === 0 ? (
@@ -2106,8 +2097,8 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                         const isSeanceOpen = !rhCollapsedEvents[`pend_${evTitre}_s_${seanceKey}`];
                                         const seanceH = seanceData.presences.reduce((s, p) => s + (p.heures || 0), 0);
                                         const seanceTitle = seanceData.label
-                                          ? `${seanceData.label} — ${new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                                          : new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                                          ? `${seanceData.label} — ${new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                                          : new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                                         return (
                                           <div key={seanceKey} style={{ border: "1px solid rgba(217,119,6,0.15)", borderRadius: 6, overflow: "hidden" }}>
                                             {/* Header séance */}
@@ -2185,8 +2176,8 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                       {Object.entries(seancesMap).sort(([,a],[,b]) => (b.date||'').localeCompare(a.date||'')).map(([seanceKey, seanceData]) => {
                                         const isSeanceOpen = !rhCollapsedEvents[`hist_${evTitre}_s_${seanceKey}`];
                                         const seanceTitle = seanceData.label
-                                          ? `${seanceData.label} — ${new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                                          : new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                                          ? `${seanceData.label} — ${new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                                          : new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                                         return (
                                           <div key={seanceKey} style={{ border: "1px solid var(--border-light)", borderRadius: 6, overflow: "hidden" }}>
                                             <div
@@ -2240,8 +2231,8 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             {(() => {
               const today = new Date().toISOString().split('T')[0];
               const in60 = new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0];
-              const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-              const fmtFull = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+              const fmt = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+              const fmtFull = (d) => new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
               const membersOnLeave = directory
                 .map(m => {
                   const conges = Array.isArray(m.conges) ? m.conges : [];
@@ -2264,7 +2255,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                   <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                     {membersOnLeave.map(m => (
                       <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: "rgba(249,115,22,0.06)", border: "1px solid rgba(249,115,22,0.2)" }}>
-                        <div style={{ width: 34, height: 34, borderRadius: "50%", background: isAvatarUrl(m.avatar) ? "transparent" : "rgba(249,115,22,0.15)", color: "#f97316", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                        <div onClick={() => openMemberProfile(m)} style={{ width: 34, height: 34, borderRadius: "50%", background: isAvatarUrl(m.avatar) ? "transparent" : "rgba(249,115,22,0.15)", color: "#f97316", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", cursor: "pointer" }}>
                           <AvatarInner avatar={m.avatar} nom={m.nom} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -2283,7 +2274,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                         <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 4 }}>À venir (60 jours)</div>
                         {upcomingLeaves.map((c, i) => (
                           <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 14px", borderRadius: 10, background: "rgba(26,86,219,0.04)", border: "1px solid rgba(26,86,219,0.12)" }}>
-                            <div style={{ width: 34, height: 34, borderRadius: "50%", background: isAvatarUrl(c.member.avatar) ? "transparent" : "rgba(26,86,219,0.1)", color: "#1a56db", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                            <div onClick={() => openMemberProfile(c.member)} style={{ width: 34, height: 34, borderRadius: "50%", background: isAvatarUrl(c.member.avatar) ? "transparent" : "rgba(26,86,219,0.1)", color: "#1a56db", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", cursor: "pointer" }}>
                               <AvatarInner avatar={c.member.avatar} nom={c.member.nom} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -3267,7 +3258,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
           });
         };
 
-        const fmtDate = (str) => { if (!str) return ""; try { return new Date(str).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }); } catch { return str; } };
+        const fmtDate = (str) => { if (!str) return ""; try { return new Date(str).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }); } catch { return str; } };
 
         return (
           <div style={{ marginTop: 24 }}>

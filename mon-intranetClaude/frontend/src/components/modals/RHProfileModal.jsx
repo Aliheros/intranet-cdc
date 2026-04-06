@@ -7,6 +7,7 @@ import { X, MessageSquare, Clock, CheckCircle2, Send, Pencil, Trash2, Phone, Mai
 import api from '../../api/apiClient';
 
 import { useModalClose } from '../../hooks/useModalClose';
+import { formatDuree } from '../../utils/utils';
 
 export default function RHProfileModal({ member, onClose, volunteerHours = [], seancePresences = [], evenements = [], missions = [], tasks = [], actions = [], currentUser, directory, setDirectory, addToast }) {
   const { isClosing, handleClose } = useModalClose(onClose);
@@ -71,7 +72,7 @@ export default function RHProfileModal({ member, onClose, volunteerHours = [], s
     ...memberHours.map(h => ({
       type: "heure",
       date: h.date || "",
-      label: `${h.hours}h — ${h.type || "Bénévolat"}`,
+      label: `${formatDuree(h.hours)} — ${h.type || "Bénévolat"}`,
       sub: h.status === "Validé" ? "Validé" : "En attente",
       color: h.status === "Validé" ? "#1a56db" : "#d97706",
       icon: "clock",
@@ -159,12 +160,12 @@ export default function RHProfileModal({ member, onClose, volunteerHours = [], s
 
   const fmtDate = (iso) => {
     if (!iso) return "";
-    return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
   const fmtDateShort = (str) => {
     if (!str) return "";
-    try { return new Date(str).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }); }
+    try { return new Date(str).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }); }
     catch { return str; }
   };
 
@@ -390,7 +391,7 @@ export default function RHProfileModal({ member, onClose, volunteerHours = [], s
                         <div key={i} style={{ padding: "9px 12px", background: "var(--bg-alt)", borderRadius: 8, border: "1px solid var(--border-light)", borderLeft: `3px solid ${borderColor}`, fontSize: 11 }}>
                           {/* Ligne principale */}
                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontWeight: 800, color: borderColor, minWidth: 34, flexShrink: 0 }}>{h.hours}h</span>
+                            <span style={{ fontWeight: 800, color: borderColor, minWidth: 34, flexShrink: 0 }}>{formatDuree(h.hours)}</span>
                             <span style={{ flex: 1, fontWeight: 600, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {eh._evenementTitre || h.type || "Bénévolat"}
                             </span>
@@ -544,7 +545,7 @@ export default function RHProfileModal({ member, onClose, volunteerHours = [], s
                 const active = conges.find(c => c.debut <= today && (!c.fin || c.fin >= today));
                 const upcoming = conges.filter(c => c.debut > today).sort((a, b) => a.debut.localeCompare(b.debut));
                 const past = conges.filter(c => c.fin && c.fin < today).sort((a, b) => b.fin.localeCompare(a.fin));
-                const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+                const fmt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
                 return (
                   <div style={{ marginTop: 20, gridColumn: "1 / -1" }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>

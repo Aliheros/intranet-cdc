@@ -15,7 +15,7 @@ const ActionTracker = () => {
   const { currentUser } = useAuth();
   const {
     handleNav, setActiveEventId, setHighlightedEventId,
-    setActionModal, setSelectedActionChecklist, highlightedActionId, setShowWizard,
+    setActionModal, setSelectedActionChecklist, highlightedActionId, setShowWizard, openMemberProfile,
   } = useAppContext();
   const navigate = handleNav;
   const {
@@ -347,7 +347,7 @@ const ActionTracker = () => {
                         const m = findMemberByName(directory, r);
                         return (
                           <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                            <div style={{ width: 20, height: 20, borderRadius: "50%", background: isAvatarUrl(m?.avatar) ? "transparent" : (m ? POLE_COLORS[m.pole] : "var(--text-muted)"), color: "#fff", fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                            <div onClick={() => openMemberProfile(m)} style={{ width: 20, height: 20, borderRadius: "50%", background: isAvatarUrl(m?.avatar) ? "transparent" : (m ? POLE_COLORS[m.pole] : "var(--text-muted)"), color: "#fff", fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", cursor: m ? "pointer" : "default" }}>
                               <AvatarInner avatar={m?.avatar} nom={r} />
                             </div>
                             <span style={{ fontSize: 11 }}>{r}</span>

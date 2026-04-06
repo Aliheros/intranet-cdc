@@ -102,6 +102,7 @@ export function AppProvider({ children }) {
   const [selectedMemberProfile,   setSelectedMemberProfile]   = useState(null);
   const [showMyProfileModal,      setShowMyProfileModal]      = useState(false);
   const [rhProfileModal,          setRhProfileModal]          = useState(null);
+  const openMemberProfile = (member) => { if (member) { setSelectedMemberProfile(member); setIsProfileModalOpen(true); } };
 
   // ─── MODALES MÉTIER ───────────────────────────────────────────────────────
   const [transactionModal,        setTransactionModal]        = useState(null);
@@ -149,6 +150,7 @@ export function AppProvider({ children }) {
       selectedMemberProfile, setSelectedMemberProfile,
       showMyProfileModal, setShowMyProfileModal,
       rhProfileModal, setRhProfileModal,
+      openMemberProfile,
       // Modales
       transactionModal, setTransactionModal,
       actionModal, setActionModal,
