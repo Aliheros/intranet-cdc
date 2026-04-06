@@ -255,8 +255,26 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const [rhFilterStatut, setRhFilterStatut] = useState("Tous");
   const [rhSort, setRhSort] = useState("hValidated_desc");
   const [rhSearch, setRhSearch] = useState("");
-  const [rhCollapsedEvents, setRhCollapsedEvents] = useState({}); // { evenementTitre: bool }
-  const [rhValidationCollapsed, setRhValidationCollapsed] = useState(false);
+  const [rhCollapsedEvents, setRhCollapsedEventsRaw] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('rh_collapsed_events') || '{}'); } catch { return {}; }
+  });
+  const setRhCollapsedEvents = (updater) => {
+    setRhCollapsedEventsRaw(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try { localStorage.setItem('rh_collapsed_events', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+  const [rhValidationCollapsed, setRhValidationCollapsedRaw] = useState(() => {
+    try { return localStorage.getItem('rh_validation_collapsed') === 'true'; } catch { return false; }
+  });
+  const setRhValidationCollapsed = (updater) => {
+    setRhValidationCollapsedRaw(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try { localStorage.setItem('rh_validation_collapsed', String(next)); } catch {}
+      return next;
+    });
+  };
   // Filtres/tri NDF trésorerie
   const [ndfTab, setNdfTab] = useState("traiter");
   const [ndfSearch, setNdfSearch] = useState("");
@@ -1780,12 +1798,14 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
         const allStatuts = ["Tous", ...Object.keys(MEMBER_STATUS)];
 
         // Table unifiée par membre
+        const today0 = new Date(); today0.setHours(0,0,0,0);
         const SORTS = {
           hValidated_desc: (a, b) => b.hValidated - a.hValidated,
           hValidated_asc:  (a, b) => a.hValidated - b.hValidated,
           hPending_desc:   (a, b) => b.hPending - a.hPending,
           hPending_asc:    (a, b) => a.hPending - b.hPending,
           tasks_desc:      (a, b) => b.activeTasks - a.activeTasks,
+          tasks_late_desc: (a, b) => b.lateTasks - a.lateTasks,
           missions_desc:   (a, b) => b.memberMissions - a.memberMissions,
           nom_asc:         (a, b) => a.nom.localeCompare(b.nom),
           pole_asc:        (a, b) => (a.pole || "").localeCompare(b.pole || ""),
@@ -1794,9 +1814,19 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
         const allMemberRows = directory.map(m => {
           const hValidated = volunteerHours.filter(h => h.user === m.nom && h.status === "Validé").reduce((s, h) => s + h.hours, 0);
           const hPending = volunteerHours.filter(h => h.user === m.nom && h.status === "En attente").reduce((s, h) => s + h.hours, 0);
-          const activeTasks = (tasks || []).filter(t => t.status !== "Terminé" && (t.assignees || []).some(a => a.name === m.nom));
+          const myTasks = (tasks || []).filter(t => (t.assignees || []).some(a => a.name === m.nom));
+          const activeTasks  = myTasks.filter(t => !isTaskEffectivelyDone(t));
+          const doneTasks    = myTasks.filter(t => isTaskEffectivelyDone(t));
+          const lateTasks    = activeTasks.filter(t => t.deadline && new Date(t.deadline + "T00:00:00") < today0);
+          const forceDone    = myTasks.filter(t => !!t.forceCompletedBy);
+          const lockedTasks  = myTasks.filter(t => !!t.lockedBy && !isTaskEffectivelyDone(t));
           const memberMissions = missions.filter(ms => ms.candidatures?.some(c => c.nom === m.nom && c.statut === "Accepté"));
-          return { ...m, hValidated, hPending, activeTasks: activeTasks.length, memberMissions: memberMissions.length };
+          return {
+            ...m, hValidated, hPending,
+            activeTasks: activeTasks.length, doneTasks: doneTasks.length,
+            lateTasks: lateTasks.length, forceDone: forceDone.length, lockedTasks: lockedTasks.length,
+            memberMissions: memberMissions.length,
+          };
         });
 
         const memberRows = allMemberRows
@@ -1874,6 +1904,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                   <option value="hPending_desc">↓ Heures en attente</option>
                   <option value="hPending_asc">↑ Heures en attente</option>
                   <option value="tasks_desc">↓ Tâches actives</option>
+                  <option value="tasks_late_desc">↓ Tâches en retard</option>
                   <option value="missions_desc">↓ Missions</option>
                   <option value="nom_asc">A → Z Nom</option>
                   <option value="pole_asc">A → Z Pôle</option>
@@ -1888,15 +1919,15 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
 
               {/* Tableau membres (scroll horizontal sur mobile) */}
               <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-              <div style={{ minWidth: 600 }}>
+              <div style={{ minWidth: 700 }}>
               {/* Entête colonnes cliquables */}
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1.5fr 80px 90px 60px 65px", gap: 0, padding: "8px 18px", borderBottom: "1px solid var(--border-light)", background: "var(--bg-alt)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1.4fr 65px 65px 2.2fr 55px", gap: 0, padding: "8px 18px", borderBottom: "1px solid var(--border-light)", background: "var(--bg-alt)" }}>
                 <ColHeader label="Membre" sortKey="nom_asc" />
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-muted)" }}>Statut</div>
                 <ColHeader label="Pôle" sortKey="pole_asc" />
                 <ColHeader label="Heures ✓" sortKey="hValidated_desc" sortKeyAlt="hValidated_asc" />
-                <ColHeader label="En attente" sortKey="hPending_desc" sortKeyAlt="hPending_asc" />
-                <ColHeader label="Tâches" sortKey="tasks_desc" />
+                <ColHeader label="Att." sortKey="hPending_desc" sortKeyAlt="hPending_asc" />
+                <ColHeader label="Tâches (actives · retard · terminées)" sortKey="tasks_desc" sortKeyAlt="tasks_late_desc" />
                 <ColHeader label="Missions" sortKey="missions_desc" />
               </div>
 
@@ -1908,10 +1939,11 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                 ) : memberRows.map((m, i) => (
                   <div key={m.nom}
                     onClick={() => onOpenRHProfile && onOpenRHProfile(m)}
-                    style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1.5fr 80px 90px 60px 65px", gap: 0, padding: "10px 18px", borderBottom: i < memberRows.length - 1 ? "1px solid var(--border-light)" : "none", cursor: onOpenRHProfile ? "pointer" : "default", transition: "background 0.15s", alignItems: "center" }}
+                    style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1.4fr 65px 65px 2.2fr 55px", gap: 0, padding: "9px 18px", borderBottom: i < memberRows.length - 1 ? "1px solid var(--border-light)" : "none", cursor: onOpenRHProfile ? "pointer" : "default", transition: "background 0.15s", alignItems: "center" }}
                     onMouseEnter={e => { if (onOpenRHProfile) e.currentTarget.style.background = "var(--bg-hover)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = ""; }}
                   >
+                    {/* Membre */}
                     <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
                       <div style={{ width: 30, height: 30, borderRadius: "50%", background: isAvatarUrl(m.avatar) ? "transparent" : (POLE_COLORS[m.pole] || "#1a56db") + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, overflow: "hidden" }}>
                         <AvatarInner avatar={m.avatar} nom={m.nom} />
@@ -1921,11 +1953,54 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                         {m.email && <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.email}</div>}
                       </div>
                     </div>
+                    {/* Statut */}
                     <div><StatusBadge map={MEMBER_STATUS} value={m.statut} size={10} /></div>
+                    {/* Pôle */}
                     <div style={{ fontSize: 11, color: "var(--text-dim)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.pole}</div>
+                    {/* Heures validées */}
                     <div style={{ fontSize: 13, fontWeight: 800, color: m.hValidated > 0 ? "#1a56db" : "var(--text-muted)" }}>{m.hValidated}h</div>
+                    {/* Heures en attente */}
                     <div style={{ fontSize: 11, color: m.hPending > 0 ? "#d97706" : "var(--text-muted)", fontWeight: m.hPending > 0 ? 700 : 400 }}>{m.hPending > 0 ? `+${m.hPending}h` : "—"}</div>
-                    <div style={{ fontSize: 12, fontWeight: m.activeTasks > 0 ? 700 : 400, color: m.activeTasks > 0 ? "#1a56db" : "var(--text-muted)" }}>{m.activeTasks > 0 ? m.activeTasks : "—"}</div>
+                    {/* Tâches — détail enrichi */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                      {m.activeTasks === 0 && m.doneTasks === 0 ? (
+                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>—</span>
+                      ) : (
+                        <>
+                          {m.activeTasks > 0 && (
+                            <span title={`${m.activeTasks} tâche${m.activeTasks > 1 ? 's' : ''} active${m.activeTasks > 1 ? 's' : ''}`}
+                              style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: "rgba(26,86,219,0.1)", color: "#1a56db", fontWeight: 700 }}>
+                              {m.activeTasks} actives
+                            </span>
+                          )}
+                          {m.lateTasks > 0 && (
+                            <span title={`${m.lateTasks} tâche${m.lateTasks > 1 ? 's' : ''} en retard`}
+                              style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: "rgba(230,57,70,0.1)", color: "#e63946", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                              <AlertTriangle size={8} strokeWidth={2}/> {m.lateTasks} retard
+                            </span>
+                          )}
+                          {m.doneTasks > 0 && (
+                            <span title={`${m.doneTasks} tâche${m.doneTasks > 1 ? 's' : ''} terminée${m.doneTasks > 1 ? 's' : ''}`}
+                              style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: "rgba(22,163,74,0.09)", color: "#16a34a", fontWeight: 700 }}>
+                              {m.doneTasks} ✓
+                            </span>
+                          )}
+                          {m.forceDone > 0 && (
+                            <span title={`${m.forceDone} tâche${m.forceDone > 1 ? 's' : ''} validée${m.forceDone > 1 ? 's' : ''} de force`}
+                              style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: "rgba(124,58,237,0.1)", color: "#7c3aed", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                              <Zap size={8} strokeWidth={2}/> {m.forceDone}
+                            </span>
+                          )}
+                          {m.lockedTasks > 0 && (
+                            <span title={`${m.lockedTasks} tâche${m.lockedTasks > 1 ? 's' : ''} verrouillée${m.lockedTasks > 1 ? 's' : ''}`}
+                              style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: "rgba(217,119,6,0.1)", color: "#d97706", fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+                              <Lock size={8} strokeWidth={2}/> {m.lockedTasks}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    {/* Missions */}
                     <div style={{ fontSize: 12, fontWeight: m.memberMissions > 0 ? 700 : 400, color: m.memberMissions > 0 ? "#7c3aed" : "var(--text-muted)" }}>{m.memberMissions > 0 ? m.memberMissions : "—"}</div>
                   </div>
                 ))}
@@ -1940,21 +2015,38 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
               const recentRh  = seancePresences.filter(p => p.rhStatut !== 'en_attente').sort((a, b) => b.seanceDate?.localeCompare(a.seanceDate || '') || 0).slice(0, 30);
               if (pendingRh.length === 0 && recentRh.length === 0) return null;
 
-              // Grouper pendingRh par événement
-              const pendingByEvent = pendingRh.reduce((acc, p) => {
-                const key = p.evenementTitre || 'Événement inconnu';
-                if (!acc[key]) acc[key] = [];
-                acc[key].push(p);
-                return acc;
-              }, {});
+              // Helper: libellé séance depuis evenements
+              const getSeanceLabel = (p) => {
+                const ev = evenements.find(e => e.id === p.evenementId);
+                const seance = ev ? (ev.seances || []).find(s => String(s.id) === String(p.seanceId)) : null;
+                return seance?.libelle || null;
+              };
 
-              // Grouper recentRh par événement
-              const recentByEvent = recentRh.reduce((acc, p) => {
-                const key = p.evenementTitre || 'Événement inconnu';
-                if (!acc[key]) acc[key] = [];
-                acc[key].push(p);
-                return acc;
-              }, {});
+              // Grouper pendingRh par événement → puis par séance
+              const pendingByEvent = {};
+              pendingRh.forEach(p => {
+                const evKey = p.evenementTitre || 'Événement inconnu';
+                const seanceKey = p.seanceId || p.seanceDate;
+                const seanceLabel = getSeanceLabel(p);
+                if (!pendingByEvent[evKey]) pendingByEvent[evKey] = {};
+                if (!pendingByEvent[evKey][seanceKey]) {
+                  pendingByEvent[evKey][seanceKey] = { label: seanceLabel, date: p.seanceDate, presences: [] };
+                }
+                pendingByEvent[evKey][seanceKey].presences.push(p);
+              });
+
+              // Grouper recentRh par événement → puis par séance
+              const recentByEvent = {};
+              recentRh.forEach(p => {
+                const evKey = p.evenementTitre || 'Événement inconnu';
+                const seanceKey = p.seanceId || p.seanceDate;
+                const seanceLabel = getSeanceLabel(p);
+                if (!recentByEvent[evKey]) recentByEvent[evKey] = {};
+                if (!recentByEvent[evKey][seanceKey]) {
+                  recentByEvent[evKey][seanceKey] = { label: seanceLabel, date: p.seanceDate, presences: [] };
+                }
+                recentByEvent[evKey][seanceKey].presences.push(p);
+              });
 
               return (
                 <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
@@ -1976,16 +2068,17 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                   {!rhValidationCollapsed && (
                     <div style={{ padding: 16 }}>
 
-                      {/* ── EN ATTENTE : groupé par événement ── */}
+                      {/* ── EN ATTENTE : groupé par événement → séance ── */}
                       {pendingRh.length > 0 && (
                         <div style={{ marginBottom: 20 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>
                             À valider ({pendingRh.length} présence{pendingRh.length > 1 ? 's' : ''})
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                            {Object.entries(pendingByEvent).map(([evTitre, presences]) => {
-                              const isOpen = !rhCollapsedEvents[`pend_${evTitre}`];
-                              const totalH = presences.reduce((s, p) => s + (p.heures || 0), 0);
+                            {Object.entries(pendingByEvent).map(([evTitre, seancesMap]) => {
+                              const isEvOpen = !rhCollapsedEvents[`pend_${evTitre}`];
+                              const allPresences = Object.values(seancesMap).flatMap(s => s.presences);
+                              const totalH = allPresences.reduce((s, p) => s + (p.heures || 0), 0);
                               return (
                                 <div key={evTitre} style={{ border: "1px solid rgba(217,119,6,0.25)", borderRadius: 8, overflow: "hidden" }}>
                                   {/* Header événement */}
@@ -1993,37 +2086,61 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                                     onClick={() => setRhCollapsedEvents(prev => ({ ...prev, [`pend_${evTitre}`]: !prev[`pend_${evTitre}`] }))}
                                     style={{ padding: "10px 14px", background: "rgba(217,119,6,0.05)", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
                                   >
+                                    <Calendar size={12} strokeWidth={1.8} color="#d97706" />
                                     <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: "var(--text-base)" }}>{evTitre}</span>
-                                    <span style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{presences.length} bénévole{presences.length > 1 ? 's' : ''} · {formatDuree(totalH)}</span>
-                                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{isOpen ? '▼' : '▶'}</span>
+                                    <span style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{allPresences.length} bénévole{allPresences.length > 1 ? 's' : ''} · {formatDuree(totalH)}</span>
+                                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{isEvOpen ? '▼' : '▶'}</span>
                                   </div>
-                                  {isOpen && (
-                                    <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-                                      {presences.map(p => (
-                                        <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--bg-hover)", border: "1px solid var(--border-light)", borderRadius: 8, padding: "9px 12px", flexWrap: "wrap" }}>
-                                          <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-base)" }}>{p.membreNom}</div>
-                                            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                                              {new Date(p.seanceDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })} · {formatDuree(p.heures)}
+                                  {isEvOpen && (
+                                    <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+                                      {Object.entries(seancesMap).sort(([,a],[,b]) => (a.date||'').localeCompare(b.date||'')).map(([seanceKey, seanceData]) => {
+                                        const isSeanceOpen = !rhCollapsedEvents[`pend_${evTitre}_s_${seanceKey}`];
+                                        const seanceH = seanceData.presences.reduce((s, p) => s + (p.heures || 0), 0);
+                                        const seanceTitle = seanceData.label
+                                          ? `${seanceData.label} — ${new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                                          : new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                                        return (
+                                          <div key={seanceKey} style={{ border: "1px solid rgba(217,119,6,0.15)", borderRadius: 6, overflow: "hidden" }}>
+                                            {/* Header séance */}
+                                            <div
+                                              onClick={() => setRhCollapsedEvents(prev => ({ ...prev, [`pend_${evTitre}_s_${seanceKey}`]: !prev[`pend_${evTitre}_s_${seanceKey}`] }))}
+                                              style={{ padding: "7px 12px", background: "rgba(217,119,6,0.03)", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", userSelect: "none", borderBottom: isSeanceOpen ? "1px solid rgba(217,119,6,0.1)" : "none" }}
+                                            >
+                                              <Clock size={10} strokeWidth={1.8} color="#d97706" />
+                                              <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: "var(--text-dim)" }}>{seanceTitle}</span>
+                                              <span style={{ fontSize: 10, color: "#d97706" }}>{seanceData.presences.length} · {formatDuree(seanceH)}</span>
+                                              <span style={{ fontSize: 9, color: "var(--text-muted)", marginLeft: 4 }}>{isSeanceOpen ? '▼' : '▶'}</span>
                                             </div>
-                                            <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: p.resp1Statut === 'present' ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.08)", color: p.resp1Statut === 'present' ? "#16a34a" : "#dc2626" }}>
-                                              {p.resp1Statut === 'present' ? <CheckCircle2 size={10} strokeWidth={2} /> : <XCircle size={10} strokeWidth={2} />}
-                                              Responsable : {p.resp1Statut === 'present' ? 'Présent' : 'Absent'}
-                                              {p.resp1Par && <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>— {p.resp1Par}</span>}
-                                            </div>
+                                            {isSeanceOpen && (
+                                              <div style={{ padding: "6px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
+                                                {seanceData.presences.map(p => (
+                                                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--bg-hover)", border: "1px solid var(--border-light)", borderRadius: 7, padding: "8px 10px", flexWrap: "wrap" }}>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-base)" }}>{p.membreNom}</div>
+                                                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{formatDuree(p.heures)}</div>
+                                                      <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4, background: p.resp1Statut === 'present' ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.08)", color: p.resp1Statut === 'present' ? "#16a34a" : "#dc2626" }}>
+                                                        {p.resp1Statut === 'present' ? <CheckCircle2 size={9} strokeWidth={2} /> : <XCircle size={9} strokeWidth={2} />}
+                                                        {p.resp1Statut === 'present' ? 'Présent' : 'Absent'}
+                                                        {p.resp1Par && <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>— {p.resp1Par}</span>}
+                                                      </div>
+                                                    </div>
+                                                    <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                                                      <button
+                                                        style={{ fontSize: 11, padding: "5px 10px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", color: "#16a34a", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                                                        onClick={() => handleRhValidation(p.id, 'confirme')}
+                                                      ><CheckCircle2 size={11} strokeWidth={2} /> Confirmer {formatDuree(p.heures)}</button>
+                                                      <button
+                                                        style={{ fontSize: 11, padding: "5px 10px", borderRadius: 6, background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", color: "#dc2626", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                                                        onClick={() => handleRhValidation(p.id, 'rejete')}
+                                                      ><XCircle size={11} strokeWidth={2} /> Rejeter</button>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
                                           </div>
-                                          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                                            <button
-                                              style={{ fontSize: 11, padding: "5px 12px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", color: "#16a34a", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
-                                              onClick={() => handleRhValidation(p.id, 'confirme')}
-                                            ><CheckCircle2 size={11} strokeWidth={2} /> Confirmer {formatDuree(p.heures)}</button>
-                                            <button
-                                              style={{ fontSize: 11, padding: "5px 12px", borderRadius: 6, background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", color: "#dc2626", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
-                                              onClick={() => handleRhValidation(p.id, 'rejete')}
-                                            ><XCircle size={11} strokeWidth={2} /> Rejeter</button>
-                                          </div>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -2033,41 +2150,68 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                         </div>
                       )}
 
-                      {/* ── HISTORIQUE : groupé par événement ── */}
+                      {/* ── HISTORIQUE : groupé par événement → séance ── */}
                       {recentRh.length > 0 && (
                         <div>
                           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
                             Historique récent ({recentRh.length})
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {Object.entries(recentByEvent).map(([evTitre, presences]) => {
-                              const isOpen = !rhCollapsedEvents[`hist_${evTitre}`];
+                            {Object.entries(recentByEvent).map(([evTitre, seancesMap]) => {
+                              const isEvOpen = !rhCollapsedEvents[`hist_${evTitre}`];
+                              const allPresences = Object.values(seancesMap).flatMap(s => s.presences);
                               return (
                                 <div key={evTitre} style={{ border: "1px solid var(--border-light)", borderRadius: 8, overflow: "hidden" }}>
                                   <div
                                     onClick={() => setRhCollapsedEvents(prev => ({ ...prev, [`hist_${evTitre}`]: !prev[`hist_${evTitre}`] }))}
                                     style={{ padding: "9px 14px", background: "var(--bg-alt)", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
                                   >
+                                    <Calendar size={11} strokeWidth={1.8} color="var(--text-muted)" />
                                     <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: "var(--text-dim)" }}>{evTitre}</span>
-                                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{presences.length} entrée{presences.length > 1 ? 's' : ''}</span>
-                                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{isOpen ? '▼' : '▶'}</span>
+                                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{allPresences.length} entrée{allPresences.length > 1 ? 's' : ''}</span>
+                                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{isEvOpen ? '▼' : '▶'}</span>
                                   </div>
-                                  {isOpen && (
-                                    <div style={{ padding: "6px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
-                                      {presences.map(p => (
-                                        <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 10px", borderRadius: 6, background: p.rhStatut === 'confirme' ? "rgba(22,163,74,0.04)" : "rgba(220,38,38,0.04)", border: `1px solid ${p.rhStatut === 'confirme' ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.1)"}` }}>
-                                          <div style={{ minWidth: 0 }}>
-                                            <span style={{ fontSize: 12, fontWeight: 600 }}>{p.membreNom}</span>
-                                            <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>
-                                              {new Date(p.seanceDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · {formatDuree(p.heures)}
-                                            </span>
+                                  {isEvOpen && (
+                                    <div style={{ padding: "6px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+                                      {Object.entries(seancesMap).sort(([,a],[,b]) => (b.date||'').localeCompare(a.date||'')).map(([seanceKey, seanceData]) => {
+                                        const isSeanceOpen = !rhCollapsedEvents[`hist_${evTitre}_s_${seanceKey}`];
+                                        const seanceTitle = seanceData.label
+                                          ? `${seanceData.label} — ${new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                                          : new Date(seanceData.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                                        return (
+                                          <div key={seanceKey} style={{ border: "1px solid var(--border-light)", borderRadius: 6, overflow: "hidden" }}>
+                                            <div
+                                              onClick={() => setRhCollapsedEvents(prev => ({ ...prev, [`hist_${evTitre}_s_${seanceKey}`]: !prev[`hist_${evTitre}_s_${seanceKey}`] }))}
+                                              style={{ padding: "6px 10px", background: "var(--bg-hover)", display: "flex", alignItems: "center", gap: 5, cursor: "pointer", userSelect: "none", borderBottom: isSeanceOpen ? "1px solid var(--border-light)" : "none" }}
+                                            >
+                                              <Clock size={9} strokeWidth={1.8} color="var(--text-muted)" />
+                                              <span style={{ flex: 1, fontSize: 10, fontWeight: 700, color: "var(--text-dim)" }}>{seanceTitle}</span>
+                                              <span style={{ fontSize: 9, color: "var(--text-muted)", marginLeft: 4 }}>{isSeanceOpen ? '▼' : '▶'}</span>
+                                            </div>
+                                            {isSeanceOpen && (
+                                              <div style={{ padding: "5px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
+                                                {seanceData.presences.map(p => (
+                                                  <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "6px 10px", borderRadius: 6, background: p.rhStatut === 'confirme' ? "rgba(22,163,74,0.04)" : "rgba(220,38,38,0.04)", border: `1px solid ${p.rhStatut === 'confirme' ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.1)"}` }}>
+                                                    <div style={{ minWidth: 0 }}>
+                                                      <span style={{ fontSize: 12, fontWeight: 600 }}>{p.membreNom}</span>
+                                                      <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{formatDuree(p.heures)}</span>
+                                                    </div>
+                                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0 }}>
+                                                      <span style={{ fontSize: 10, fontWeight: 700, color: p.rhStatut === 'confirme' ? "#16a34a" : "#dc2626", display: "flex", alignItems: "center", gap: 3 }}>
+                                                        {p.rhStatut === 'confirme' ? <><CheckCircle2 size={10} /> Validées</> : <><XCircle size={10} /> Rejetées</>}
+                                                        {p.rhPar && <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>par {p.rhPar}</span>}
+                                                      </span>
+                                                      {p.resp1Par && (
+                                                        <span style={{ fontSize: 9, color: "var(--text-muted)" }}>Resp. : {p.resp1Par}</span>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
                                           </div>
-                                          <span style={{ fontSize: 10, fontWeight: 700, color: p.rhStatut === 'confirme' ? "#16a34a" : "#dc2626", display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-                                            {p.rhStatut === 'confirme' ? <><CheckCircle2 size={10} /> Validées</> : <><XCircle size={10} /> Rejetées</>}
-                                            {p.rhPar && <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>par {p.rhPar}</span>}
-                                          </span>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>

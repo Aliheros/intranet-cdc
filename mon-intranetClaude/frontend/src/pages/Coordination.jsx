@@ -331,38 +331,8 @@ const Coordination = () => {
             borderTop: highlightedEventId === activeEvent.id ? "2px solid rgba(26,86,219,0.5)" : "2px solid transparent",
             transition: "background 0.5s ease, box-shadow 0.6s ease, border-top 0.4s ease",
           }}>
-            {canManageEvent && (
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginBottom: 16 }}>
-                <button
-                  title={activeEvent.isArchived ? "Désarchiver l'événement" : "Archiver l'événement"}
-                  onClick={() => toggleArchiveEvent(activeEvent)}
-                  style={{ background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-dim)", flexShrink: 0 }}
-                >
-                  <Archive size={14} strokeWidth={1.8} />
-                </button>
-                {canEditEvent && (
-                  <button
-                    title="Modifier l'événement"
-                    onClick={() => setEventModal({ ...activeEvent })}
-                    style={{ background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-dim)", flexShrink: 0 }}
-                  >
-                    <Pencil size={14} strokeWidth={1.8} />
-                  </button>
-                )}
-                {!activeEvent.isArchived && (
-                  <button
-                    title="Supprimer l'événement"
-                    onClick={() => deleteEvent(activeEvent)}
-                    style={{ background: "rgba(230,57,70,0.06)", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#e63946", flexShrink: 0 }}
-                  >
-                    <Trash2 size={14} strokeWidth={1.8} />
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* ── Titre + statut ── */}
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: 10 }}>
+            {/* ── Titre + statut + boutons inline ── */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 {activeEvent.projet && (
                   <span style={{ display: "inline-block", fontSize: 9, fontWeight: 700, padding: "2px 9px", borderRadius: 20, color: "#fff", background: PROJET_COLORS[activeEvent.projet] || "#888", marginBottom: 6 }}>
@@ -371,7 +341,38 @@ const Coordination = () => {
                 )}
                 <div className="event-title" style={{ wordBreak: "break-word" }}>{activeEvent.titre}</div>
               </div>
-              <Badge label={activeEvent.statut} bg={STATUT_STYLE[activeEvent.statut]?.bg || "var(--bg-alt)"} c={STATUT_STYLE[activeEvent.statut]?.c || "var(--text-dim)"} size={11} />
+              <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                <Badge label={activeEvent.statut} bg={STATUT_STYLE[activeEvent.statut]?.bg || "var(--bg-alt)"} c={STATUT_STYLE[activeEvent.statut]?.c || "var(--text-dim)"} size={11} />
+                {canManageEvent && (
+                  <>
+                    <button
+                      title={activeEvent.isArchived ? "Désarchiver l'événement" : "Archiver l'événement"}
+                      onClick={() => toggleArchiveEvent(activeEvent)}
+                      style={{ background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-dim)", flexShrink: 0 }}
+                    >
+                      <Archive size={14} strokeWidth={1.8} />
+                    </button>
+                    {canEditEvent && (
+                      <button
+                        title="Modifier l'événement"
+                        onClick={() => setEventModal({ ...activeEvent })}
+                        style={{ background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-dim)", flexShrink: 0 }}
+                      >
+                        <Pencil size={14} strokeWidth={1.8} />
+                      </button>
+                    )}
+                    {!activeEvent.isArchived && (
+                      <button
+                        title="Supprimer l'événement"
+                        onClick={() => deleteEvent(activeEvent)}
+                        style={{ background: "rgba(230,57,70,0.06)", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 7, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#e63946", flexShrink: 0 }}
+                      >
+                        <Trash2 size={14} strokeWidth={1.8} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             {/* ── Métadonnées ── */}
