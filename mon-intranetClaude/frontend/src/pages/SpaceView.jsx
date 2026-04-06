@@ -152,7 +152,7 @@ const TaskModal = ({ task, onSave, onClose, teamMembers, actions = [], directory
             )}
           </div>
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 12 }}>Assigner à (Membres du cycle)</label>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 12 }}>Assigner à (Membres du pôle)</label>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {teamMembers.map((m) => {
                 const isAssigned = form.assignees.some((a) => a.name === m.nom);
@@ -163,7 +163,16 @@ const TaskModal = ({ task, onSave, onClose, teamMembers, actions = [], directory
                   </div>
                 );
               })}
-              {teamMembers.length === 0 && <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>Ajoutez des membres à l'équipe pour les assigner.</div>}
+              {/* Assignés hors équipe (anciens membres, supprimés, changement de pôle) */}
+              {form.assignees.filter(a => !teamMembers.some(m => m.nom === a.name)).map(a => {
+                const inDirectory = findMemberByName(directory, a.name);
+                return (
+                  <div key={a.name} onClick={() => toggleAssignee(a.name)} title={inDirectory ? "Hors équipe — cliquer pour retirer" : "Profil introuvable — cliquer pour retirer"} style={{ padding: "8px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "1px solid rgba(217,119,6,0.4)", background: "rgba(217,119,6,0.08)", color: "#d97706", display: "flex", alignItems: "center", gap: 5, textDecoration: !inDirectory ? "line-through" : "none", opacity: !inDirectory ? 0.7 : 1 }}>
+                    <AlertTriangle size={10} strokeWidth={2} /> {a.name} ✕
+                  </div>
+                );
+              })}
+              {teamMembers.length === 0 && form.assignees.length === 0 && <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>Ajoutez des membres à l'équipe pour les assigner.</div>}
             </div>
           </div>
         </div>
@@ -751,7 +760,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                               {assigneesList.length === 0 ? <span style={{ fontSize: 10, color: "var(--text-muted)", fontStyle: "italic" }}>Non assigné</span> : (
                                 <>
                                   <div style={{ display: "flex", alignItems: "center" }}>
-                                    {assigneesList.map((a, i) => {
+                                    {assigneesList.filter(a => findMemberByName(directory, a.name)).map((a, i) => {
                                       const m = findMemberByName(directory, a.name);
                                       return (
                                         <div key={a.name} title={a.name} style={{
