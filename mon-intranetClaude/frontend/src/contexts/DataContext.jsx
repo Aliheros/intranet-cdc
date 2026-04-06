@@ -17,6 +17,16 @@ export const OperationsSliceContext = createContext(null);
 export const FinanceSliceContext    = createContext(null);
 export const CommsSliceContext      = createContext(null);
 
+// ─── Normalise volunteerHours : h.user peut être un objet {id,nom,avatar} côté API
+//     On le réduit à une string (le nom) pour que tous les filtres h.user === nom marchent.
+const normalizeHours = (hours) =>
+  (hours || []).map(h => ({
+    ...h,
+    user: typeof h.user === 'object' && h.user !== null
+      ? h.user.nom
+      : (h.user || h.userNomSnapshot || ''),
+  }));
+
 // ─── Helper pour construire un événement Coordination lié à une action ──────
 const buildLinkedEvent = (form, actionId, cycle) => {
   const eventDate = form.date_debut || new Date().toISOString().split('T')[0];
@@ -204,7 +214,7 @@ export function DataProvider({ children }) {
             });
           }
         }
-        setVolunteerHours(hoursData || []);
+        setVolunteerHours(normalizeHours(hoursData));
         setConversations(convsData || []);
 
         if (spaceSettingsData) {
@@ -1828,7 +1838,7 @@ export function DataProvider({ children }) {
       if (statut === 'confirme') {
         // Recharger les heures pour refléter la nouvelle Hour créée
         const hours = await api.get('/hours');
-        if (hours) setVolunteerHours(hours);
+        if (hours) setVolunteerHours(normalizeHours(hours));
       }
       addToast(statut === 'confirme' ? 'Heures validées et comptabilisées' : 'Heures rejetées');
     } catch (err) {

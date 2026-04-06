@@ -1,7 +1,7 @@
 // src/components/modals/ActionModal.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TYPES_ACTION, STATUTS_ACTION, NIVEAUX_CLASSE, POLES } from '../../data/constants';
-import { Pencil, MapPin, X, Plus, Send, Receipt, School, Search, CheckCircle2 } from 'lucide-react';
+import { TYPES_ACTION, STATUTS_ACTION, NIVEAUX_CLASSE } from '../../data/constants';
+import { Pencil, MapPin, X, Receipt, School, Search, CheckCircle2 } from 'lucide-react';
 import { useModalClose } from '../../hooks/useModalClose';
 import { MEMBER_STATUS } from '../ui/StatusIcon';
 
@@ -167,14 +167,9 @@ const GeoSearch = ({ ville, departement, onSelect }) => {
   );
 };
 
-const ActionModal = ({ action, onClose, onSave, directory, cycles, onTaskRequest, currentUser, notesFrais = [] }) => {
+const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, notesFrais = [] }) => {
   const { isClosing, handleClose } = useModalClose(onClose);
   const [form, setForm] = useState(action || {});
-
-  const emptyReq = { text: "", description: "", space: POLES[0], deadline: "" };
-  const [taskReq, setTaskReq] = useState(emptyReq);
-  const [showTaskReq, setShowTaskReq] = useState(false);
-  const [taskReqSent, setTaskReqSent] = useState(false);
 
   useEffect(() => {
     if (action) setForm(action);
@@ -366,58 +361,6 @@ const ActionModal = ({ action, onClose, onSave, directory, cycles, onTaskRequest
           </div>
 
         </div>
-
-        {/* Demande de tâche */}
-        {form.id && onTaskRequest && (
-          <div style={{ padding: "0 24px 20px 24px" }}>
-            <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: 16 }}>
-              <button className="btn-secondary" style={{ padding: "8px 14px", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }} onClick={() => { setShowTaskReq(v => !v); setTaskReqSent(false); }}>
-                <Plus size={13} strokeWidth={2} /> Demander une tâche au pôle
-              </button>
-              {showTaskReq && (
-                <div style={{ marginTop: 14, padding: 16, background: "rgba(26,86,219,0.04)", border: "1px dashed rgba(26,86,219,0.25)", borderRadius: 10, display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Nouvelle demande de tâche</div>
-                  <div className="form-2col">
-                    <div>
-                      <label className="form-label">Intitulé de la tâche *</label>
-                      <input type="text" className="form-input" placeholder="Ex: Préparer la présentation…" value={taskReq.text} onChange={e => setTaskReq(r => ({ ...r, text: e.target.value }))} />
-                    </div>
-                    <div>
-                      <label className="form-label">Pôle concerné</label>
-                      <select className="form-select" value={taskReq.space} onChange={e => setTaskReq(r => ({ ...r, space: e.target.value }))}>
-                        {POLES.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-2col">
-                    <div>
-                      <label className="form-label">Description (optionnel)</label>
-                      <textarea className="form-input" rows={2} placeholder="Détails de la tâche…" value={taskReq.description} onChange={e => setTaskReq(r => ({ ...r, description: e.target.value }))} style={{ resize: "vertical" }} />
-                    </div>
-                    <div>
-                      <label className="form-label">Échéance</label>
-                      <input type="date" className="form-input" value={taskReq.deadline} onChange={e => setTaskReq(r => ({ ...r, deadline: e.target.value }))} />
-                    </div>
-                  </div>
-                  {taskReqSent ? (
-                    <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>✓ Demande envoyée au pôle {taskReq.space}</div>
-                  ) : (
-                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                      <button className="btn-primary" style={{ padding: "8px 16px", fontSize: 12, display: "flex", alignItems: "center", gap: 6 }} onClick={() => {
-                        if (!taskReq.text.trim()) return alert("L'intitulé de la tâche est requis.");
-                        onTaskRequest({ text: taskReq.text.trim(), description: taskReq.description.trim(), space: taskReq.space, actionId: form.id, requestedBy: currentUser?.nom || "", assignees: [], targetPool: [], deadline: taskReq.deadline || form.date_fin || form.date_debut || "", cycle: form.cycle || "", status: "En attente" });
-                        setTaskReqSent(true);
-                        setTaskReq(emptyReq);
-                      }}>
-                        <Send size={12} strokeWidth={2} /> Envoyer la demande
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* NDF liées */}
         {action?.id && (() => {

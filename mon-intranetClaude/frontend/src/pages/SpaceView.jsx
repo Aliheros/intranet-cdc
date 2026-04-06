@@ -255,6 +255,8 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const [rhFilterStatut, setRhFilterStatut] = useState("Tous");
   const [rhSort, setRhSort] = useState("hValidated_desc");
   const [rhSearch, setRhSearch] = useState("");
+  const [rhCollapsedEvents, setRhCollapsedEvents] = useState({}); // { evenementTitre: bool }
+  const [rhValidationCollapsed, setRhValidationCollapsed] = useState(false);
   // Filtres/tri NDF trésorerie
   const [ndfTab, setNdfTab] = useState("traiter");
   const [ndfSearch, setNdfSearch] = useState("");
@@ -1935,74 +1937,148 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             {/* ── Validation RH des heures bénévoles ── */}
             {(() => {
               const pendingRh = seancePresences.filter(p => p.resp1Statut !== 'en_attente' && p.rhStatut === 'en_attente');
-              const recentRh  = seancePresences.filter(p => p.rhStatut !== 'en_attente').slice(-20);
+              const recentRh  = seancePresences.filter(p => p.rhStatut !== 'en_attente').sort((a, b) => b.seanceDate?.localeCompare(a.seanceDate || '') || 0).slice(0, 30);
               if (pendingRh.length === 0 && recentRh.length === 0) return null;
+
+              // Grouper pendingRh par événement
+              const pendingByEvent = pendingRh.reduce((acc, p) => {
+                const key = p.evenementTitre || 'Événement inconnu';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(p);
+                return acc;
+              }, {});
+
+              // Grouper recentRh par événement
+              const recentByEvent = recentRh.reduce((acc, p) => {
+                const key = p.evenementTitre || 'Événement inconnu';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(p);
+                return acc;
+              }, {});
+
               return (
                 <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: 12, overflow: "hidden", marginBottom: 20 }}>
-                  <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border-light)", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-                    <Shield size={13} strokeWidth={1.8} color="#1a56db" /> Validation RH — Heures bénévoles
+                  {/* Header principal repliable */}
+                  <div
+                    onClick={() => setRhValidationCollapsed(v => !v)}
+                    style={{ padding: "14px 18px", borderBottom: rhValidationCollapsed ? "none" : "1px solid var(--border-light)", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
+                  >
+                    <Shield size={13} strokeWidth={1.8} color="#1a56db" />
+                    <span style={{ flex: 1 }}>Validation RH — Heures bénévoles</span>
                     {pendingRh.length > 0 && (
                       <span style={{ padding: "2px 8px", borderRadius: 10, background: "rgba(217,119,6,0.1)", color: "#d97706", fontSize: 11, fontWeight: 700 }}>
                         {pendingRh.length} en attente
                       </span>
                     )}
+                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{rhValidationCollapsed ? '▶' : '▼'}</span>
                   </div>
-                  <div style={{ padding: 16 }}>
-                    {pendingRh.length > 0 && (
-                      <>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
-                          À valider (avis responsable reçu)
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                          {pendingRh.map(p => (
-                            <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--bg-hover)", border: "1px solid var(--border-light)", borderRadius: 8, padding: "10px 14px", flexWrap: "wrap" }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-base)" }}>{p.membreNom}</div>
-                                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-                                  {p.evenementTitre} · {new Date(p.seanceDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · {formatDuree(p.heures)}
+
+                  {!rhValidationCollapsed && (
+                    <div style={{ padding: 16 }}>
+
+                      {/* ── EN ATTENTE : groupé par événement ── */}
+                      {pendingRh.length > 0 && (
+                        <div style={{ marginBottom: 20 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#d97706", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>
+                            À valider ({pendingRh.length} présence{pendingRh.length > 1 ? 's' : ''})
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            {Object.entries(pendingByEvent).map(([evTitre, presences]) => {
+                              const isOpen = !rhCollapsedEvents[`pend_${evTitre}`];
+                              const totalH = presences.reduce((s, p) => s + (p.heures || 0), 0);
+                              return (
+                                <div key={evTitre} style={{ border: "1px solid rgba(217,119,6,0.25)", borderRadius: 8, overflow: "hidden" }}>
+                                  {/* Header événement */}
+                                  <div
+                                    onClick={() => setRhCollapsedEvents(prev => ({ ...prev, [`pend_${evTitre}`]: !prev[`pend_${evTitre}`] }))}
+                                    style={{ padding: "10px 14px", background: "rgba(217,119,6,0.05)", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
+                                  >
+                                    <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: "var(--text-base)" }}>{evTitre}</span>
+                                    <span style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{presences.length} bénévole{presences.length > 1 ? 's' : ''} · {formatDuree(totalH)}</span>
+                                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{isOpen ? '▼' : '▶'}</span>
+                                  </div>
+                                  {isOpen && (
+                                    <div style={{ padding: "8px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+                                      {presences.map(p => (
+                                        <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--bg-hover)", border: "1px solid var(--border-light)", borderRadius: 8, padding: "9px 12px", flexWrap: "wrap" }}>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-base)" }}>{p.membreNom}</div>
+                                            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
+                                              {new Date(p.seanceDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })} · {formatDuree(p.heures)}
+                                            </div>
+                                            <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: p.resp1Statut === 'present' ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.08)", color: p.resp1Statut === 'present' ? "#16a34a" : "#dc2626" }}>
+                                              {p.resp1Statut === 'present' ? <CheckCircle2 size={10} strokeWidth={2} /> : <XCircle size={10} strokeWidth={2} />}
+                                              Responsable : {p.resp1Statut === 'present' ? 'Présent' : 'Absent'}
+                                              {p.resp1Par && <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>— {p.resp1Par}</span>}
+                                            </div>
+                                          </div>
+                                          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                                            <button
+                                              style={{ fontSize: 11, padding: "5px 12px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", color: "#16a34a", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                                              onClick={() => handleRhValidation(p.id, 'confirme')}
+                                            ><CheckCircle2 size={11} strokeWidth={2} /> Confirmer {formatDuree(p.heures)}</button>
+                                            <button
+                                              style={{ fontSize: 11, padding: "5px 12px", borderRadius: 6, background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", color: "#dc2626", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                                              onClick={() => handleRhValidation(p.id, 'rejete')}
+                                            ><XCircle size={11} strokeWidth={2} /> Rejeter</button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
-                                <div style={{ marginTop: 4, display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: p.resp1Statut === 'present' ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.08)", color: p.resp1Statut === 'present' ? "#16a34a" : "#dc2626" }}>
-                                  {p.resp1Statut === 'present' ? <CheckCircle2 size={10} strokeWidth={2} /> : <XCircle size={10} strokeWidth={2} />}
-                                  Avis responsable : {p.resp1Statut === 'present' ? 'Présent' : 'Absent'}
-                                  {p.resp1Par && <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>— {p.resp1Par}</span>}
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── HISTORIQUE : groupé par événement ── */}
+                      {recentRh.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
+                            Historique récent ({recentRh.length})
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            {Object.entries(recentByEvent).map(([evTitre, presences]) => {
+                              const isOpen = !rhCollapsedEvents[`hist_${evTitre}`];
+                              return (
+                                <div key={evTitre} style={{ border: "1px solid var(--border-light)", borderRadius: 8, overflow: "hidden" }}>
+                                  <div
+                                    onClick={() => setRhCollapsedEvents(prev => ({ ...prev, [`hist_${evTitre}`]: !prev[`hist_${evTitre}`] }))}
+                                    style={{ padding: "9px 14px", background: "var(--bg-alt)", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
+                                  >
+                                    <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: "var(--text-dim)" }}>{evTitre}</span>
+                                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{presences.length} entrée{presences.length > 1 ? 's' : ''}</span>
+                                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>{isOpen ? '▼' : '▶'}</span>
+                                  </div>
+                                  {isOpen && (
+                                    <div style={{ padding: "6px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
+                                      {presences.map(p => (
+                                        <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "6px 10px", borderRadius: 6, background: p.rhStatut === 'confirme' ? "rgba(22,163,74,0.04)" : "rgba(220,38,38,0.04)", border: `1px solid ${p.rhStatut === 'confirme' ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.1)"}` }}>
+                                          <div style={{ minWidth: 0 }}>
+                                            <span style={{ fontSize: 12, fontWeight: 600 }}>{p.membreNom}</span>
+                                            <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>
+                                              {new Date(p.seanceDate + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · {formatDuree(p.heures)}
+                                            </span>
+                                          </div>
+                                          <span style={{ fontSize: 10, fontWeight: 700, color: p.rhStatut === 'confirme' ? "#16a34a" : "#dc2626", display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+                                            {p.rhStatut === 'confirme' ? <><CheckCircle2 size={10} /> Validées</> : <><XCircle size={10} /> Rejetées</>}
+                                            {p.rhPar && <span style={{ fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>par {p.rhPar}</span>}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                                <button
-                                  style={{ fontSize: 11, padding: "5px 12px", borderRadius: 6, background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", color: "#16a34a", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
-                                  onClick={() => handleRhValidation(p.id, 'confirme')}
-                                ><CheckCircle2 size={11} strokeWidth={2} /> Confirmer {formatDuree(p.heures)}</button>
-                                <button
-                                  style={{ fontSize: 11, padding: "5px 12px", borderRadius: 6, background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.2)", color: "#dc2626", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
-                                  onClick={() => handleRhValidation(p.id, 'rejete')}
-                                ><XCircle size={11} strokeWidth={2} /> Rejeter</button>
-                              </div>
-                            </div>
-                          ))}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </>
-                    )}
-                    {recentRh.length > 0 && (
-                      <>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>
-                          Historique récent
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                          {recentRh.map(p => (
-                            <div key={p.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "7px 12px", borderRadius: 6, background: p.rhStatut === 'confirme' ? "rgba(22,163,74,0.04)" : "rgba(220,38,38,0.04)", border: `1px solid ${p.rhStatut === 'confirme' ? "rgba(22,163,74,0.12)" : "rgba(220,38,38,0.1)"}` }}>
-                              <div>
-                                <span style={{ fontSize: 12, fontWeight: 600 }}>{p.membreNom}</span>
-                                <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{p.evenementTitre} · {formatDuree(p.heures)}</span>
-                              </div>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: p.rhStatut === 'confirme' ? "#16a34a" : "#dc2626", display: "flex", alignItems: "center", gap: 3 }}>
-                                {p.rhStatut === 'confirme' ? <><CheckCircle2 size={10} /> Validées</> : <><XCircle size={10} /> Rejetées</>}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
+                      )}
+
+                    </div>
+                  )}
                 </div>
               );
             })()}

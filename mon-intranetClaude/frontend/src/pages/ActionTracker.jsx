@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { ErrorBoundary } from '../components/ui/ErrorBoundary';
 import Badge from '../components/ui/Badge';
-import { TYPES_ACTION, STATUTS_ACTION, STATUT_STYLE, POLE_COLORS } from '../data/constants';
+import { TYPES_ACTION, STATUTS_ACTION, STATUT_STYLE, POLE_COLORS, POLES } from '../data/constants';
 import { AvatarInner, isAvatarUrl, findMemberByName } from '../components/ui/AvatarDisplay';
 import { formatDateShort, computeCompletionScore, isTaskEffectivelyDone } from '../utils/utils';
-import { Archive, Calendar, ClipboardList, CheckCircle2, AlertTriangle, Zap, Pencil, Trash2, RotateCcw, Lock, Plus, Star, FileText } from 'lucide-react';
+import { Archive, Calendar, ClipboardList, CheckCircle2, AlertTriangle, Zap, Pencil, Trash2, RotateCcw, Lock, Plus, Star, FileText, Send, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
+import api from '../api/apiClient';
 
 const ActionTracker = () => {
   const { currentUser } = useAuth();
@@ -20,7 +21,7 @@ const ActionTracker = () => {
   const {
     actions, evenements, cycles, directory, isAdmin, isResponsable,
     toggleArchiveAction, deleteAction, handleUpdateActionStatus: onUpdateActionStatus,
-    tasks, trash, restoreTrash, forceDeleteTrash,
+    tasks, taskRequests, setTaskRequests, trash, restoreTrash, forceDeleteTrash,
     handleSaveBilan,
   } = useDataContext();
 
@@ -28,6 +29,35 @@ const ActionTracker = () => {
   const BILAN_EMPTY = { satisfaction: 0, beneficiaires: 0, pointsPositifs: '', difficultes: '', recommandations: '' };
   const [bilanPending, setBilanPending] = useState(null); // { actionId, ...fields }
   const [bilanSaving, setBilanSaving] = useState(false);
+
+  // ─── Inline task request form ─────────────────────────────────────────────
+  const TASK_REQ_EMPTY = { text: "", space: POLES[0], deadline: "" };
+  const [taskReqActionId, setTaskReqActionId] = useState(null); // null = fermé
+  const [taskReqForm, setTaskReqForm] = useState(TASK_REQ_EMPTY);
+  const [taskReqSent, setTaskReqSent] = useState(false);
+
+  const handleSendTaskReq = async (action) => {
+    if (!taskReqForm.text.trim()) return;
+    const req = {
+      text: taskReqForm.text.trim(),
+      description: '',
+      space: taskReqForm.space,
+      actionId: action.id,
+      requestedBy: currentUser?.nom || '',
+      assignees: [], targetPool: [],
+      deadline: taskReqForm.deadline || action.date_fin || action.date_debut || '',
+      cycle: action.cycle || '',
+      status: 'En attente',
+    };
+    try {
+      const created = await api.post('/tasks/requests', req);
+      if (created?.id) setTaskRequests(prev => [...prev, created]);
+      setTaskReqSent(true);
+      setTimeout(() => { setTaskReqActionId(null); setTaskReqSent(false); setTaskReqForm(TASK_REQ_EMPTY); }, 1500);
+    } catch (err) {
+      alert(err?.message || 'Erreur envoi');
+    }
+  };
 
   const handleStatutChange = (action, newStatut) => {
     if (newStatut === 'Terminée' && action.statut !== 'Terminée') {
@@ -359,6 +389,48 @@ const ActionTracker = () => {
                     )}
                   </td>
                   <td>
+                    {/* ── Demande de tâche inline ── */}
+                    {(isAdmin || (currentUser && (a.responsables || []).includes(currentUser.nom))) && (
+                      <div style={{ marginBottom: 8 }}>
+                        {taskReqActionId !== a.id ? (
+                          <button
+                            onClick={() => { setTaskReqActionId(a.id); setTaskReqSent(false); setTaskReqForm(TASK_REQ_EMPTY); }}
+                            style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: "rgba(26,86,219,0.07)", border: "1px solid rgba(26,86,219,0.2)", color: "#1a56db", cursor: "pointer", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}
+                          ><Plus size={9} strokeWidth={2.5} /> Demander une tâche</button>
+                        ) : (
+                          <div style={{ padding: "10px 12px", background: "rgba(26,86,219,0.04)", border: "1px dashed rgba(26,86,219,0.25)", borderRadius: 8, marginBottom: 6 }}>
+                            {taskReqSent ? (
+                              <div style={{ fontSize: 11, color: "#16a34a", fontWeight: 600 }}>✓ Demande envoyée</div>
+                            ) : (
+                              <>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: "#1a56db" }}>Nouvelle demande de tâche</span>
+                                  <button onClick={() => setTaskReqActionId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, display: "flex" }}><X size={11} strokeWidth={2} /></button>
+                                </div>
+                                <input
+                                  type="text" className="form-input"
+                                  placeholder="Intitulé de la tâche *"
+                                  value={taskReqForm.text}
+                                  onChange={e => setTaskReqForm(f => ({ ...f, text: e.target.value }))}
+                                  style={{ fontSize: 11, padding: "4px 8px", marginBottom: 6 }}
+                                  autoFocus
+                                />
+                                <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                                  <select className="form-select" value={taskReqForm.space} onChange={e => setTaskReqForm(f => ({ ...f, space: e.target.value }))} style={{ fontSize: 10, flex: 1 }}>
+                                    {POLES.map(p => <option key={p} value={p}>{p}</option>)}
+                                  </select>
+                                  <input type="date" className="form-input" value={taskReqForm.deadline} onChange={e => setTaskReqForm(f => ({ ...f, deadline: e.target.value }))} style={{ fontSize: 10, flex: 1, padding: "4px 6px" }} />
+                                </div>
+                                <button
+                                  onClick={() => handleSendTaskReq(a)}
+                                  style={{ fontSize: 10, padding: "4px 10px", background: "#1a56db", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
+                                ><Send size={9} strokeWidth={2} /> Envoyer</button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <ErrorBoundary inline label="barre des tâches">
                     {(() => {
                       // Uniquement les tâches avec au moins un assigné (acceptées et assignées)

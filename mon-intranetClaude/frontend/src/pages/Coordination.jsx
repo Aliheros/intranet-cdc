@@ -39,6 +39,7 @@ const Coordination = () => {
   const [newDossierVal, setNewDossierVal]       = useState('');
   const [showNewDossier, setShowNewDossier]     = useState(false);
   const [uploadingPrefait, setUploadingPrefait] = useState(false);
+  const [collapsedPresences, setCollapsedPresences] = useState({}); // { seanceId: bool }
   const fileInputRef    = useRef(null);
   const prefaitInputRef = useRef(null);
 
@@ -884,56 +885,81 @@ const Coordination = () => {
                           );
                           const allValidated = seancePresencesForSeance.length > 0 &&
                             seancePresencesForSeance.every(p => p.resp1Statut !== 'en_attente');
+                          const isCollapsed = collapsedPresences[s.id];
                           return (
                             <div style={{ marginTop: 10, borderTop: '2px solid rgba(22,163,74,0.2)', paddingTop: 10 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                              {/* Header repliable */}
+                              <div
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: isCollapsed ? 0 : 8, cursor: 'pointer', userSelect: 'none' }}
+                                onClick={() => setCollapsedPresences(prev => ({ ...prev, [s.id]: !prev[s.id] }))}
+                              >
                                 <Shield size={11} strokeWidth={2} style={{ color: '#16a34a' }} />
-                                <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a' }}>Validation des présences — votre rôle de responsable</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', flex: 1 }}>Validation des présences</span>
                                 {allValidated && <span style={{ fontSize: 10, background: 'rgba(22,163,74,0.1)', color: '#16a34a', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>✓ Complète</span>}
-                                {!allValidated && seancePresencesForSeance.length === 0 && (
-                                  <button style={{ fontSize: 10, background: 'none', border: '1px solid #16a34a', color: '#16a34a', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
-                                    onClick={() => refreshSeancePresences()}>
-                                    Générer les fiches
-                                  </button>
+                                {!allValidated && seancePresencesForSeance.some(p => p.resp1Statut === 'en_attente') && (
+                                  <span style={{ fontSize: 10, background: 'rgba(217,119,6,0.1)', color: '#d97706', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>
+                                    {seancePresencesForSeance.filter(p => p.resp1Statut === 'en_attente').length} en attente
+                                  </span>
                                 )}
+                                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{isCollapsed ? '▶' : '▼'}</span>
                               </div>
-                              {seancePresencesForSeance.length === 0 ? (
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                                  Cliquez sur "Générer les fiches" pour créer les fiches de présence.
-                                </div>
-                              ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                  {seancePresencesForSeance.map(p => (
-                                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: p.resp1Statut === 'present' ? 'rgba(22,163,74,0.06)' : p.resp1Statut === 'absent' ? 'rgba(220,38,38,0.05)' : 'var(--bg-card)', border: `1px solid ${p.resp1Statut === 'present' ? 'rgba(22,163,74,0.2)' : p.resp1Statut === 'absent' ? 'rgba(220,38,38,0.15)' : 'var(--border-light)'}`, borderRadius: 6, padding: '6px 10px' }}>
-                                      <span style={{ fontSize: 12, fontWeight: 600 }}>{p.membreNom}</span>
-                                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                        {p.resp1Statut === 'en_attente' ? (
-                                          <>
-                                            <button
-                                              style={{ fontSize: 10, padding: '3px 10px', borderRadius: 5, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)', color: '#16a34a', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
-                                              onClick={() => handleRespValidation(p.id, 'present')}
-                                            ><CheckCircle2 size={10} strokeWidth={2} /> Présent</button>
-                                            <button
-                                              style={{ fontSize: 10, padding: '3px 10px', borderRadius: 5, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#dc2626', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
-                                              onClick={() => handleRespValidation(p.id, 'absent')}
-                                            ><XCircle size={10} strokeWidth={2} /> Absent</button>
-                                          </>
-                                        ) : (
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <span style={{ fontSize: 11, fontWeight: 700, color: p.resp1Statut === 'present' ? '#16a34a' : '#dc2626', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                              {p.resp1Statut === 'present' ? <CheckCircle2 size={11} strokeWidth={2} /> : <XCircle size={11} strokeWidth={2} />}
-                                              {p.resp1Statut === 'present' ? 'Présent' : 'Absent'}
-                                            </span>
-                                            <button style={{ fontSize: 9, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-                                              onClick={() => handleRespValidation(p.id, p.resp1Statut === 'present' ? 'absent' : 'present')}>
-                                              Corriger
-                                            </button>
+                              {!isCollapsed && (
+                                <>
+                                  {seancePresencesForSeance.length === 0 ? (
+                                    <button style={{ fontSize: 10, background: 'none', border: '1px solid #16a34a', color: '#16a34a', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}
+                                      onClick={e => { e.stopPropagation(); refreshSeancePresences(); }}>
+                                      Générer les fiches
+                                    </button>
+                                  ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                      {seancePresencesForSeance.map(p => {
+                                        const rhDone = p.rhStatut !== 'en_attente';
+                                        return (
+                                          <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: p.resp1Statut === 'present' ? 'rgba(22,163,74,0.06)' : p.resp1Statut === 'absent' ? 'rgba(220,38,38,0.05)' : 'var(--bg-card)', border: `1px solid ${p.resp1Statut === 'present' ? 'rgba(22,163,74,0.2)' : p.resp1Statut === 'absent' ? 'rgba(220,38,38,0.15)' : 'var(--border-light)'}`, borderRadius: 6, padding: '6px 10px', flexWrap: 'wrap', gap: 6 }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                                              <span style={{ fontSize: 12, fontWeight: 600 }}>{p.membreNom}</span>
+                                              {rhDone && (
+                                                <span style={{ fontSize: 10, color: p.rhStatut === 'confirme' ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                                                  RH : {p.rhStatut === 'confirme' ? '✓ heures confirmées' : '✗ heures rejetées'}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                              {p.resp1Statut === 'en_attente' ? (
+                                                <>
+                                                  <button
+                                                    style={{ fontSize: 10, padding: '3px 10px', borderRadius: 5, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)', color: '#16a34a', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                                                    onClick={() => handleRespValidation(p.id, 'present')}
+                                                  ><CheckCircle2 size={10} strokeWidth={2} /> Présent</button>
+                                                  <button
+                                                    style={{ fontSize: 10, padding: '3px 10px', borderRadius: 5, background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#dc2626', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                                                    onClick={() => handleRespValidation(p.id, 'absent')}
+                                                  ><XCircle size={10} strokeWidth={2} /> Absent</button>
+                                                </>
+                                              ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                  <span style={{ fontSize: 11, fontWeight: 700, color: p.resp1Statut === 'present' ? '#16a34a' : '#dc2626', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                    {p.resp1Statut === 'present' ? <CheckCircle2 size={11} strokeWidth={2} /> : <XCircle size={11} strokeWidth={2} />}
+                                                    {p.resp1Statut === 'present' ? 'Présent' : 'Absent'}
+                                                  </span>
+                                                  {/* Corriger bloqué si RH a déjà traité ce dossier */}
+                                                  {!rhDone ? (
+                                                    <button style={{ fontSize: 9, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                                                      onClick={() => handleRespValidation(p.id, p.resp1Statut === 'present' ? 'absent' : 'present')}>
+                                                      Corriger
+                                                    </button>
+                                                  ) : (
+                                                    <span style={{ fontSize: 9, color: 'var(--text-muted)', fontStyle: 'italic' }} title="RH a déjà traité ces heures">verrouillé</span>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
                                           </div>
-                                        )}
-                                      </div>
+                                        );
+                                      })}
                                     </div>
-                                  ))}
-                                </div>
+                                  )}
+                                </>
                               )}
                             </div>
                           );
