@@ -9,7 +9,7 @@ import {
   BarChart2, Users, Zap, TrendingUp, Target, Clock, CheckCircle2,
   AlertTriangle, Calendar, Receipt, ChevronRight, Award, Activity,
   PieChart, Layers, MapPin, FileText, Plus, Edit2, Trash2, ArrowUp, ArrowDown,
-  Minus, Star, Flame, Info,
+  Minus, Star, Flame, Info, X,
 } from 'lucide-react';
 
 // ─── Composants graphiques CSS ────────────────────────────────────────────────
@@ -90,6 +90,11 @@ const Analytics = () => {
   const [impactForm, setImpactForm] = useState(null);
   const [impactSaving, setImpactSaving] = useState(false);
   const [tab, setTab] = useState('overview');
+  const [rapportPole, setRapportPole] = useState('Tous');
+  const [rapportType, setRapportType] = useState('Tous');
+  const [rapportRep, setRapportRep] = useState('Tous');
+  const [showEtabList, setShowEtabList] = useState(false);
+  const [rapportSection, setRapportSection] = useState(null); // section ouverte (null = toutes)
 
   const {
     cycleActions, actionsByStatus, actionsByType, actionsByPole,
@@ -105,6 +110,16 @@ const Analytics = () => {
     prevCycleName, prevTotalActions, prevBeneficiaires, prevCompletionRate,
     byNiveau, byDepartement, byLabelRep, labelRepTotal, pctRep,
     byInstitution, simActions,
+    // rapport enrichi
+    byVille, byProjet,
+    nbEtabUniques, nbVillesUniques, nbDeptsUniques, etablissementsList,
+    beneficiairesByType, beneficiairesByNiveau, beneficiairesByDept, beneficiairesByRep,
+    seancesRealisees, totalInscritsSeances, avgInscritsParSeance,
+    totalPresentsValides, totalAbsentsValides, tauxPresenceValide, tauxValidationRH,
+    actionsByResponsable,
+    benefParAction, benefParSeance, benefParEtab, heuresParSeance,
+    nbBenevAvecHeures, nbActionsAvecBenef,
+    bilanVerbatims,
   } = analyticsStats;
 
   const activeMembers   = directory.filter(m => m.statut === 'Actif').length;
@@ -237,6 +252,17 @@ const Analytics = () => {
   // Faible couverture bilan — signal qualité rapportage
   if (termineeCount >= 3 && bilanWithScore.length / termineeCount < 0.5)
     alerts.push({ level: 'info', msg: `Couverture bilan faible : ${bilanWithScore.length}/${termineeCount} actions terminées ont un bilan renseigné (${Math.round(bilanWithScore.length/termineeCount*100)}%).` });
+
+  // ── Rapport : ventilation filtrée ────────────────────────────────────────
+  const isFiltered = rapportPole !== 'Tous' || rapportType !== 'Tous' || rapportRep !== 'Tous';
+  const rapportActions = cycleActions.filter(a =>
+    (rapportPole === 'Tous' || (a.poles || []).includes(rapportPole)) &&
+    (rapportType === 'Tous' || a.type === rapportType) &&
+    (rapportRep  === 'Tous' || a.labelRep === rapportRep)
+  );
+  const rapportBenef  = rapportActions.reduce((s, a) => s + (Number(a.beneficiaires) || 0), 0);
+  const rapportEtabs  = new Set(rapportActions.map(a => a.etablissement).filter(Boolean)).size;
+  const rapportVilles = new Set(rapportActions.map(a => a.ville).filter(Boolean)).size;
 
   const TABS = [
     { id: 'overview',  label: 'Vue d\'ensemble', icon: BarChart2 },
@@ -777,31 +803,327 @@ const Analytics = () => {
       {/* ═══════════ ONGLET RAPPORT ═══════════ */}
       {tab === 'rapport' && (
         <>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, padding: '20px 24px', marginBottom: 20 }}>
+          {/* ── Filtres ventilation ─────────────────────────────────────────────── */}
+          <div className="toolbar-wrap" style={{ marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
+            <select className="form-select" style={{ width: 'auto', fontSize: 11 }} value={rapportPole} onChange={e => setRapportPole(e.target.value)}>
+              <option value="Tous">Tous les pôles</option>
+              {POLES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <select className="form-select" style={{ width: 'auto', fontSize: 11 }} value={rapportType} onChange={e => setRapportType(e.target.value)}>
+              <option value="Tous">Tous les types</option>
+              {Object.keys(actionsByType).sort().map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+            <select className="form-select" style={{ width: 'auto', fontSize: 11 }} value={rapportRep} onChange={e => setRapportRep(e.target.value)}>
+              <option value="Tous">Tous labels REP</option>
+              {['REP+', 'REP', 'Hors REP'].map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            {isFiltered && (
+              <button className="chip" style={{ border: 'none', fontSize: 11, color: '#e63946', display: 'flex', alignItems: 'center', gap: 4 }}
+                onClick={() => { setRapportPole('Tous'); setRapportType('Tous'); setRapportRep('Tous'); }}>
+                <X size={10} strokeWidth={2.5} /> Réinitialiser
+              </button>
+            )}
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic', marginLeft: 'auto', alignSelf: 'center' }}>
+              {isFiltered
+                ? `${rapportActions.length} action${rapportActions.length > 1 ? 's' : ''} filtrée${rapportActions.length > 1 ? 's' : ''}`
+                : `${totalActions} action${totalActions > 1 ? 's' : ''} — ${activeCycle === 'Toutes' ? 'tous cycles' : `Cycle ${activeCycle}`}`}
+            </span>
+          </div>
+
+          {/* ── Synthèse exécutive ───────────────────────────────────────────────── */}
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 10, padding: '20px 24px', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 4 }}>Chiffres clés auto-calculés</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)' }}>{activeCycle === 'Toutes' ? 'Tous cycles confondus' : `Cycle ${activeCycle}`}</div>
+                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 4 }}>Synthèse exécutive — chiffres clés</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)' }}>
+                  {activeCycle === 'Toutes' ? 'Tous cycles confondus' : `Cycle ${activeCycle}`}
+                  {isFiltered && <span style={{ fontSize: 11, color: '#d97706', marginLeft: 10, fontWeight: 600 }}>· Vue filtrée</span>}
+                </div>
               </div>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic' }}>Données issues de l'intranet en temps réel</div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic' }}>Données intranet — temps réel</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(115px, 1fr))', gap: 10 }}>
               {[
-                { label: 'Bénéficiaires touchés', value: totalBeneficiaires, color: '#7c3aed' },
-                { label: 'Ateliers réalisés',     value: nbAteliersAuto,    color: '#1a56db' },
-                { label: 'Établissements',        value: nbEtabAuto,        color: '#0891b2' },
-                { label: 'Bénévoles investis',    value: activeMembers,     color: '#d97706' },
-                { label: 'Heures bénévoles',      value: totalHours > 0 ? formatDuree(totalHours) : '—', color: '#16a34a' },
-                { label: 'Actions menées',        value: totalActions,      color: '#e63946' },
+                { label: 'Bénéficiaires touchés',     value: isFiltered ? rapportBenef.toLocaleString('fr-FR') : totalBeneficiaires.toLocaleString('fr-FR'), color: '#7c3aed' },
+                { label: 'Séances réalisées',          value: seancesRealisees,                                                                               color: '#1a56db' },
+                { label: 'Établissements partenaires', value: isFiltered ? rapportEtabs : nbEtabUniques,                                                       color: '#0891b2' },
+                { label: 'Villes couvertes',           value: isFiltered ? rapportVilles : nbVillesUniques,                                                    color: '#059669' },
+                { label: 'Départements couverts',      value: nbDeptsUniques,                                                                                  color: '#64748b' },
+                { label: 'Bénévoles avec heures',      value: nbBenevAvecHeures || activeMembers,                                                              color: '#d97706' },
+                { label: 'Heures bénévoles',           value: totalHours > 0 ? formatDuree(totalHours) : '—',                                                 color: '#16a34a' },
+                { label: 'En zone REP / REP+',         value: pctRep != null ? `${pctRep}%` : '—',                                                            color: '#e63946' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: `${color}0d`, borderRadius: 8, padding: '12px 14px', borderLeft: `3px solid ${color}` }}>
                   <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, fontWeight: 500 }}>{label}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 5, fontWeight: 500, lineHeight: 1.3 }}>{label}</div>
                 </div>
               ))}
             </div>
           </div>
 
+          {/* ── Ratios d'efficacité ──────────────────────────────────────────────── */}
+          {(benefParAction != null || benefParSeance != null || benefParEtab != null || heuresParSeance != null) && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 16 }}>
+              {[
+                { label: 'bénéf. / action',    value: benefParAction,                                       color: '#7c3aed' },
+                { label: 'bénéf. / séance',    value: benefParSeance,                                       color: '#1a56db' },
+                { label: 'bénéf. / étab.',     value: benefParEtab,                                         color: '#0891b2' },
+                { label: 'heures / séance',    value: heuresParSeance != null ? formatDuree(heuresParSeance) : null, color: '#16a34a' },
+              ].filter(r => r.value != null).map(({ label, value, color }) => (
+                <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 8, padding: '12px 14px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 26, fontWeight: 800, color }}>{value}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Grille sections ─────────────────────────────────────────────────── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
+
+            {/* Couverture territoriale */}
+            <div className="sc">
+              <SectionTitle icon={MapPin}>Couverture territoriale</SectionTitle>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                {[
+                  { label: 'Dép.', value: nbDeptsUniques, color: '#0891b2' },
+                  { label: 'Villes', value: nbVillesUniques, color: '#059669' },
+                  { label: 'Étab.', value: nbEtabUniques, color: '#7c3aed' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} style={{ flex: 1, textAlign: 'center', background: `${color}0d`, borderRadius: 6, padding: '8px 4px' }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, color }}>{value}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              {Object.keys(byDepartement).length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Par département</div>
+                  {Object.entries(byDepartement).sort(([, a], [, b]) => b - a).slice(0, 8).map(([dept, count]) => (
+                    <BarRow key={dept} label={`Dép. ${dept}`} value={count} max={Math.max(1, ...Object.values(byDepartement))} color="#0891b2" suffix=" action(s)" small />
+                  ))}
+                </>
+              )}
+              {Object.keys(byVille).length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Par ville</div>
+                  {Object.entries(byVille).sort(([, a], [, b]) => b - a).slice(0, 6).map(([ville, count]) => (
+                    <BarRow key={ville} label={ville} value={count} max={Math.max(1, ...Object.values(byVille))} color="#059669" suffix=" action(s)" small />
+                  ))}
+                </div>
+              )}
+              {etablissementsList.length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <button onClick={() => setShowEtabList(v => !v)} style={{ fontSize: 10, fontWeight: 600, color: '#1a56db', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <ChevronRight size={10} strokeWidth={2} style={{ transform: showEtabList ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+                    {showEtabList ? 'Masquer les établissements' : `Voir les ${etablissementsList.length} établissements`}
+                  </button>
+                  {showEtabList && (
+                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 180, overflowY: 'auto' }}>
+                      {etablissementsList.map(e => (
+                        <div key={e} style={{ fontSize: 11, color: 'var(--text-base)', padding: '3px 8px', background: 'var(--bg-hover)', borderRadius: 4 }}>{e}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Profil bénéficiaires */}
+            <div className="sc">
+              <SectionTitle icon={Users}>Profil des bénéficiaires</SectionTitle>
+              {totalBeneficiaires > 0 ? (
+                <>
+                  {Object.keys(beneficiairesByType).length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Par type d'action</div>
+                      {Object.entries(beneficiairesByType).sort(([, a], [, b]) => b - a).map(([t, n]) => (
+                        <BarRow key={t} label={t} value={n} max={totalBeneficiaires} color="#7c3aed" suffix={` (${Math.round(n / totalBeneficiaires * 100)}%)`} small />
+                      ))}
+                    </div>
+                  )}
+                  {Object.keys(beneficiairesByNiveau).length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Par niveau scolaire</div>
+                      {Object.entries(beneficiairesByNiveau).sort(([, a], [, b]) => b - a).map(([n, v]) => (
+                        <BarRow key={n} label={n} value={v} max={totalBeneficiaires} color="#1a56db" suffix=" pers." small />
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Par zone prioritaire</div>
+                    {Object.entries(beneficiairesByRep).filter(([, n]) => n > 0).map(([label, n]) => (
+                      <BarRow key={label} label={label} value={n} max={totalBeneficiaires}
+                        color={label === 'REP+' ? '#e63946' : label === 'REP' ? '#d97706' : '#94a3b8'}
+                        suffix={` (${Math.round(n / totalBeneficiaires * 100)}%)`} small />
+                    ))}
+                    {pctRep != null && (
+                      <div style={{ marginTop: 6, fontSize: 11, fontWeight: pctRep >= 50 ? 700 : 400, color: pctRep >= 50 ? '#16a34a' : 'var(--text-muted)' }}>
+                        {pctRep}% des actions en zone prioritaire (REP/REP+)
+                      </div>
+                    )}
+                  </div>
+                  {Object.keys(beneficiairesByDept).length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Par département (bénéf.)</div>
+                      {Object.entries(beneficiairesByDept).sort(([, a], [, b]) => b - a).slice(0, 5).map(([dept, n]) => (
+                        <BarRow key={dept} label={`Dép. ${dept}`} value={n} max={totalBeneficiaires} color="#059669" suffix=" pers." small />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState msg="Aucun bénéficiaire enregistré pour ce cycle." />
+              )}
+            </div>
+
+            {/* Activité opérationnelle */}
+            <div className="sc">
+              <SectionTitle icon={Calendar}>Activité opérationnelle</SectionTitle>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+                {[
+                  { label: 'Séances réalisées',     value: seancesRealisees,       color: '#1a56db' },
+                  { label: 'Séances annulées',       value: seanceAnnuleeCount,     color: '#e63946' },
+                  { label: 'Total inscrits',         value: totalInscritsSeances,   color: '#7c3aed' },
+                  { label: 'Moy. inscrits / séance', value: avgInscritsParSeance ?? '—', color: '#0891b2' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} style={{ textAlign: 'center', background: `${color}0d`, borderRadius: 6, padding: '8px 6px' }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color }}>{value}</div>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.3 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              {(totalPresentsValides + totalAbsentsValides) > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Présences validées (responsable)</div>
+                  <BarRow label="Présents" value={totalPresentsValides} max={totalPresentsValides + totalAbsentsValides} color="#16a34a" suffix={` (${tauxPresenceValide}%)`} small />
+                  <BarRow label="Absents"  value={totalAbsentsValides}  max={totalPresentsValides + totalAbsentsValides} color="#e63946" suffix={` (${100 - (tauxPresenceValide || 0)}%)`} small />
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                    {totalPresentsValides + totalAbsentsValides} fiche{totalPresentsValides + totalAbsentsValides > 1 ? 's' : ''} de présence validées
+                  </div>
+                </div>
+              )}
+              {tauxValidationRH != null && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Validation RH des heures</div>
+                  <BarRow label="Fiches validées RH" value={tauxValidationRH} max={100} color="#0891b2" suffix="%" small />
+                </div>
+              )}
+              {annulationRate > 0 && (
+                <div style={{ fontSize: 11, background: annulationRate >= 25 ? 'rgba(230,57,70,0.07)' : 'var(--bg-hover)', borderRadius: 6, padding: '7px 10px', color: annulationRate >= 25 ? '#e63946' : 'var(--text-muted)' }}>
+                  Taux d'annulation séances : <strong>{annulationRate}%</strong>
+                  {annulationRate >= 25 && <span style={{ fontWeight: 700 }}> — à surveiller</span>}
+                </div>
+              )}
+            </div>
+
+            {/* Engagement bénévoles */}
+            <div className="sc">
+              <SectionTitle icon={Clock}>Engagement bénévoles</SectionTitle>
+              {totalHours > 0 ? (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+                    <div style={{ textAlign: 'center', background: '#0891b20d', borderRadius: 6, padding: '8px 6px' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#0891b2' }}>{formatDuree(totalHours)}</div>
+                      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>heures totales</div>
+                    </div>
+                    <div style={{ textAlign: 'center', background: '#d9770610', borderRadius: 6, padding: '8px 6px' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#d97706' }}>{nbBenevAvecHeures}</div>
+                      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>bénévoles actifs</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Classement heures</div>
+                  {hoursRanking.slice(0, 8).map(([nom, h]) => (
+                    <BarRow key={nom} label={nom} value={h} max={maxHours} color="#0891b2" display={formatDuree(h)} small />
+                  ))}
+                  {Object.keys(hoursByType).length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Par type d'activité</div>
+                      {Object.entries(hoursByType).sort(([, a], [, b]) => b - a).map(([t, h]) => (
+                        <BarRow key={t} label={t} value={h} max={totalHours} color="#7c3aed" display={formatDuree(h)} small />
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState msg="Aucune heure bénévole enregistrée." />
+              )}
+            </div>
+
+            {/* Responsables d'actions */}
+            {Object.keys(actionsByResponsable).length > 0 && (
+              <div className="sc">
+                <SectionTitle icon={Star}>Responsables d'actions</SectionTitle>
+                {Object.entries(actionsByResponsable).sort(([, a], [, b]) => b - a).slice(0, 10).map(([nom, n]) => (
+                  <BarRow key={nom} label={nom} value={n} max={Math.max(1, ...Object.values(actionsByResponsable))} color="#d97706" suffix={` action${n > 1 ? 's' : ''}`} small />
+                ))}
+                <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
+                  {Object.keys(actionsByResponsable).length} bénévole{Object.keys(actionsByResponsable).length > 1 ? 's' : ''} responsable{Object.keys(actionsByResponsable).length > 1 ? 's' : ''}
+                </div>
+              </div>
+            )}
+
+            {/* Qualité & bilans */}
+            <div className="sc">
+              <SectionTitle icon={Award}>Qualité & bilans d'action</SectionTitle>
+              {bilanWithScore.length > 0 ? (
+                <>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                    <div style={{ textAlign: 'center', background: '#d9770610', borderRadius: 6, padding: '8px 12px', flex: 1 }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#d97706' }}>{avgBilanSatisfaction != null ? `${avgBilanSatisfaction}/5` : '—'}</div>
+                      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>satisfaction moy.</div>
+                    </div>
+                    <div style={{ textAlign: 'center', background: '#16a34a10', borderRadius: 6, padding: '8px 12px', flex: 1 }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>{bilanWithScore.length}</div>
+                      <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>bilans saisis</div>
+                    </div>
+                    {termineeCount > 0 && (
+                      <div style={{ textAlign: 'center', background: '#1a56db10', borderRadius: 6, padding: '8px 12px', flex: 1 }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: '#1a56db' }}>{Math.round(bilanWithScore.length / termineeCount * 100)}%</div>
+                        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>couverture</div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Distribution satisfaction</div>
+                  {[5, 4, 3, 2, 1].map(s => (
+                    <BarRow key={s} label={'★'.repeat(s) + '☆'.repeat(5 - s)} value={bilanSatisfactionDist[s] || 0} max={maxBilanDist}
+                      color={s >= 4 ? '#16a34a' : s === 3 ? '#d97706' : '#e63946'} suffix={` (${bilanSatisfactionDist[s] || 0})`} small />
+                  ))}
+                </>
+              ) : (
+                <EmptyState msg="Aucun bilan d'action renseigné." />
+              )}
+            </div>
+
+          </div>
+
+          {/* ── Verbatims bilans ───────────────────────────────────────────────────── */}
+          {bilanVerbatims.length > 0 && (
+            <div className="sc" style={{ marginBottom: 16 }}>
+              <SectionTitle icon={Info}>Verbatims bilans — retours terrain</SectionTitle>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+                {bilanVerbatims.slice(0, 6).map((v, i) => (
+                  <div key={i} style={{ background: 'var(--bg-hover)', borderRadius: 8, padding: '12px 14px', borderLeft: '3px solid var(--border-light)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-base)', marginBottom: 8 }}>{v.etablissement}</div>
+                    {v.positifs && (
+                      <div style={{ marginBottom: 6 }}>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>+ Points positifs</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.45 }}>{v.positifs.slice(0, 130)}{v.positifs.length > 130 ? '…' : ''}</div>
+                      </div>
+                    )}
+                    {v.difficultes && (
+                      <div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: '#e63946', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>− Difficultés</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.45 }}>{v.difficultes.slice(0, 130)}{v.difficultes.length > 130 ? '…' : ''}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Études d'impact manuelles ──────────────────────────────────────────── */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <SectionTitle icon={FileText}>Études d'impact (données enquêtes)</SectionTitle>
             {(isAdmin || isBureau) && activeCycle !== 'Toutes' && (

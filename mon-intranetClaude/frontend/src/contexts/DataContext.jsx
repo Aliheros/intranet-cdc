@@ -1504,6 +1504,82 @@ export function DataProvider({ children }) {
       if (v) byInstitution[v] = (byInstitution[v] || 0) + 1;
     });
 
+    // ── Ventilation géographique et pédagogique enrichie ─────────────────────
+    const byVille = {};
+    const byProjet = {};
+    cycleActions.forEach(a => {
+      if (a.ville) byVille[a.ville] = (byVille[a.ville] || 0) + 1;
+      if (a.projet) byProjet[a.projet] = (byProjet[a.projet] || 0) + 1;
+    });
+    const nbEtabUniques = new Set(cycleActions.map(a => a.etablissement).filter(Boolean)).size;
+    const nbVillesUniques = new Set(cycleActions.map(a => a.ville).filter(Boolean)).size;
+    const nbDeptsUniques = new Set(cycleActions.map(a => a.departement).filter(Boolean)).size;
+    const etablissementsList = [...new Set(cycleActions.map(a => a.etablissement).filter(Boolean))].sort();
+
+    // ── Bénéficiaires ventilés ────────────────────────────────────────────────
+    const beneficiairesByType = {};
+    const beneficiairesByNiveau = {};
+    const beneficiairesByDept = {};
+    const beneficiairesByRep = { 'Hors REP': 0, 'REP': 0, 'REP+': 0 };
+    cycleActions.forEach(a => {
+      const b = Number(a.beneficiaires) || 0;
+      if (b === 0) return;
+      const t = a.type || 'Autre';
+      beneficiairesByType[t] = (beneficiairesByType[t] || 0) + b;
+      if (a.type_classe) beneficiairesByNiveau[a.type_classe] = (beneficiairesByNiveau[a.type_classe] || 0) + b;
+      if (a.departement) beneficiairesByDept[a.departement] = (beneficiairesByDept[a.departement] || 0) + b;
+      if (a.labelRep && beneficiairesByRep[a.labelRep] !== undefined) beneficiairesByRep[a.labelRep] += b;
+    });
+
+    // ── Séances du cycle enrichies ─────────────────────────────────────────────
+    const cycleEvenements = evenements.filter(e => activeCycle === 'Toutes' || e.cycle === activeCycle);
+    let seancesRealisees = 0;
+    let totalInscritsSeances = 0;
+    cycleEvenements.forEach(e => {
+      (e.seances || []).forEach(s => {
+        if (!s.annulee) {
+          seancesRealisees++;
+          totalInscritsSeances += (s.inscrits || []).length;
+        }
+      });
+    });
+    const avgInscritsParSeance = seancesRealisees > 0 ? Math.round(totalInscritsSeances / seancesRealisees * 10) / 10 : null;
+
+    // ── Présences validées (depuis SeancePresence) ─────────────────────────────
+    const cycleEvIds = new Set(cycleEvenements.map(e => e.id));
+    const cyclePresences = seancePresences.filter(p => activeCycle === 'Toutes' || cycleEvIds.has(p.evenementId));
+    const totalPresentsValides = cyclePresences.filter(p => p.resp1Statut === 'present').length;
+    const totalAbsentsValides  = cyclePresences.filter(p => p.resp1Statut === 'absent').length;
+    const tauxPresenceValide   = (totalPresentsValides + totalAbsentsValides) > 0
+      ? Math.round(totalPresentsValides / (totalPresentsValides + totalAbsentsValides) * 100) : null;
+    const tauxValidationRH     = cyclePresences.length > 0
+      ? Math.round(cyclePresences.filter(p => p.rhStatut !== 'en_attente').length / cyclePresences.length * 100) : null;
+
+    // ── Responsables les plus actifs ──────────────────────────────────────────
+    const actionsByResponsable = {};
+    cycleActions.forEach(a => {
+      (a.responsables || []).forEach(r => {
+        actionsByResponsable[r] = (actionsByResponsable[r] || 0) + 1;
+      });
+    });
+
+    // ── Ratios clés ───────────────────────────────────────────────────────────
+    const nbActionsAvecBenef = cycleActions.filter(a => (a.beneficiaires || 0) > 0).length;
+    const benefParAction = nbActionsAvecBenef > 0 ? Math.round(totalBeneficiaires / nbActionsAvecBenef) : null;
+    const benefParSeance = seancesRealisees > 0 && totalBeneficiaires > 0 ? Math.round(totalBeneficiaires / seancesRealisees) : null;
+    const benefParEtab   = nbEtabUniques > 0 && totalBeneficiaires > 0 ? Math.round(totalBeneficiaires / nbEtabUniques) : null;
+    const heuresParSeance = seancesRealisees > 0 && totalHours > 0 ? Math.round(totalHours / seancesRealisees * 10) / 10 : null;
+    const nbBenevAvecHeures = Object.keys(hoursByPerson).length;
+
+    // ── Bilans texte agrégés ──────────────────────────────────────────────────
+    const bilanVerbatims = bilanParsed.map(b => ({
+      etablissement: b.etablissement,
+      positifs: b.bilanData.pointsPositifs || '',
+      difficultes: b.bilanData.difficultes || '',
+      recommandations: b.bilanData.recommandations || '',
+      score: Number(b.bilanData.satisfaction) || null,
+    })).filter(b => b.positifs || b.difficultes || b.recommandations);
+
     return {
       cycleActions, actionsByStatus, actionsByType, actionsByPole,
       totalBeneficiaires, beneficiairesPerMonth,
@@ -1518,9 +1594,19 @@ export function DataProvider({ children }) {
       prevCycleName, prevTotalActions, prevBeneficiaires, prevCompletionRate,
       byNiveau, byDepartement, byLabelRep, labelRepTotal, pctRep,
       byInstitution, simActions,
+      // enrichissements rapport
+      byVille, byProjet,
+      nbEtabUniques, nbVillesUniques, nbDeptsUniques, etablissementsList,
+      beneficiairesByType, beneficiairesByNiveau, beneficiairesByDept, beneficiairesByRep,
+      seancesRealisees, totalInscritsSeances, avgInscritsParSeance,
+      totalPresentsValides, totalAbsentsValides, tauxPresenceValide, tauxValidationRH,
+      actionsByResponsable,
+      benefParAction, benefParSeance, benefParEtab, heuresParSeance,
+      nbBenevAvecHeures, nbActionsAvecBenef,
+      bilanVerbatims,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actions, volunteerHours, tasks, transactions, budgets, notesFrais, evenements, activeCycle, cycles]);
+  }, [actions, volunteerHours, tasks, transactions, budgets, notesFrais, evenements, seancePresences, activeCycle, cycles]);
 
   // ─── SLICES CONTEXTUELS (pour abonnements fins, sans casser l'API existante) ──
 
