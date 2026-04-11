@@ -2,19 +2,47 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AvatarInner, isAvatarUrl } from '../ui/AvatarDisplay';
 import { POLE_COLORS, PROJET_COLORS } from '../../data/constants';
-import { LogOut, Moon, Sun, Settings, Search, X, Bell, ClipboardList, MessageCircle, LayoutDashboard, Zap, Users, Receipt, Crown, Shield, Calendar, User, Target, Menu, ExternalLink, HelpCircle, FileSignature, BarChart2 } from 'lucide-react';
+import { LogOut, Moon, Sun, Settings, Search, X, Bell, ClipboardList, MessageCircle, LayoutDashboard, Zap, Users, Receipt, Crown, Shield, Calendar, User, Target, Menu, ExternalLink, HelpCircle, FileSignature, BarChart2, ChevronRight } from 'lucide-react';
+import { useDataContext } from '../../contexts/DataContext';
 
 const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, darkMode, setDarkMode, currentUser, isAdmin = false, isBureau = false, accessiblePoles = [], accessibleProjets = [], myTeamSpaces = [], onOpenProfile, onOpenMyProfile, onRemoveAvatar, onLogout, globalQuery = "", setGlobalQuery, upcomingNotifications = [], notifBadgeCount = 0, onOpenNotifPanel, bannerHeight = 0, directory = [], actions = [], evenements = [], missions = [], onSelectMember, onSelectAction, onSelectEvent, onSelectMission }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [avatarHovered, setAvatarHovered] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const searchRef = useRef(null);
+  const notifRef = useRef(null);
+  const profileRef = useRef(null);
+
+  const { notifLues, setNotifLues, visibleNotifs, personalNotifs } = useDataContext();
+
+  const PAGE_LABELS = {
+    dashboard: 'Tableau de bord', actions: 'Suivi des actions', coordination: 'Coordination',
+    planning: 'Planning', annuaire: 'Annuaire & RH', messagerie: 'Messagerie',
+    analytics: 'Analytics', notefrais: 'Notes de frais', devisFactures: 'Devis & Factures',
+    faq: 'FAQ', bureau: 'Espace Bureau', admin: 'Administration',
+  };
+  const currentPageLabel = (page === 'pole' || page === 'projet') ? subPage : (PAGE_LABELS[page] || page);
+
+  const NOTIF_ICON  = { annonce: '📢', task: '✅', seance: '📅' };
+  const NOTIF_COLOR = { annonce: 'rgba(124,58,237,.1)', task: 'rgba(22,163,74,.1)', seance: 'rgba(8,145,178,.1)' };
+
+  const handleMarkAllRead = () => {
+    const allIds = [
+      ...visibleNotifs.map(n => n.id),
+      ...personalNotifs.map(n => n.id),
+    ].filter(id => !notifLues.includes(id));
+    if (allIds.length > 0) setNotifLues(prev => [...prev, ...allIds]);
+  };
 
   useEffect(() => {
     const handler = (e) => {
       if (searchRef.current && !searchRef.current.closest('[data-search-container]')?.contains(e.target)) {
         setSearchOpen(false);
       }
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -243,19 +271,6 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
               </div>
             ))}
 
-            {/* ── Notifications ── */}
-            <div className={`ni`} onClick={() => { onOpenNotifPanel(); setSidebarOpen(false); }} style={{ marginTop: 8 }}>
-              <span style={{ display: "inline-flex", alignItems: "center", marginRight: 8, opacity: notifBadgeCount > 0 ? 1 : 0.6 }}>
-                <Bell size={15} strokeWidth={1.8} />
-              </span>
-              Notifications
-              {notifBadgeCount > 0 && (
-                <span style={{ marginLeft: "auto", background: "#e63946", color: "#fff", fontSize: 9, fontWeight: 700, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
-                </span>
-              )}
-            </div>
-
             {mySpaceEntries.length > 0 && (
               <>
                 <div className="ns" style={{ marginTop: 14 }}>Mon espace</div>
@@ -302,35 +317,29 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
           </nav>
 
           <div className="s-bottom" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button className="user-btn" onClick={openProfile} title="Éditer mon profil" style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{ position: 'relative', flexShrink: 0 }}
-                  onMouseEnter={() => setAvatarHovered(true)}
-                  onMouseLeave={() => setAvatarHovered(false)}
-                >
-                  <div className="uav" style={{ background: isAvatarUrl(currentUser.avatar) ? "transparent" : undefined, overflow: "hidden", padding: 0 }}>
-                    <AvatarInner avatar={currentUser.avatar} nom={currentUser.nom} />
-                  </div>
-                  {isAvatarUrl(currentUser.avatar) && avatarHovered && onRemoveAvatar && (
-                    <button
-                      onClick={e => { e.stopPropagation(); onRemoveAvatar(); }}
-                      title="Supprimer la photo"
-                      style={{ position: 'absolute', top: -3, right: -3, width: 15, height: 15, borderRadius: '50%', background: '#e63946', border: '1.5px solid rgba(255,255,255,0.8)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}
-                    >
-                      <X size={7} strokeWidth={3} color="#fff" />
-                    </button>
-                  )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 0' }}>
+              <div
+                style={{ position: 'relative', flexShrink: 0 }}
+                onMouseEnter={() => setAvatarHovered(true)}
+                onMouseLeave={() => setAvatarHovered(false)}
+              >
+                <div className="uav" style={{ background: isAvatarUrl(currentUser.avatar) ? "transparent" : undefined, overflow: "hidden", padding: 0 }}>
+                  <AvatarInner avatar={currentUser.avatar} nom={currentUser.nom} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                  <div className="uname">{currentUser.nom}</div>
-                  <div className="urole">{currentUser.role}</div>
-                </div>
-                <span style={{ display: "inline-flex", alignItems: "center", color: "rgba(255,255,255,0.4)" }}><Settings size={14} strokeWidth={1.8} /></span>
-              </button>
-              <button className="theme-toggle" onClick={() => setDarkMode(!darkMode)} title="Changer le thème" style={{ flexShrink: 0 }}>
-                {darkMode ? <Moon size={15} strokeWidth={1.8} /> : <Sun size={15} strokeWidth={1.8} />}
-              </button>
+                {isAvatarUrl(currentUser.avatar) && avatarHovered && onRemoveAvatar && (
+                  <button
+                    onClick={e => { e.stopPropagation(); onRemoveAvatar(); }}
+                    title="Supprimer la photo"
+                    style={{ position: 'absolute', top: -3, right: -3, width: 15, height: 15, borderRadius: '50%', background: '#e63946', border: '1.5px solid rgba(255,255,255,0.8)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}
+                  >
+                    <X size={7} strokeWidth={3} color="#fff" />
+                  </button>
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="uname">{currentUser.nom}</div>
+                <div className="urole">{currentUser.role}</div>
+              </div>
             </div>
             {onLogout && (
               <button
@@ -339,15 +348,10 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
                 style={{
                   background: 'rgba(230,57,70,0.15)',
                   border: '1px solid rgba(230,57,70,0.3)',
-                  borderRadius: 8,
-                  color: '#ff6b7a',
-                  padding: '7px 10px',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  transition: 'all 0.2s',
-                  width: '100%',
-                  fontWeight: 600,
-                  letterSpacing: '0.3px',
+                  borderRadius: 8, color: '#ff6b7a',
+                  padding: '7px 10px', cursor: 'pointer',
+                  fontSize: 13, transition: 'all 0.2s',
+                  width: '100%', fontWeight: 600, letterSpacing: '0.3px',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(230,57,70,0.25)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(230,57,70,0.15)'; }}
@@ -359,12 +363,23 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
         </aside>
 
         {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────────── */}
-        <main className="main" style={{ paddingTop: "20px", transition: "all 0.3s ease-out" }}>
+        <main className={`main ${page === 'dashboard' ? 'main-gradient' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
 
-          {/* ── BARRE DE RECHERCHE GLOBALE ──────────────────────────────────── */}
-          <div data-search-container="true" style={{ position: "relative", flex: 1, maxWidth: 420, margin: "0 0 16px 0" }}>
-            <div style={{ position: "relative" }}>
-              <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none", display: "inline-flex" }}><Search size={13} strokeWidth={1.8} /></span>
+          {/* ── TOPBAR STICKY ───────────────────────────────────────────────── */}
+          <div className="topbar">
+            {/* Breadcrumb */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>
+              <LayoutDashboard size={13} strokeWidth={1.8} style={{ color: 'var(--text-muted)' }} />
+              <span>Intranet</span>
+              <ChevronRight size={12} strokeWidth={2} />
+              <span style={{ fontWeight: 600, color: 'var(--text-base)' }}>{currentPageLabel}</span>
+            </div>
+
+            {/* Barre de recherche */}
+            <div data-search-container="true" className="topbar-search-wrap">
+              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none', display: 'inline-flex' }}>
+                <Search size={13} strokeWidth={1.8} />
+              </span>
               <input
                 ref={searchRef}
                 type="text"
@@ -372,95 +387,159 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
                 onChange={e => { setGlobalQuery(e.target.value); setSearchOpen(true); }}
                 onFocus={() => setSearchOpen(true)}
                 placeholder="Rechercher membres, actions, événements…"
-                style={{ width: "100%", padding: "7px 12px 7px 32px", fontSize: 12, background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 8, color: "var(--text-base)", outline: "none", boxSizing: "border-box" }}
+                className="topbar-search-input"
               />
               {globalQuery && (
-                <button onClick={() => { setGlobalQuery(""); setSearchOpen(false); }} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, lineHeight: 1, display: "inline-flex" }}><X size={14} strokeWidth={2} /></button>
+                <button onClick={() => { setGlobalQuery(""); setSearchOpen(false); }} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'inline-flex' }}>
+                  <X size={14} strokeWidth={2} />
+                </button>
               )}
+              {/* Overlay résultats */}
+              {searchOpen && globalQuery.length >= 2 && (() => {
+                const q = globalQuery.toLowerCase();
+                const memberResults  = directory.filter(m => m.nom.toLowerCase().includes(q) || m.pole.toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q)).slice(0, 3);
+                const actionResults  = actions.filter(a => !a.isArchived && (a.etablissement.toLowerCase().includes(q) || (a.ville || "").toLowerCase().includes(q) || (a.description || "").toLowerCase().includes(q))).slice(0, 3);
+                const eventResults   = evenements.filter(e => !e.isArchived && (e.titre.toLowerCase().includes(q) || (e.lieu || "").toLowerCase().includes(q))).slice(0, 3);
+                const missionResults = missions.filter(m => m.titre.toLowerCase().includes(q) || m.description.toLowerCase().includes(q) || m.pole.toLowerCase().includes(q)).slice(0, 3);
+                const hasResults = memberResults.length + actionResults.length + eventResults.length + missionResults.length > 0;
+                return (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 10, boxShadow: '0 12px 40px rgba(0,0,0,0.18)', zIndex: 9000, overflow: 'hidden', maxHeight: 480, overflowY: 'auto' }}>
+                    {!hasResults && <div style={{ padding: '20px 16px', fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>Aucun résultat pour "{globalQuery}"</div>}
+                    {memberResults.length > 0 && <div>
+                      <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: 4 }}><User size={11} strokeWidth={1.8} /> Membres</div>
+                      {memberResults.map(m => (
+                        <div key={m.id || m.nom} onClick={() => { onSelectMember && onSelectMember(m); setGlobalQuery(''); setSearchOpen(false); }} style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: 'background .15s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: isAvatarUrl(m.avatar) ? 'transparent' : 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}><AvatarInner avatar={m.avatar} nom={m.nom} /></div>
+                          <div><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)' }}>{m.nom}</div><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.pole}</div></div>
+                        </div>
+                      ))}
+                    </div>}
+                    {actionResults.length > 0 && <div>
+                      <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: 4 }}><ClipboardList size={11} strokeWidth={1.8} /> Actions</div>
+                      {actionResults.map(a => (
+                        <div key={a.id} onClick={() => { onSelectAction && onSelectAction(a); setGlobalQuery(''); setSearchOpen(false); }} style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: 'background .15s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <ClipboardList size={18} strokeWidth={1.8} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.etablissement}</div><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{a.ville} · {a.statut}</div></div>
+                        </div>
+                      ))}
+                    </div>}
+                    {eventResults.length > 0 && <div>
+                      <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: 4 }}><Zap size={11} strokeWidth={1.8} /> Événements</div>
+                      {eventResults.map(e => (
+                        <div key={e.id} onClick={() => { onSelectEvent && onSelectEvent(e); setGlobalQuery(''); setSearchOpen(false); }} style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: 'background .15s' }} onMouseEnter={el => el.currentTarget.style.background = 'var(--bg-alt)'} onMouseLeave={el => el.currentTarget.style.background = 'transparent'}>
+                          <Zap size={18} strokeWidth={1.8} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.titre}</div><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{e.date} · {e.lieu || ''}</div></div>
+                        </div>
+                      ))}
+                    </div>}
+                    {missionResults.length > 0 && <div>
+                      <div style={{ padding: '8px 14px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: 4 }}><Target size={11} strokeWidth={1.8} /> Missions</div>
+                      {missionResults.map(m => (
+                        <div key={m.id} onClick={() => { onSelectMission && onSelectMission(m); setGlobalQuery(''); setSearchOpen(false); }} style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: 'background .15s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-alt)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <Target size={18} strokeWidth={1.8} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.titre}</div><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{m.pole} · {m.type}</div></div>
+                        </div>
+                      ))}
+                    </div>}
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* OVERLAY RÉSULTATS */}
-            {searchOpen && globalQuery.length >= 2 && (() => {
-              const q = globalQuery.toLowerCase();
-              const memberResults = directory.filter(m => m.nom.toLowerCase().includes(q) || m.pole.toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q)).slice(0, 3);
-              const actionResults = actions.filter(a => !a.isArchived && (a.etablissement.toLowerCase().includes(q) || (a.ville || "").toLowerCase().includes(q) || (a.description || "").toLowerCase().includes(q))).slice(0, 3);
-              const eventResults = evenements.filter(e => !e.isArchived && (e.titre.toLowerCase().includes(q) || (e.lieu || "").toLowerCase().includes(q))).slice(0, 3);
-              const missionResults = missions.filter(m => m.titre.toLowerCase().includes(q) || m.description.toLowerCase().includes(q) || m.pole.toLowerCase().includes(q)).slice(0, 3);
-              const hasResults = memberResults.length + actionResults.length + eventResults.length + missionResults.length > 0;
+            {/* Actions topbar droite */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
 
-              return (
-                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderRadius: 10, boxShadow: "0 12px 40px rgba(0,0,0,0.18)", zIndex: 9000, overflow: "hidden", maxHeight: 480, overflowY: "auto" }}>
-                  {!hasResults && (
-                    <div style={{ padding: "20px 16px", fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>Aucun résultat pour "{globalQuery}"</div>
-                  )}
+              {/* Thème */}
+              <button className="topbar-btn" onClick={() => setDarkMode(!darkMode)} title={darkMode ? 'Mode clair' : 'Mode sombre'}>
+                {darkMode ? <Moon size={16} strokeWidth={1.8} /> : <Sun size={16} strokeWidth={1.8} />}
+              </button>
 
-                  {memberResults.length > 0 && (
-                    <div>
-                      <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 4 }}><User size={11} strokeWidth={1.8} /> Membres</div>
-                      {memberResults.map(m => (
-                        <div key={m.id || m.nom} onClick={() => { onSelectMember && onSelectMember(m); setGlobalQuery(""); setSearchOpen(false); }} style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "var(--bg-alt)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: isAvatarUrl(m.avatar) ? "transparent" : "var(--accent)", color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
-                            <AvatarInner avatar={m.avatar} nom={m.nom} />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-base)" }}>{m.nom}</div>
-                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{m.pole}</div>
-                          </div>
-                        </div>
-                      ))}
+              {/* Notifications */}
+              <div style={{ position: 'relative' }} ref={notifRef}>
+                <button className="topbar-btn" onClick={() => { setNotifOpen(v => !v); setProfileOpen(false); }} title="Notifications">
+                  <Bell size={16} strokeWidth={1.8} />
+                  {notifBadgeCount > 0 && <span className="notif-badge-dot" />}
+                </button>
+
+                {notifOpen && (
+                  <div className="topbar-dropdown" style={{ width: 320 }}>
+                    {/* Header */}
+                    <div style={{ padding: '13px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,.06)' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)' }}>Notifications</span>
+                      <button onClick={handleMarkAllRead} style={{ fontSize: 11, color: '#0071e3', cursor: 'pointer', fontWeight: 500, background: 'none', border: 'none', fontFamily: 'var(--font-body)' }}>
+                        Tout marquer lu
+                      </button>
                     </div>
-                  )}
-
-                  {actionResults.length > 0 && (
-                    <div>
-                      <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 4 }}><ClipboardList size={11} strokeWidth={1.8} /> Actions</div>
-                      {actionResults.map(a => (
-                        <div key={a.id} onClick={() => { onSelectAction && onSelectAction(a); setGlobalQuery(""); setSearchOpen(false); }} style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "var(--bg-alt)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                          <span style={{ display: "inline-flex", color: "var(--text-muted)" }}><ClipboardList size={18} strokeWidth={1.8} /></span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.etablissement}</div>
-                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{a.ville} · {a.statut}</div>
+                    {/* Items */}
+                    {upcomingNotifications.length === 0 ? (
+                      <div style={{ padding: '20px 16px', fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>Tout est à jour ✓</div>
+                    ) : (
+                      upcomingNotifications.slice(0, 5).map(n => {
+                        const isRead = notifLues.includes(n.id);
+                        return (
+                          <div key={n.id} className={`topbar-notif-item${isRead ? '' : ' unread'}`}
+                            onClick={() => { setNotifLues(prev => prev.includes(n.id) ? prev : [...prev, n.id]); setNotifOpen(false); onOpenNotifPanel(); }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: NOTIF_COLOR[n.type] || 'rgba(148,163,184,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                              {NOTIF_ICON[n.type] || '🔔'}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-base)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</div>
+                              <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.description}</div>
+                            </div>
+                            {!isRead && <div style={{ width: 7, height: 7, background: '#0071e3', borderRadius: '50%', flexShrink: 0, marginTop: 4 }} />}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })
+                    )}
+                    {/* Footer */}
+                    <div onClick={() => { setNotifOpen(false); onOpenNotifPanel(); }}
+                      style={{ padding: '10px 16px', textAlign: 'center', borderTop: '1px solid rgba(0,0,0,.06)', fontSize: 12, color: '#0071e3', cursor: 'pointer', fontWeight: 500 }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,113,227,.04)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      Voir toutes les notifications
                     </div>
-                  )}
+                  </div>
+                )}
+              </div>
 
-                  {eventResults.length > 0 && (
-                    <div>
-                      <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 4 }}><Zap size={11} strokeWidth={1.8} /> Événements</div>
-                      {eventResults.map(e => (
-                        <div key={e.id} onClick={() => { onSelectEvent && onSelectEvent(e); setGlobalQuery(""); setSearchOpen(false); }} style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={el => el.currentTarget.style.background = "var(--bg-alt)"} onMouseLeave={el => el.currentTarget.style.background = "transparent"}>
-                          <span style={{ display: "inline-flex", color: "var(--text-muted)" }}><Zap size={18} strokeWidth={1.8} /></span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.titre}</div>
-                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{e.date} · {e.lieu || ""}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              <div className="topbar-divider" />
 
-                  {missionResults.length > 0 && (
-                    <div>
-                      <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 4 }}><Target size={11} strokeWidth={1.8} /> Missions</div>
-                      {missionResults.map(m => (
-                        <div key={m.id} onClick={() => { onSelectMission && onSelectMission(m); setGlobalQuery(""); setSearchOpen(false); }} style={{ padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "var(--bg-alt)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                          <span style={{ display: "inline-flex", color: "var(--text-muted)" }}><Target size={18} strokeWidth={1.8} /></span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.titre}</div>
-                            <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{m.pole} · {m.type}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              {/* Profil */}
+              <div style={{ position: 'relative' }} ref={profileRef}>
+                <div className="topbar-avatar" onClick={() => { setProfileOpen(v => !v); setNotifOpen(false); }} title="Mon profil">
+                  <AvatarInner avatar={currentUser.avatar} nom={currentUser.nom} />
                 </div>
-              );
-            })()}
+
+                {profileOpen && (
+                  <div className="topbar-dropdown" style={{ width: 220 }}>
+                    {/* Header profil */}
+                    <div style={{ padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(0,0,0,.06)' }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: '#e63946', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                        <AvatarInner avatar={currentUser.avatar} nom={currentUser.nom} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)' }}>{currentUser.nom}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{currentUser.role}</div>
+                      </div>
+                    </div>
+                    <div className="topbar-dropdown-item" onClick={() => { setProfileOpen(false); openProfile && openProfile(); }}>
+                      <User size={14} strokeWidth={1.8} /> Mon profil
+                    </div>
+                    <div className="topbar-dropdown-item danger" onClick={() => { setProfileOpen(false); onLogout && onLogout(); }}>
+                      <LogOut size={14} strokeWidth={1.8} /> Déconnexion
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
           </div>
 
-          <div key={page} className="page-transition">{children}</div>
+          {/* ── PAGE CONTENT ────────────────────────────────────────────────── */}
+          <div style={{ padding: '28px 44px 44px' }}>
+            <div key={page} className="page-transition">{children}</div>
+          </div>
+
         </main>
       </div>
 

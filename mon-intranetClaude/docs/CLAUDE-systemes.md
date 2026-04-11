@@ -1,5 +1,30 @@
 # CLAUDE-systemes.md — Systèmes transverses
 
+## Design system Glass + Topbar
+
+**Source unique** : `src/styles/glass.css` — importer ce seul fichier change le style glass partout.
+
+**Fond animé** : classe `main-gradient` sur `<main>` dans `Layout.jsx`.
+Pour l'activer sur une nouvelle page, modifier la condition dans Layout :
+```jsx
+className={`main ${page === 'dashboard' || page === 'mapage' ? 'main-gradient' : ''}`}
+```
+
+**Cartes glass** : `.main-gradient .kc` et `.main-gradient .sc` sont stylés automatiquement. Pour un glass sans gradient, ajouter la classe `glass-card` directement.
+
+**Tilt 3D** : `useEffect` dans `Dashboard.jsx` cible `.kpi-grid .kc` et `.dash-two-col .sc`. Pour d'autres pages, copier le même pattern ou extraire dans `src/hooks/useTilt.js`.
+
+**Topbar** : rendu dans `Layout.jsx` à l'intérieur de `<main>`, sticky via `position: sticky; top: 0`. Contient :
+- Breadcrumb (computed depuis `PAGE_LABELS` + `page`/`subPage`)
+- Barre de recherche globale (déplacée depuis l'ancien emplacement dans `<main>`)
+- Thème toggle (déplacé depuis `s-bottom` sidebar)
+- Cloche notifications + mini-dropdown (5 items récents, bouton "Voir tout" ouvre le panel existant)
+- Avatar profil + dropdown (Mon profil → `openProfile`, Déconnexion → `onLogout`)
+
+**Intégrité** : `padding: 0` sur `<main>` (inline), contenu dans `<div style={{ padding: '28px 44px 44px' }}>`.
+
+---
+
 ## GeoSearch — Recherche ville/département/arrondissement
 
 **Composant** : copie locale dans `ActionModal.jsx` ET `WizardModal.jsx` (pas de composant partagé).

@@ -1,5 +1,5 @@
 // src/pages/Dashboard.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '../components/ui/Badge';
 import { POLE_COLORS, PROJET_COLORS, STATUT_STYLE, POLES, PROJETS } from '../data/constants';
 import { formatDateShort, isPastDate, sortTasksSmart, isTaskActiveInFeed } from '../utils/utils';
@@ -40,6 +40,36 @@ const Dashboard = () => {
   const onEndCongeNow = handleEndCongeNow;
   const onEditConge = ({ id, ...updatedConge }) => handleEditConge(id, updatedConge);
   const onDeleteConge = (id) => handleDeleteConge(id);
+  // ── Effet tilt 3D sur les cartes dashboard ────────────────────────────────
+  useEffect(() => {
+    const intensity = 40;
+    const attachTilt = (el) => {
+      const onMove = (e) => {
+        const { left, top, width, height } = el.getBoundingClientRect();
+        const rx = ((e.clientY - top  - height / 2) / intensity) * -1;
+        const ry =  (e.clientX - left - width  / 2) / intensity;
+        el.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.015)`;
+        el.style.transition = 'none';
+      };
+      const onLeave = () => {
+        el.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+        el.style.transition = 'transform .5s cubic-bezier(.25,1,.5,1)';
+      };
+      const onEnter = () => { el.style.transition = 'transform .1s ease'; };
+      el.addEventListener('mousemove', onMove);
+      el.addEventListener('mouseleave', onLeave);
+      el.addEventListener('mouseenter', onEnter);
+      return () => {
+        el.removeEventListener('mousemove', onMove);
+        el.removeEventListener('mouseleave', onLeave);
+        el.removeEventListener('mouseenter', onEnter);
+      };
+    };
+    const targets = document.querySelectorAll('.kpi-grid .kc, .dash-two-col .sc, .sc[data-tour]');
+    const cleanups = Array.from(targets).map(el => attachTilt(el));
+    return () => cleanups.forEach(f => f());
+  }, []);
+
   const [showMissionApply, setShowMissionApply] = useState(null);
   const [applyMsg, setApplyMsg] = useState("");
   const [ignoredMissions, setIgnoredMissions] = useState([]);
