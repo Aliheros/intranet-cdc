@@ -73,7 +73,7 @@ const GeoSearch = ({ ville, onSelect }) => {
     const v = e.target.value;
     setQuery(v);
     setConfirmed(false);
-    if (!v) { onSelect({ ville: '', departement: '' }); setSuggestions([]); setOpen(false); return; }
+    if (!v) { onSelect({ ville: '', departement: '', codesPostaux: [] }); setSuggestions([]); setOpen(false); return; }
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => doSearch(v), 350);
   };
@@ -84,7 +84,11 @@ const GeoSearch = ({ ville, onSelect }) => {
     setConfirmed(true);
     setOpen(false);
     setSuggestions([]);
-    onSelect({ ville: commune.nom, departement: commune.codeDepartement });
+    onSelect({
+      ville: commune.nom,
+      departement: commune.codeDepartement,
+      codesPostaux: commune.codesPostaux || [],
+    });
   };
 
   return (
@@ -157,7 +161,7 @@ const CHECKLIST_TEMPLATE = {
 };
 
 const EMPTY_FORM = {
-  type: "", etablissement: "", ville: "", departement: "", labelRep: "", adresse: "", titreCoordination: "",
+  type: "", etablissement: "", ville: "", departement: "", arrondissement: "", labelRep: "", adresse: "", titreCoordination: "",
   contact_nom: "", contact_email: "", contact_tel: "",
   date_debut: "", date_fin: "",
   responsables: [], statut: "Planifiée",
@@ -187,6 +191,7 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
   const [config, setConfig] = useState({ ...EMPTY_CONFIG });
   const [editableTasks, setEditableTasks] = useState(null);
   const [newTaskForm, setNewTaskForm] = useState({ text: "", space: "Ressources Humaines", deadline: "" });
+  const [geoPostalCodes, setGeoPostalCodes] = useState([]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const setConf = (k, v) => setConfig(c => ({ ...c, [k]: v }));
@@ -312,7 +317,10 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
                   </label>
                   <GeoSearch
                     ville={form.ville}
-                    onSelect={({ ville, departement }) => setForm(f => ({ ...f, ville, departement }))}
+                    onSelect={({ ville, departement, codesPostaux }) => {
+                      setForm(f => ({ ...f, ville, departement, arrondissement: '' }));
+                      setGeoPostalCodes(codesPostaux || []);
+                    }}
                   />
                 </div>
                 <div>
@@ -326,6 +334,23 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
                   />
                 </div>
               </div>
+
+              {/* Arrondissement — affiché si la ville a plusieurs codes postaux */}
+              {geoPostalCodes.length > 1 && (
+                <div>
+                  <label className="form-label">Arrondissement <span style={{ fontSize: 10, fontWeight: 400, color: "rgba(255,255,255,0.4)", marginLeft: 4 }}>(optionnel)</span></label>
+                  <select
+                    className="form-select"
+                    value={form.arrondissement || ''}
+                    onChange={e => set('arrondissement', e.target.value)}
+                  >
+                    <option value="">— Sélectionner un arrondissement</option>
+                    {geoPostalCodes.map(cp => (
+                      <option key={cp} value={cp}>{cp}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Ligne 3b : Adresse précise */}
               <div>

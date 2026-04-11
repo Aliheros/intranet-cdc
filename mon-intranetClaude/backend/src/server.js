@@ -28,6 +28,8 @@ const devisFacturesRoutes = require('./routes/devis-factures');
 const categoriesDfRoutes  = require('./routes/categories-df');
 const impactStudiesRoutes    = require('./routes/impact-studies');
 const seancePresencesRoutes  = require('./routes/seance-presences');
+const automationRulesRoutes  = require('./routes/automation-rules');
+const { startAutomationCron } = require('./lib/automationCron');
 
 const app = express();
 
@@ -132,6 +134,7 @@ app.use('/api/devis-factures', devisFacturesRoutes);
 app.use('/api/categories-df',  categoriesDfRoutes);
 app.use('/api/impact-studies',    impactStudiesRoutes);
 app.use('/api/seance-presences',  seancePresencesRoutes);
+app.use('/api/automation-rules',  automationRulesRoutes);
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'ok', message: 'Intranet API' }));
@@ -168,4 +171,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   log.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Backend démarré');
+  startAutomationCron();
 });

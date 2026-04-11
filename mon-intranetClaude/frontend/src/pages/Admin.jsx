@@ -6,8 +6,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
 import Permissions from './Permissions';
-import NdfConfigPanel from '../components/admin/NdfConfigPanel';
-import DfConfigPanel  from '../components/admin/DfConfigPanel';
+import NdfConfigPanel     from '../components/admin/NdfConfigPanel';
+import DfConfigPanel      from '../components/admin/DfConfigPanel';
+import AutomationPanel    from '../components/admin/AutomationPanel';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (d) => {
@@ -497,7 +498,7 @@ const ParametresTab = () => {
     refreshDevisFacture,
     cycles, activeCycle, handleNextCycle, handleDeleteCycle,
   } = useDataContext();
-  const [section, setSection] = useState('ndf'); // 'ndf' | 'df' | 'cycles'
+  const [section, setSection] = useState('ndf'); // 'ndf' | 'df' | 'cycles' | 'automation'
 
   const canDeleteCycle = (c) => c !== activeCycle && cycles.length > 1;
 
@@ -506,9 +507,10 @@ const ParametresTab = () => {
       {/* Sous-navigation */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
         {[
-          { id: 'ndf',    label: 'Notes de Frais' },
-          { id: 'df',     label: 'Devis & Factures' },
-          { id: 'cycles', label: 'Cycles / Années' },
+          { id: 'ndf',        label: 'Notes de Frais' },
+          { id: 'df',         label: 'Devis & Factures' },
+          { id: 'cycles',     label: 'Cycles / Années' },
+          { id: 'automation', label: 'Automatisation' },
         ].map(s => (
           <button key={s.id} onClick={() => setSection(s.id)} style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${section === s.id ? '#1a56db' : 'var(--border-light)'}`, background: section === s.id ? 'rgba(26,86,219,0.08)' : 'var(--bg-hover)', color: section === s.id ? '#1a56db' : 'var(--text-dim)' }}>
             {s.label}
@@ -578,6 +580,9 @@ const ParametresTab = () => {
           </div>
         </div>
       )}
+
+      {/* Automatisation */}
+      {section === 'automation' && <AutomationPanel />}
     </div>
   );
 };

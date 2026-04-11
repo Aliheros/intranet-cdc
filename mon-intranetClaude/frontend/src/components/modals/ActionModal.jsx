@@ -98,7 +98,7 @@ const GeoSearch = ({ ville, departement, onSelect }) => {
     const v = e.target.value;
     setQuery(v);
     setConfirmed(false);
-    if (!v) { onSelect({ ville: '', departement: '' }); setSuggestions([]); setOpen(false); return; }
+    if (!v) { onSelect({ ville: '', departement: '', codesPostaux: [] }); setSuggestions([]); setOpen(false); return; }
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => doSearch(v), 350);
   };
@@ -109,7 +109,11 @@ const GeoSearch = ({ ville, departement, onSelect }) => {
     setConfirmed(true);
     setOpen(false);
     setSuggestions([]);
-    onSelect({ ville: commune.nom, departement: commune.codeDepartement });
+    onSelect({
+      ville: commune.nom,
+      departement: commune.codeDepartement,
+      codesPostaux: commune.codesPostaux || [],
+    });
   };
 
   return (
@@ -170,17 +174,19 @@ const GeoSearch = ({ ville, departement, onSelect }) => {
 const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, notesFrais = [] }) => {
   const { isClosing, handleClose } = useModalClose(onClose);
   const [form, setForm] = useState(action || {});
+  const [geoPostalCodes, setGeoPostalCodes] = useState([]);
 
   useEffect(() => {
     if (action) setForm(action);
-  }, [action]);
+  }, [action?.id]);
 
   if (!action) return null;
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleGeoSelect = ({ ville, departement }) => {
-    setForm(f => ({ ...f, ville, departement }));
+  const handleGeoSelect = ({ ville, departement, codesPostaux }) => {
+    setForm(f => ({ ...f, ville, departement, arrondissement: '' }));
+    setGeoPostalCodes(codesPostaux || []);
   };
 
   const toggleResponsable = (nom) => {
@@ -238,6 +244,22 @@ const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, 
                 />
               </div>
             </div>
+            {/* Arrondissement — affiché si la ville a plusieurs codes postaux */}
+            {(geoPostalCodes.length > 1 || form.arrondissement) && (
+              <div>
+                <label className="form-label">Arrondissement <span style={{ fontSize: 10, fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>(optionnel)</span></label>
+                <select
+                  className="form-select"
+                  value={form.arrondissement || ''}
+                  onChange={e => set('arrondissement', e.target.value)}
+                >
+                  <option value="">— Sélectionner un arrondissement</option>
+                  {(geoPostalCodes.length > 1 ? geoPostalCodes : [form.arrondissement]).filter(Boolean).map(cp => (
+                    <option key={cp} value={cp}>{cp}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="form-label">Adresse précise <span style={{ fontSize: 10, fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>(optionnel — ex: 15 rue de la Paix)</span></label>
               <input type="text" className="form-input" value={form.adresse || ""} onChange={(e) => set("adresse", e.target.value)} placeholder="Ex: 15 rue de la Paix, Bâtiment A" />

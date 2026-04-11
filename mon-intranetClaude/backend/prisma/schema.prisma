@@ -85,6 +85,7 @@ model Action {
   beneficiaires       Int       @default(0)
   type_classe         String?
   departement         String?   // ex: "93", "75", "94"
+  arrondissement      String?   // ex: "75001", "75018" — pour Paris/Lyon/Marseille
   labelRep            String?   // "Hors REP" | "REP" | "REP+"
   institutionSimulee  String?   // ex: "Assemblée Nationale", "Sénat" — pour les simulations
   heures              Float     @default(0)
@@ -432,6 +433,42 @@ model ImpactStudy {
   createdBy String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Automatisation ──────────────────────────────────────────────────────────
+
+model AutomationRule {
+  id                Int      @id @default(autoincrement())
+  nom               String
+  description       String?
+  isActive          Boolean  @default(true)
+  // Déclencheur
+  triggerOffsetDays Int      // ex: 2 = J-2, 7 = J-7 (nb de jours AVANT la date de référence)
+  triggerDateRef    String   // "date_debut" | "date_fin"
+  // Filtre optionnel sur le type d'action (vide = toutes les actions)
+  actionTypeFilter  String[] @default([])
+  // TaskRequest à créer
+  targetPole        String
+  taskText          String
+  taskDescription   String?
+  // Méta
+  createdBy         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  executions AutomationExecution[]
+}
+
+model AutomationExecution {
+  id            Int      @id @default(autoincrement())
+  ruleId        Int
+  actionId      Int
+  taskRequestId Int?
+  firedAt       DateTime @default(now())
+
+  rule AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@unique([ruleId, actionId])
 }
 
 // Table d'audit immuable — append only, jamais de UPDATE ni DELETE

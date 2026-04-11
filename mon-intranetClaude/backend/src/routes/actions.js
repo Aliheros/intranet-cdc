@@ -38,6 +38,8 @@ function pickActionFields(body) {
   if ('type'               in body) data.type               = body.type;
   if ('etablissement'      in body) data.etablissement      = body.etablissement;
   if ('ville'              in body) data.ville              = body.ville || null;
+  if ('departement'        in body) data.departement        = body.departement || null;
+  if ('arrondissement'     in body) data.arrondissement     = body.arrondissement || null;
   if ('adresse'            in body) data.adresse            = body.adresse || null;
   if ('contact_nom'        in body) data.contact_nom        = body.contact_nom;
   if ('contact_email'      in body) data.contact_email      = body.contact_email;

@@ -135,6 +135,7 @@ const Analytics = () => {
   // Charge tâches — top 10
   const taskRanking = Object.entries(taskLoadByPerson).sort(([, a], [, b]) => b - a).slice(0, 10);
   const maxTasks = taskRanking[0]?.[1] || 1;
+  const overloadedMembers = Object.entries(taskLoadByPerson).filter(([, count]) => count >= 6).map(([name]) => name);
 
   // Budget — tri par allocated desc
   const budgetRows = POLES

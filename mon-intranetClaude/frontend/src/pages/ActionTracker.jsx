@@ -6,6 +6,7 @@ import { TYPES_ACTION, STATUTS_ACTION, STATUT_STYLE, POLE_COLORS, POLES } from '
 import { AvatarInner, isAvatarUrl, findMemberByName } from '../components/ui/AvatarDisplay';
 import { formatDateShort, computeCompletionScore, isTaskEffectivelyDone } from '../utils/utils';
 import { Archive, Calendar, ClipboardList, CheckCircle2, AlertTriangle, Zap, Pencil, Trash2, RotateCcw, Lock, Plus, Star, FileText, Send, X } from 'lucide-react';
+import TaskRequestModal from '../components/modals/TaskRequestModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
@@ -22,7 +23,7 @@ const ActionTracker = () => {
     actions, evenements, cycles, directory, isAdmin, isResponsable,
     toggleArchiveAction, deleteAction, handleUpdateActionStatus: onUpdateActionStatus,
     tasks, taskRequests, setTaskRequests, trash, restoreTrash, forceDeleteTrash,
-    handleSaveBilan,
+    handleSaveBilan, getSpaceAccess,
   } = useDataContext();
 
   // ─── Bilan post-action ────────────────────────────────────────────────────
@@ -30,33 +31,12 @@ const ActionTracker = () => {
   const [bilanPending, setBilanPending] = useState(null); // { actionId, ...fields }
   const [bilanSaving, setBilanSaving] = useState(false);
 
-  // ─── Inline task request form ─────────────────────────────────────────────
-  const TASK_REQ_EMPTY = { text: "", space: POLES[0], deadline: "" };
-  const [taskReqActionId, setTaskReqActionId] = useState(null); // null = fermé
-  const [taskReqForm, setTaskReqForm] = useState(TASK_REQ_EMPTY);
-  const [taskReqSent, setTaskReqSent] = useState(false);
+  // ─── Task request modal ───────────────────────────────────────────────────
+  const [taskReqAction, setTaskReqAction] = useState(null); // null = fermé
 
-  const handleSendTaskReq = async (action) => {
-    if (!taskReqForm.text.trim()) return;
-    const req = {
-      text: taskReqForm.text.trim(),
-      description: '',
-      space: taskReqForm.space,
-      actionId: action.id,
-      requestedBy: currentUser?.nom || '',
-      assignees: [], targetPool: [],
-      deadline: taskReqForm.deadline || action.date_fin || action.date_debut || '',
-      cycle: action.cycle || '',
-      status: 'En attente',
-    };
-    try {
-      const created = await api.post('/tasks/requests', req);
-      if (created?.id) setTaskRequests(prev => [...prev, created]);
-      setTaskReqSent(true);
-      setTimeout(() => { setTaskReqActionId(null); setTaskReqSent(false); setTaskReqForm(TASK_REQ_EMPTY); }, 1500);
-    } catch (err) {
-      alert(err?.message || 'Erreur envoi');
-    }
+  const handleSendTaskReq = async (req) => {
+    const created = await api.post('/tasks/requests', req);
+    if (created?.id) setTaskRequests(prev => [...prev, created]);
   };
 
   const handleStatutChange = (action, newStatut) => {
@@ -389,46 +369,13 @@ const ActionTracker = () => {
                     )}
                   </td>
                   <td>
-                    {/* ── Demande de tâche inline ── */}
+                    {/* ── Demande de tâche → modale ── */}
                     {(isAdmin || (currentUser && (a.responsables || []).includes(currentUser.nom))) && (
                       <div style={{ marginBottom: 8 }}>
-                        {taskReqActionId !== a.id ? (
-                          <button
-                            onClick={() => { setTaskReqActionId(a.id); setTaskReqSent(false); setTaskReqForm(TASK_REQ_EMPTY); }}
-                            style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: "rgba(26,86,219,0.07)", border: "1px solid rgba(26,86,219,0.2)", color: "#1a56db", cursor: "pointer", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}
-                          ><Plus size={9} strokeWidth={2.5} /> Demander une tâche</button>
-                        ) : (
-                          <div style={{ padding: "10px 12px", background: "rgba(26,86,219,0.04)", border: "1px dashed rgba(26,86,219,0.25)", borderRadius: 8, marginBottom: 6 }}>
-                            {taskReqSent ? (
-                              <div style={{ fontSize: 11, color: "#16a34a", fontWeight: 600 }}>✓ Demande envoyée</div>
-                            ) : (
-                              <>
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                                  <span style={{ fontSize: 10, fontWeight: 700, color: "#1a56db" }}>Nouvelle demande de tâche</span>
-                                  <button onClick={() => setTaskReqActionId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, display: "flex" }}><X size={11} strokeWidth={2} /></button>
-                                </div>
-                                <input
-                                  type="text" className="form-input"
-                                  placeholder="Intitulé de la tâche *"
-                                  value={taskReqForm.text}
-                                  onChange={e => setTaskReqForm(f => ({ ...f, text: e.target.value }))}
-                                  style={{ fontSize: 11, padding: "4px 8px", marginBottom: 6 }}
-                                  autoFocus
-                                />
-                                <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                                  <select className="form-select" value={taskReqForm.space} onChange={e => setTaskReqForm(f => ({ ...f, space: e.target.value }))} style={{ fontSize: 10, flex: 1 }}>
-                                    {POLES.map(p => <option key={p} value={p}>{p}</option>)}
-                                  </select>
-                                  <input type="date" className="form-input" value={taskReqForm.deadline} onChange={e => setTaskReqForm(f => ({ ...f, deadline: e.target.value }))} style={{ fontSize: 10, flex: 1, padding: "4px 6px" }} />
-                                </div>
-                                <button
-                                  onClick={() => handleSendTaskReq(a)}
-                                  style={{ fontSize: 10, padding: "4px 10px", background: "#1a56db", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}
-                                ><Send size={9} strokeWidth={2} /> Envoyer</button>
-                              </>
-                            )}
-                          </div>
-                        )}
+                        <button
+                          onClick={() => setTaskReqAction(a)}
+                          style={{ fontSize: 10, padding: "2px 8px", borderRadius: 5, background: "rgba(26,86,219,0.07)", border: "1px solid rgba(26,86,219,0.2)", color: "#1a56db", cursor: "pointer", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}
+                        ><Plus size={9} strokeWidth={2.5} /> Demander une tâche</button>
                       </div>
                     )}
                     <ErrorBoundary inline label="barre des tâches">
@@ -481,13 +428,14 @@ const ActionTracker = () => {
                                   : isDone ? 100 : 0;
                                 const barColor = isDone ? "#16a34a" : isOverdue ? "#e63946" : "#1a56db";
                                 const spaceType = POLES_PAGES.includes(t.space) ? "pole" : "projet";
+                                const canAccessSpace = t.space ? getSpaceAccess(t.space).canView : false;
 
                                 return (
                                   <div
                                     key={t.id}
-                                    onClick={() => { if (t.space) { navigate(spaceType, t.space); } }}
-                                    style={{ cursor: t.space ? "pointer" : "default", padding: "5px 7px", borderRadius: 6, background: "var(--bg-hover)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.25)" : "var(--border-light)"}`, borderLeft: `3px solid ${barColor}` }}
-                                    title={`${t.text || ""}${t.space ? ` → ${t.space}` : ""}`}
+                                    onClick={() => { if (t.space && canAccessSpace) { navigate(spaceType, t.space); } }}
+                                    style={{ cursor: (t.space && canAccessSpace) ? "pointer" : "default", padding: "5px 7px", borderRadius: 6, background: "var(--bg-hover)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.25)" : "var(--border-light)"}`, borderLeft: `3px solid ${barColor}` }}
+                                    title={`${t.text || ""}${t.space && canAccessSpace ? ` → ${t.space}` : ""}`}
                                   >
                                     <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
                                       <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 700, minWidth: 12, flexShrink: 0 }}>{i + 1}.</span>
@@ -538,14 +486,14 @@ const ActionTracker = () => {
                     })()}
                   </td>
                   <td>
-                    {/* PROGRESSION DES TÂCHES */}
+                    {/* CHECKLIST + BOUTONS D'ACTION */}
                     {(() => {
-                      const { completed, total, percentage } = getTasksCompletion(a.id);
+                      const canEdit = isAdmin || (currentUser && (a.responsables || []).includes(currentUser.nom));
                       return (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 120 }}>
-                          {/* Checklist */}
+                          {/* Checklist — visible par tous */}
                           {a.checklist && (
-                            <div style={{ cursor: "pointer" }} onClick={() => setSelectedActionChecklist(a)}>
+                            <div style={{ cursor: canEdit ? "pointer" : "default" }} onClick={() => canEdit && setSelectedActionChecklist(a)}>
                               <div style={{ fontSize: 9, color: "var(--text-muted)", marginBottom: 4, fontWeight: 700, display:"flex", alignItems:"center", gap:3 }}><ClipboardList size={9} strokeWidth={1.8}/> Checklist</div>
                               <div style={{ height: 4, background: "var(--bg-alt)", borderRadius: 2, overflow: "hidden" }}>
                                 <div style={{ height: "100%", width: `${computeCompletionScore(a)}%`, background: computeCompletionScore(a) >= 80 ? "#16a34a" : computeCompletionScore(a) >= 40 ? "#d97706" : "#e63946", transition: "width 0.3s ease" }} />
@@ -554,8 +502,8 @@ const ActionTracker = () => {
                             </div>
                           )}
 
-                          {/* Boutons d'action */}
-                          {(isAdmin || (currentUser && (a.responsables || []).includes(currentUser.nom))) && (
+                          {/* Boutons d'action — seulement si autorisé */}
+                          {canEdit && (
                             <div style={{ display: "flex", gap: 5, marginTop: 4, paddingTop: 6, borderTop: "1px solid var(--border-light)", flexWrap: "wrap" }}>
                               {!a.isArchived && (
                                 <button
@@ -577,7 +525,7 @@ const ActionTracker = () => {
                               )}
                               {isAdmin && (
                                 <button
-                                  title="Supprimer définitivement"
+                                  title="Supprimer"
                                   onClick={() => deleteAction(a)}
                                   style={{ background: "rgba(230,57,70,0.06)", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 5, padding: "3px 7px", cursor: "pointer", color: "#e63946", display: "inline-flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 600 }}
                                 >
@@ -603,15 +551,17 @@ const ActionTracker = () => {
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 8 }}>
                           {linkedTasks.map(t => {
                             const isOverdue = t.deadline && new Date(t.deadline) < new Date();
+                            const POLES_PAGES_EXP = ["Relations Publiques","Ressources Humaines","Plaidoyer","Etudes","Développement Financier","Communication","Trésorerie"];
+                            const canNavSpace = t.space ? getSpaceAccess(t.space).canView : false;
                             return (
                               <div
                                 key={t.id}
                                 onClick={() => {
-                                  if (!t.space) return;
-                                  const pageType = ["Relations Publiques","Ressources Humaines","Plaidoyer","Etudes","Développement Financier","Communication","Trésorerie"].includes(t.space) ? "pole" : "projet";
+                                  if (!t.space || !canNavSpace) return;
+                                  const pageType = POLES_PAGES_EXP.includes(t.space) ? "pole" : "projet";
                                   navigate(pageType, t.space);
                                 }}
-                                style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 6, background: "var(--bg-surface)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.3)" : "var(--border-light)"}`, borderLeft: isOverdue ? "3px solid #e63946" : "3px solid #1a56db", cursor: t.space ? "pointer" : "default", fontSize: 11, maxWidth: 260 }}
+                                style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 6, background: "var(--bg-surface)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.3)" : "var(--border-light)"}`, borderLeft: isOverdue ? "3px solid #e63946" : "3px solid #1a56db", cursor: (t.space && canNavSpace) ? "pointer" : "default", fontSize: 11, maxWidth: 260 }}
                               >
                                 <span style={{ fontWeight: 600, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.text || "—"}</span>
                                 {isOverdue && <span style={{ display:"inline-flex", color: "#e63946", flexShrink: 0 }}><AlertTriangle size={9} strokeWidth={2}/></span>}
@@ -729,6 +679,16 @@ const ActionTracker = () => {
           </div>
         );
       })()}
+
+      {/* ── Modale demande de tâche ── */}
+      {taskReqAction && (
+        <TaskRequestModal
+          action={taskReqAction}
+          currentUser={currentUser}
+          onSend={handleSendTaskReq}
+          onClose={() => setTaskReqAction(null)}
+        />
+      )}
     </>
   );
 };
