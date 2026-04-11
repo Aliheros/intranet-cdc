@@ -9,10 +9,18 @@ import { POLES, PROJETS, TYPES_ACTION, NIVEAUX_CLASSE } from '../data/constants'
 
 // ─── Valeurs de secours si l'API app-config échoue ───────────────────────────
 const FALLBACK_CONFIG = {
-  types_action:  TYPES_ACTION.map(v => ({ value: v, label: v })),
+  types_action:   TYPES_ACTION.map(v => ({ value: v, label: v })),
   niveaux_classe: NIVEAUX_CLASSE.map(v => ({ value: v, label: v })),
-  labels_rep:    ['Hors REP', 'REP', 'REP+'].map(v => ({ value: v, label: v })),
-  thresholds: { overloadTasks: 6, annulationRateWarn: 25, budgetWarnPct: 80, ndfBacklogWarn: 5 },
+  labels_rep:     ['Hors REP', 'REP', 'REP+'].map(v => ({ value: v, label: v })),
+  statuts_action: ['Planifiée', 'En cours', 'Terminée', 'Annulée'].map(v => ({ value: v, label: v })),
+  thresholds: { overloadTasks: 6, annulationRateWarn: 25, budgetWarnPct: 80, ndfBacklogWarn: 5, planningAlertDays: 1 },
+  notification_rules: {
+    action_created:  true,
+    ndf_soumise:     true,
+    tache_assignee:  true,
+    task_request:    true,
+    action_terminee: true,
+  },
 };
 import { generateAutoTasks, buildPropagationMessage, fmtHeure } from '../utils/utils';
 
@@ -1890,6 +1898,18 @@ export function DataProvider({ children }) {
     return item; // { value, label, renamedFrom?, archived? }
   };
 
+  /**
+   * Retourne le label d'un statut d'action (ex: "Planifiée" → libellé configuré).
+   * Le code interne (value) est toujours retourné en fallback.
+   */
+  const getStatutLabel = (value) => {
+    if (!value) return value;
+    const list = appConfig?.statuts_action;
+    if (!Array.isArray(list)) return value;
+    const item = list.find(i => i.value === value);
+    return item ? item.label : value;
+  };
+
   /** Liste active (non archivée) d'une clé de config */
   const getActiveConfigList = (key) => {
     const list = appConfig[key];
@@ -2047,7 +2067,7 @@ export function DataProvider({ children }) {
       impactStudies, handleSaveImpactStudy, handleDeleteImpactStudy,
       seancePresences, refreshSeancePresences, handleRespValidation, handleRhValidation,
       // App Config
-      appConfig, getConfigLabel, getActiveConfigList, getThreshold, handleSaveAppConfig,
+      appConfig, getConfigLabel, getActiveConfigList, getThreshold, getStatutLabel, handleSaveAppConfig,
     }}>
       {children}
     </DataContext.Provider>

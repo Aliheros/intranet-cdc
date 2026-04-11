@@ -39,12 +39,30 @@ const DEFAULTS = {
     { value: 'REP+',     label: 'REP+' },
   ],
 
-  // Seuils d'alerte Analytics
+  // Statuts d'action — value = code stocké en DB (IMMUABLE), label = libellé affiché
+  statuts_action: [
+    { value: 'Planifiée',  label: 'Planifiée' },
+    { value: 'En cours',   label: 'En cours' },
+    { value: 'Terminée',   label: 'Terminée' },
+    { value: 'Annulée',    label: 'Annulée' },
+  ],
+
+  // Seuils d'alerte Analytics + Planning
   thresholds: {
     overloadTasks:       6,    // nb tâches actives avant surcharge bénévole
     annulationRateWarn:  25,   // % séances annulées
     budgetWarnPct:       80,   // % budget consommé avant alerte
     ndfBacklogWarn:      5,    // nb NDF en attente avant alerte
+    planningAlertDays:   1,    // J-X pour les alertes dans le calendrier
+  },
+
+  // Règles de notification — true = activé
+  notification_rules: {
+    action_created:  true,
+    ndf_soumise:     true,
+    tache_assignee:  true,
+    task_request:    true,
+    action_terminee: true,
   },
 };
 

@@ -170,12 +170,73 @@ function ConfigList({ configKey, title, description, items, usedValues = new Set
   );
 }
 
-// ─── Seuils Analytics ─────────────────────────────────────────────────────────
+// ─── Statuts d'action (renommer uniquement) ───────────────────────────────────
+
+function StatutsConfig({ items, onSave }) {
+  const [editingIdx, setEditingIdx] = useState(null);
+  const [editLabel, setEditLabel]   = useState('');
+  const [saving, setSaving]         = useState(false);
+  const { addToast } = useAppContext();
+
+  const saveAll = async (nextItems) => {
+    setSaving(true);
+    try { await onSave('statuts_action', nextItems); }
+    finally { setSaving(false); }
+  };
+
+  const startEdit = (idx) => { setEditingIdx(idx); setEditLabel(items[idx].label); };
+
+  const confirmEdit = async () => {
+    if (!editLabel.trim() || editingIdx === null) return;
+    const item = items[editingIdx];
+    const nextItems = items.map((it, i) => i === editingIdx
+      ? { ...it, label: editLabel.trim(), renamedFrom: it.label !== editLabel.trim() ? it.label : it.renamedFrom }
+      : it
+    );
+    await saveAll(nextItems);
+    setEditingIdx(null);
+  };
+
+  const inputStyle = { padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border-light)', background: 'var(--bg-alt)', color: 'var(--text-base)', fontSize: 13, flex: 1, boxSizing: 'border-box' };
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)', marginBottom: 4 }}>Statuts d'action</div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>
+        Renommage uniquement — les codes internes (Planifiée, En cours…) sont immuables et ne peuvent pas être supprimés.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {items.map((item, idx) => (
+          <div key={item.value} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 9, border: '1px solid var(--border-light)', background: 'var(--bg-hover)' }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace', minWidth: 90 }}>{item.value}</span>
+            {editingIdx === idx ? (
+              <>
+                <input style={inputStyle} value={editLabel} onChange={e => setEditLabel(e.target.value)} autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') setEditingIdx(null); }} />
+                <button onClick={confirmEdit} disabled={saving} style={{ padding: '4px 8px', borderRadius: 6, background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer' }}><Check size={13} /></button>
+                <button onClick={() => setEditingIdx(null)} style={{ padding: '4px 8px', borderRadius: 6, background: 'none', border: '1px solid var(--border-light)', cursor: 'pointer', color: 'var(--text-dim)' }}><X size={13} /></button>
+              </>
+            ) : (
+              <>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</span>
+                  {item.renamedFrom && <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8, fontStyle: 'italic' }}>ex : {item.renamedFrom}</span>}
+                </div>
+                <button onClick={() => startEdit(idx)} title="Renommer" style={{ padding: 5, borderRadius: 6, border: '1px solid var(--border-light)', background: 'none', cursor: 'pointer', color: 'var(--text-dim)', display: 'flex' }}><Pencil size={13} /></button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Seuils Analytics + Planning ──────────────────────────────────────────────
 
 function ThresholdsConfig({ thresholds, onSave }) {
   const [form, setForm] = useState(thresholds || {});
   const [saving, setSaving] = useState(false);
-  const { addToast } = useAppContext();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -186,6 +247,7 @@ function ThresholdsConfig({ thresholds, onSave }) {
         annulationRateWarn: parseInt(form.annulationRateWarn, 10) || 25,
         budgetWarnPct:      parseInt(form.budgetWarnPct, 10)    || 80,
         ndfBacklogWarn:     parseInt(form.ndfBacklogWarn, 10)   || 5,
+        planningAlertDays:  parseInt(form.planningAlertDays, 10) || 1,
       });
     } finally {
       setSaving(false);
@@ -196,17 +258,18 @@ function ThresholdsConfig({ thresholds, onSave }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)', marginBottom: 12 }}>Seuils d'alerte Analytics</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)', marginBottom: 12 }}>Seuils d'alerte</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
         {[
-          { key: 'overloadTasks',      label: 'Surcharge tâches bénévole',    suffix: 'tâches' },
+          { key: 'overloadTasks',      label: 'Surcharge tâches bénévole',     suffix: 'tâches' },
           { key: 'annulationRateWarn', label: 'Alerte taux annulation séances', suffix: '%' },
-          { key: 'budgetWarnPct',      label: 'Alerte budget consommé',        suffix: '%' },
-          { key: 'ndfBacklogWarn',     label: 'Alerte backlog NDF',            suffix: 'dossiers' },
+          { key: 'budgetWarnPct',      label: 'Alerte budget consommé',         suffix: '%' },
+          { key: 'ndfBacklogWarn',     label: 'Alerte backlog NDF',             suffix: 'dossiers' },
+          { key: 'planningAlertDays',  label: 'Alerte Planning séance sans inscrits', suffix: 'j avant' },
         ].map(({ key, label, suffix }) => (
           <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 9, border: '1px solid var(--border-light)', background: 'var(--bg-hover)' }}>
             <div style={{ flex: 1, fontSize: 12, color: 'var(--text-dim)' }}>{label}</div>
-            <input type="number" min={1} max={100} style={inputStyle} value={form[key] ?? ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
+            <input type="number" min={1} max={365} style={inputStyle} value={form[key] ?? ''} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{suffix}</span>
           </div>
         ))}
@@ -218,24 +281,76 @@ function ThresholdsConfig({ thresholds, onSave }) {
   );
 }
 
+// ─── Règles de notifications ───────────────────────────────────────────────────
+
+const NOTIFICATION_EVENTS = [
+  { key: 'action_created',   label: 'Nouvelle action créée',           desc: 'Notifie l\'équipe à la création d\'une action' },
+  { key: 'ndf_soumise',      label: 'Note de frais soumise',           desc: 'Notifie le bureau à chaque NDF déposée' },
+  { key: 'tache_assignee',   label: 'Tâche assignée',                  desc: 'Notifie la personne quand une tâche lui est assignée' },
+  { key: 'task_request',     label: 'Demande de tâche',                desc: 'Notifie l\'équipe à chaque nouvelle TaskRequest' },
+  { key: 'action_terminee',  label: 'Action terminée',                 desc: 'Notifie le bureau quand une action passe en "Terminée"' },
+];
+
+function NotificationRulesConfig({ rules, onSave }) {
+  const [form, setForm] = useState(() => {
+    const defaults = {};
+    NOTIFICATION_EVENTS.forEach(e => { defaults[e.key] = true; });
+    return { ...defaults, ...(rules || {}) };
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try { await onSave('notification_rules', form); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-base)', marginBottom: 12 }}>Règles de notification</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+        {NOTIFICATION_EVENTS.map(({ key, label, desc }) => (
+          <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 9, border: '1px solid var(--border-light)', background: 'var(--bg-hover)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={!!form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))}
+              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#1a56db' }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-base)' }}>{label}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{desc}</div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 5, background: form[key] ? 'rgba(22,163,74,0.1)' : 'rgba(107,114,128,0.1)', color: form[key] ? '#16a34a' : 'var(--text-muted)' }}>
+              {form[key] ? 'Activé' : 'Désactivé'}
+            </span>
+          </label>
+        ))}
+      </div>
+      <button type="submit" disabled={saving} style={{ padding: '8px 20px', borderRadius: 8, background: '#1a56db', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+        {saving ? 'Enregistrement…' : 'Enregistrer les notifications'}
+      </button>
+    </form>
+  );
+}
+
 // ─── Panneau principal ────────────────────────────────────────────────────────
+
+const HR = () => <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: '0 0 24px' }} />;
 
 export default function AppConfigPanel() {
   const { appConfig, getActiveConfigList, handleSaveAppConfig, actions } = useDataContext();
 
-  // Calcul des valeurs effectivement utilisées dans les données existantes
   const usedTypes   = new Set(actions.map(a => a.type).filter(Boolean));
   const usedNiveaux = new Set(actions.map(a => a.type_classe).filter(Boolean));
   const usedRep     = new Set(actions.map(a => a.labelRep).filter(Boolean));
 
-  const typesItems   = appConfig?.types_action   || [];
-  const niveauxItems = appConfig?.niveaux_classe  || [];
-  const repItems     = appConfig?.labels_rep      || [];
-  const thresholds   = appConfig?.thresholds      || {};
+  const typesItems   = appConfig?.types_action    || [];
+  const niveauxItems = appConfig?.niveaux_classe   || [];
+  const repItems     = appConfig?.labels_rep       || [];
+  const statutsItems = appConfig?.statuts_action   || [];
+  const thresholds   = appConfig?.thresholds       || {};
+  const notifRules   = appConfig?.notification_rules || {};
 
   return (
     <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 14, padding: '24px 28px' }}>
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 3 }}>Paramètres</div>
         <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-display)' }}>Données de référence</div>
@@ -246,7 +361,6 @@ export default function AppConfigPanel() {
         </div>
       </div>
 
-      {/* Avertissement intégrité */}
       <div style={{ display: 'flex', gap: 10, padding: '10px 14px', borderRadius: 9, background: 'rgba(217,119,6,0.07)', border: '1px solid rgba(217,119,6,0.2)', marginBottom: 24 }}>
         <AlertTriangle size={15} color="#d97706" style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ fontSize: 12, color: 'var(--text-dim)', lineHeight: 1.5 }}>
@@ -255,42 +369,35 @@ export default function AppConfigPanel() {
         </div>
       </div>
 
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: '0 0 24px' }} />
+      <HR />
 
-      <ConfigList
-        configKey="types_action"
-        title="Types d'action"
+      <ConfigList configKey="types_action" title="Types d'action"
         description="Utilisé dans le wizard de création et les statistiques Analytics"
-        items={typesItems}
-        usedValues={usedTypes}
-        onSave={handleSaveAppConfig}
-      />
+        items={typesItems} usedValues={usedTypes} onSave={handleSaveAppConfig} />
 
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: '0 0 24px' }} />
+      <HR />
 
-      <ConfigList
-        configKey="niveaux_classe"
-        title="Niveaux de classe (type_classe)"
+      <ConfigList configKey="niveaux_classe" title="Niveaux de classe (type_classe)"
         description="Public touché par l'action"
-        items={niveauxItems}
-        usedValues={usedNiveaux}
-        onSave={handleSaveAppConfig}
-      />
+        items={niveauxItems} usedValues={usedNiveaux} onSave={handleSaveAppConfig} />
 
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: '0 0 24px' }} />
+      <HR />
 
-      <ConfigList
-        configKey="labels_rep"
-        title="Labels REP"
+      <ConfigList configKey="labels_rep" title="Labels REP"
         description="Zone prioritaire de l'établissement"
-        items={repItems}
-        usedValues={usedRep}
-        onSave={handleSaveAppConfig}
-      />
+        items={repItems} usedValues={usedRep} onSave={handleSaveAppConfig} />
 
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: '0 0 24px' }} />
+      <HR />
+
+      <StatutsConfig items={statutsItems} onSave={handleSaveAppConfig} />
+
+      <HR />
 
       <ThresholdsConfig thresholds={thresholds} onSave={handleSaveAppConfig} />
+
+      <HR />
+
+      <NotificationRulesConfig rules={notifRules} onSave={handleSaveAppConfig} />
     </div>
   );
 }

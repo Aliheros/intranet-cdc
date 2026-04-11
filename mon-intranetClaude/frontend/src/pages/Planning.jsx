@@ -34,11 +34,13 @@ const Planning = () => {
   const { currentUser } = useAuth();
   const { handleNav, setHighlightedActionId, setActiveEventId, setHighlightedEventId, setHighlightedTaskId } = useAppContext();
   const navigate = handleNav;
-  const { actions, evenements, tasks, directory, handleCalendarUpdateAction, handleCalendarUpdateEvent, handleCalendarUpdateTask } = useDataContext();
+  const { actions, evenements, tasks, directory, handleCalendarUpdateAction, handleCalendarUpdateEvent, handleCalendarUpdateTask, getThreshold } = useDataContext();
   const [view, setView]           = useState('Mois');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [filterType, setFilterType]   = useState('Tous');
   const [filterUser, setFilterUser]   = useState('Tous');
+
+  const planningAlertDays = getThreshold('planningAlertDays') ?? 1;
 
   // ─── CONSTRUCTION DES ITEMS ───────────────────────────────────────────────
 
@@ -100,8 +102,9 @@ const Planning = () => {
       });
 
     // ── Séances (tous les événements, liés ou non) ───────────────────────────
-    const j1 = new Date(); j1.setDate(j1.getDate() + 1);
-    const j1str = fmt(j1);
+    const alertDays = planningAlertDays;
+    const jX = new Date(); jX.setDate(jX.getDate() + alertDays);
+    const jXstr = fmt(jX);
 
     evenements
       .filter(e => !e.isArchived)
@@ -109,14 +112,14 @@ const Planning = () => {
         (e.seances || []).forEach(s => {
           if (!s.date) return;
           const noInscrits = !s.inscrits || s.inscrits.length === 0;
-          const isJ1       = s.date === j1str;   // exactement demain
+          const isJX        = s.date === jXstr;
           const isCancelled = !!s.annulee;
           items.push({
             id: `seance-${e.id}-${s.id}`, entityId: e.id, seanceId: s.id, type: 'Séance',
             date: s.date, title: isCancelled ? `✕ ${s.libelle || e.titre}` : (s.libelle || e.titre),
             color: isCancelled ? '#e63946' : COLORS.Séance, raw: s, parentEvent: e,
             isCancelled,
-            alert: isCancelled ? `Annulée${s.commentaireAnnulation ? ` — ${s.commentaireAnnulation}` : ''}` : ((noInscrits && isJ1) ? 'Séance demain sans inscrits (J-1)' : null),
+            alert: isCancelled ? `Annulée${s.commentaireAnnulation ? ` — ${s.commentaireAnnulation}` : ''}` : ((noInscrits && isJX) ? `Séance dans ${alertDays}j sans inscrits (J-${alertDays})` : null),
           });
         });
       });
@@ -667,7 +670,7 @@ const Planning = () => {
           </span>
           <span style={{ fontSize: 11, color: '#d97706', display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{ fontSize: 13 }}>⚠</span>
-            Alerte J-1
+            Alerte J-{planningAlertDays}
           </span>
         </div>
       </div>

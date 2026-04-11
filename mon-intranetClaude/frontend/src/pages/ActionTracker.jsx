@@ -24,7 +24,13 @@ const ActionTracker = () => {
     toggleArchiveAction, deleteAction, handleUpdateActionStatus: onUpdateActionStatus,
     tasks, taskRequests, setTaskRequests, trash, restoreTrash, forceDeleteTrash,
     handleSaveBilan, getSpaceAccess,
+    getStatutLabel, getActiveConfigList, appConfig,
   } = useDataContext();
+
+  // Statuts configurables (avec fallback)
+  const statutsAction = getActiveConfigList('statuts_action').length > 0
+    ? getActiveConfigList('statuts_action')
+    : STATUTS_ACTION.map(v => ({ value: v, label: v }));
 
   // ─── Bilan post-action ────────────────────────────────────────────────────
   const BILAN_EMPTY = { satisfaction: 0, beneficiaires: 0, pointsPositifs: '', difficultes: '', recommandations: '' };
@@ -243,9 +249,9 @@ const ActionTracker = () => {
           onChange={(e) => setFilterSearch(e.target.value)}
         />
         <div className="toolbar-group">
-          {["Tous", ...STATUTS_ACTION].map((s) => (
+          {["Tous", ...statutsAction.map(s => s.value)].map((s) => (
             <button key={s} className={`chip ${filterStatut === s ? "on" : ""}`} onClick={() => setFilterStatut(s)}>
-              {s}
+              {s === 'Tous' ? 'Tous' : (statutsAction.find(st => st.value === s)?.label || s)}
             </button>
           ))}
         </div>
@@ -354,7 +360,7 @@ const ActionTracker = () => {
                         onChange={(e) => handleStatutChange(a, e.target.value)}
                         style={{ fontSize: 10, padding: "2px 6px", width: "auto", minWidth: 90, background: STATUT_STYLE[a.statut]?.bg || "var(--bg-alt)", color: STATUT_STYLE[a.statut]?.c || "var(--text-dim)", border: "none", borderRadius: 5, fontWeight: 700, cursor: "pointer" }}
                       >
-                        {STATUTS_ACTION.map(s => <option key={s} value={s}>{s}</option>)}
+                        {statutsAction.map(s => <option key={s.value} value={s.value}>{s.label}{s.renamedFrom ? ` (ex: ${s.renamedFrom})` : ''}</option>)}
                       </select>
                     ) : (
                       <Badge label={a.statut} bg={STATUT_STYLE[a.statut]?.bg} c={STATUT_STYLE[a.statut]?.c} />
