@@ -44,22 +44,31 @@ const Dashboard = () => {
   useEffect(() => {
     const intensity = 40;
     const attachTilt = (el) => {
+      let rafId = null;
+      let pendingRx = 0, pendingRy = 0;
+
       const onMove = (e) => {
         const { left, top, width, height } = el.getBoundingClientRect();
-        const rx = ((e.clientY - top  - height / 2) / intensity) * -1;
-        const ry =  (e.clientX - left - width  / 2) / intensity;
-        el.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.015)`;
-        el.style.transition = 'none';
+        pendingRx = ((e.clientY - top  - height / 2) / intensity) * -1;
+        pendingRy =  (e.clientX - left - width  / 2) / intensity;
+        if (rafId) return; // déjà en attente → on accumule juste les valeurs
+        rafId = requestAnimationFrame(() => {
+          el.style.transform = `perspective(1000px) rotateX(${pendingRx}deg) rotateY(${pendingRy}deg) scale(1.015)`;
+          rafId = null;
+        });
       };
       const onLeave = () => {
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
         el.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
         el.style.transition = 'transform .5s cubic-bezier(.25,1,.5,1)';
       };
       const onEnter = () => { el.style.transition = 'transform .1s ease'; };
+
       el.addEventListener('mousemove', onMove);
       el.addEventListener('mouseleave', onLeave);
       el.addEventListener('mouseenter', onEnter);
       return () => {
+        if (rafId) cancelAnimationFrame(rafId);
         el.removeEventListener('mousemove', onMove);
         el.removeEventListener('mouseleave', onLeave);
         el.removeEventListener('mouseenter', onEnter);

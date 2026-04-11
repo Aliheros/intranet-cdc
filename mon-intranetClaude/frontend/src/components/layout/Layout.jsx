@@ -14,6 +14,21 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
   const searchRef = useRef(null);
   const notifRef = useRef(null);
   const profileRef = useRef(null);
+  const mainRef = useRef(null);
+
+  // Pause gradient + backdrop-filter pendant le scroll
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    let timer;
+    const onScroll = () => {
+      el.classList.add('scrolling');
+      clearTimeout(timer);
+      timer = setTimeout(() => el.classList.remove('scrolling'), 120);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => { el.removeEventListener('scroll', onScroll); clearTimeout(timer); };
+  }, []);
 
   const { notifLues, setNotifLues, visibleNotifs, personalNotifs } = useDataContext();
 
@@ -363,7 +378,8 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
         </aside>
 
         {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────────── */}
-        <main className={`main ${page === 'dashboard' ? 'main-gradient' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
+        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'main-gradient' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
+          {page === 'dashboard' && <div className="gradient-layer" aria-hidden="true" />}
 
           {/* ── TOPBAR STICKY ───────────────────────────────────────────────── */}
           <div className="topbar">
@@ -536,7 +552,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
           </div>
 
           {/* ── PAGE CONTENT ────────────────────────────────────────────────── */}
-          <div style={{ padding: '28px 44px 44px' }}>
+          <div className={page === 'dashboard' ? 'gradient-content' : ''} style={page !== 'dashboard' ? { padding: '28px 44px 44px' } : undefined}>
             <div key={page} className="page-transition">{children}</div>
           </div>
 
