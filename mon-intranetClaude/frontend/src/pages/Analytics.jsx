@@ -85,6 +85,7 @@ const Analytics = () => {
     isAdmin, isBureau, hasPower,
     impactStudies, handleSaveImpactStudy, handleDeleteImpactStudy,
     evenements,
+    getThreshold, getActiveConfigList, getConfigLabel,
   } = useDataContext();
 
   const [impactForm, setImpactForm] = useState(null);
@@ -135,7 +136,16 @@ const Analytics = () => {
   // Charge tâches — top 10
   const taskRanking = Object.entries(taskLoadByPerson).sort(([, a], [, b]) => b - a).slice(0, 10);
   const maxTasks = taskRanking[0]?.[1] || 1;
-  const overloadedMembers = Object.entries(taskLoadByPerson).filter(([, count]) => count >= 6).map(([name]) => name);
+  const thOverloadTasks     = getThreshold('overloadTasks');
+  const thAnnulationWarn    = getThreshold('annulationRateWarn');
+  const thBudgetWarn        = getThreshold('budgetWarnPct');
+  const thNdfBacklog        = getThreshold('ndfBacklogWarn');
+  const overloadedMembers = Object.entries(taskLoadByPerson).filter(([, count]) => count >= thOverloadTasks).map(([name]) => name);
+
+  // Recalcul budgetAlerts avec le vrai seuil configurable (le useMemo DataContext utilise le fallback)
+  const budgetAlertsLive = POLES.filter(p =>
+    budgetExecution[p]?.allocated > 0 && budgetExecution[p].pct >= thBudgetWarn
+  );
 
   // Budget — tri par allocated desc
   const budgetRows = POLES
@@ -227,18 +237,18 @@ const Analytics = () => {
   const alerts = [];
 
   // Taux annulation séances — signal de qualité terrain
-  if (annulationRate >= 25)
+  if (annulationRate >= thAnnulationWarn)
     alerts.push({ level: 'warn', msg: `Taux d'annulation séances : ${annulationRate}% — impacte la régularité du programme.` });
 
   // Budget — signal financier critique
-  if (budgetAlerts.some(p => budgetExecution[p]?.pct >= 100))
-    alerts.push({ level: 'danger', msg: `Dépassement budgétaire sur : ${budgetAlerts.filter(p => budgetExecution[p]?.pct >= 100).join(', ')}.` });
-  else if (budgetAlerts.length > 0)
-    alerts.push({ level: 'warn', msg: `Consommation budget ≥ 80% sur : ${budgetAlerts.join(', ')}.` });
+  if (budgetAlertsLive.some(p => budgetExecution[p]?.pct >= 100))
+    alerts.push({ level: 'danger', msg: `Dépassement budgétaire sur : ${budgetAlertsLive.filter(p => budgetExecution[p]?.pct >= 100).join(', ')}.` });
+  else if (budgetAlertsLive.length > 0)
+    alerts.push({ level: 'warn', msg: `Consommation budget ≥ ${thBudgetWarn}% sur : ${budgetAlertsLive.join(', ')}.` });
 
   // NDF backlog — signal de gestion financière
   const ndfPending = notesFrais.filter(n => ['Soumise', 'En vérification'].includes(n.statut));
-  if (ndfPending.length >= 5)
+  if (ndfPending.length >= thNdfBacklog)
     alerts.push({ level: 'info', msg: `Backlog NDF : ${ndfPending.length} dossiers en attente de traitement — montant potentiel ${ndfPending.reduce((s,n) => s+(Number(n.montant)||0),0).toFixed(0)}€.` });
 
   // Taux de complétion des actions — signal programme
@@ -325,7 +335,7 @@ const Analytics = () => {
               onClick={() => setTab('benevoles')} />
             <KpiCard icon={CheckCircle2} label="Taux de complétion"        value={`${completionRate}%`} sub="actions terminées / total"          color="#16a34a"
               delta={prevCycleName && prevCompletionRate != null ? completionRate - prevCompletionRate : null} deltaLabel="pts vs cycle préc." />
-            <KpiCard icon={Calendar}     label="Taux participation séances" value={avgParticipation > 0 ? `${avgParticipation}%` : '—'} sub={`${annulationRate}% séances annulées`} color={annulationRate >= 25 ? '#e63946' : '#d97706'} />
+            <KpiCard icon={Calendar}     label="Taux participation séances" value={avgParticipation > 0 ? `${avgParticipation}%` : '—'} sub={`${annulationRate}% séances annulées`} color={annulationRate >= thAnnulationWarn ? '#e63946' : '#d97706'} />
             <KpiCard icon={Star}         label="Satisfaction bilan"         value={avgBilanSatisfaction != null ? `${avgBilanSatisfaction}/5` : '—'} sub={bilanWithScore.length > 0 ? `sur ${bilanWithScore.length} bilan${bilanWithScore.length > 1 ? 's' : ''}` : 'Aucun bilan complété'} color="#d97706" onClick={() => setTab('actions')} />
           </div>
 
@@ -652,13 +662,13 @@ const Analytics = () => {
               <SectionTitle icon={CheckCircle2}>Charge tâches actives par bénévole</SectionTitle>
               {taskRanking.length === 0 ? <EmptyState msg="Aucune tâche active assignée." /> : (
                 taskRanking.map(([name, count]) => {
-                  const color = count >= 6 ? '#e63946' : count >= 4 ? '#d97706' : '#16a34a';
+                  const color = count >= thOverloadTasks ? '#e63946' : count >= thOverloadTasks - 2 ? '#d97706' : '#16a34a';
                   return (
                     <div key={name} style={{ marginBottom: 8 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                         <span style={{ fontSize: 11, color: 'var(--text-base)', flex: 1 }}>{name}</span>
                         <span style={{ fontSize: 10, fontWeight: 700, color, background: `${color}15`, borderRadius: 4, padding: '1px 6px', flexShrink: 0 }}>
-                          {count} tâche{count > 1 ? 's' : ''}{count >= 6 ? ' ⚠' : ''}
+                          {count} tâche{count > 1 ? 's' : ''}{count >= thOverloadTasks ? ' ⚠' : ''}
                         </span>
                       </div>
                       <div style={{ height: 5, background: 'var(--border-light)', borderRadius: 3, overflow: 'hidden' }}>
@@ -668,7 +678,7 @@ const Analytics = () => {
                   );
                 })
               )}
-              {taskRanking.some(([, c]) => c >= 6) && (
+              {taskRanking.some(([, c]) => c >= thOverloadTasks) && (
                 <div style={{ marginTop: 12, fontSize: 11, color: '#e63946', background: 'rgba(230,57,70,0.06)', borderRadius: 6, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <AlertTriangle size={11} strokeWidth={2} /> Certains bénévoles ont 6+ tâches actives — risque de surcharge.
                 </div>
@@ -724,7 +734,7 @@ const Analytics = () => {
                   <KpiCard icon={Clock}         label="NDF en attente"          value={ndfPending.length} sub={ndfPendingAmt > 0 ? `${ndfPendingAmt.toFixed(0)}€` : ''} color="#d97706" />
                   <KpiCard icon={CheckCircle2}  label="NDF remboursées"         value={notesFrais.filter(n => n.statut === 'Remboursée').length} sub={totalNdfRemboursee > 0 ? `${totalNdfRemboursee.toFixed(0)}€ remboursés` : 'ce cycle'} color="#16a34a" />
                   <KpiCard icon={Target}        label="Coût / bénéficiaire"     value={coutParBenef != null ? `${coutParBenef}€` : '—'} sub={coutParBenef != null ? 'NDF remboursées / bénéficiaires' : 'Données insuffisantes'} color="#7c3aed" />
-                  <KpiCard icon={AlertTriangle} label="Pôles en alerte budget"  value={budgetAlerts.length} sub={budgetAlerts.length > 0 ? `${budgetAlerts.filter(p => budgetExecution[p]?.pct >= 100).length} en dépassement` : 'Aucune alerte'} color={budgetAlerts.some(p => budgetExecution[p]?.pct >= 100) ? '#e63946' : budgetAlerts.length > 0 ? '#d97706' : '#16a34a'} />
+                  <KpiCard icon={AlertTriangle} label="Pôles en alerte budget"  value={budgetAlertsLive.length} sub={budgetAlertsLive.length > 0 ? `${budgetAlertsLive.filter(p => budgetExecution[p]?.pct >= 100).length} en dépassement` : 'Aucune alerte'} color={budgetAlertsLive.some(p => budgetExecution[p]?.pct >= 100) ? '#e63946' : budgetAlertsLive.length > 0 ? '#d97706' : '#16a34a'} />
                 </>
               );
             })()}
@@ -1011,9 +1021,9 @@ const Analytics = () => {
                 </div>
               )}
               {annulationRate > 0 && (
-                <div style={{ fontSize: 11, background: annulationRate >= 25 ? 'rgba(230,57,70,0.07)' : 'var(--bg-hover)', borderRadius: 6, padding: '7px 10px', color: annulationRate >= 25 ? '#e63946' : 'var(--text-muted)' }}>
+                <div style={{ fontSize: 11, background: annulationRate >= thAnnulationWarn ? 'rgba(230,57,70,0.07)' : 'var(--bg-hover)', borderRadius: 6, padding: '7px 10px', color: annulationRate >= 25 ? '#e63946' : 'var(--text-muted)' }}>
                   Taux d'annulation séances : <strong>{annulationRate}%</strong>
-                  {annulationRate >= 25 && <span style={{ fontWeight: 700 }}> — à surveiller</span>}
+                  {annulationRate >= thAnnulationWarn && <span style={{ fontWeight: 700 }}> — à surveiller</span>}
                 </div>
               )}
             </div>

@@ -9,6 +9,7 @@ import Permissions from './Permissions';
 import NdfConfigPanel     from '../components/admin/NdfConfigPanel';
 import DfConfigPanel      from '../components/admin/DfConfigPanel';
 import AutomationPanel    from '../components/admin/AutomationPanel';
+import AppConfigPanel     from '../components/admin/AppConfigPanel';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (d) => {
@@ -510,6 +511,7 @@ const ParametresTab = () => {
           { id: 'ndf',        label: 'Notes de Frais' },
           { id: 'df',         label: 'Devis & Factures' },
           { id: 'cycles',     label: 'Cycles / Années' },
+          { id: 'references', label: 'Données de référence' },
           { id: 'automation', label: 'Automatisation' },
         ].map(s => (
           <button key={s.id} onClick={() => setSection(s.id)} style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${section === s.id ? '#1a56db' : 'var(--border-light)'}`, background: section === s.id ? 'rgba(26,86,219,0.08)' : 'var(--bg-hover)', color: section === s.id ? '#1a56db' : 'var(--text-dim)' }}>
@@ -580,6 +582,9 @@ const ParametresTab = () => {
           </div>
         </div>
       )}
+
+      {/* Données de référence */}
+      {section === 'references' && <AppConfigPanel />}
 
       {/* Automatisation */}
       {section === 'automation' && <AutomationPanel />}

@@ -5,7 +5,15 @@ import React, { createContext, useContext, useState, useMemo, useEffect } from '
 import { useAuth } from './AuthContext';
 import { useAppContext } from './AppContext';
 import api from '../api/apiClient';
-import { POLES, PROJETS } from '../data/constants';
+import { POLES, PROJETS, TYPES_ACTION, NIVEAUX_CLASSE } from '../data/constants';
+
+// ─── Valeurs de secours si l'API app-config échoue ───────────────────────────
+const FALLBACK_CONFIG = {
+  types_action:  TYPES_ACTION.map(v => ({ value: v, label: v })),
+  niveaux_classe: NIVEAUX_CLASSE.map(v => ({ value: v, label: v })),
+  labels_rep:    ['Hors REP', 'REP', 'REP+'].map(v => ({ value: v, label: v })),
+  thresholds: { overloadTasks: 6, annulationRateWarn: 25, budgetWarnPct: 80, ndfBacklogWarn: 5 },
+};
 import { generateAutoTasks, buildPropagationMessage, fmtHeure } from '../utils/utils';
 
 const DataContext = createContext(null);
@@ -92,6 +100,7 @@ export function DataProvider({ children }) {
   const [impactStudies,      setImpactStudies]      = useState([]);
   const [seancePresences,    setSeancePresences]    = useState([]);
   const [fichiersPrefaits, setFichiersPrefaits] = useState([]);
+  const [appConfig, setAppConfig] = useState(FALLBACK_CONFIG);
   const [ndfConfig, setNdfConfig] = useState({
     categories: [
       { label: 'Transport', plafond: '', note: '' },
@@ -155,7 +164,7 @@ export function DataProvider({ children }) {
           transactionsData, budgetsData, missionsData, notesFraisData,
           notifsData, hoursData, convsData, spaceSettingsData,
           faqData, devisFacturesData, categoriesDFData, impactStudiesData,
-          seancePresencesData,
+          seancePresencesData, appConfigData,
         ] = await Promise.all([
           api.get('/users'),
           api.get('/actions'),
@@ -175,6 +184,7 @@ export function DataProvider({ children }) {
           api.get('/categories-df').catch(() => []),
           api.get('/impact-studies').catch(() => []),
           api.get('/seance-presences').catch(() => []),
+          api.get('/app-config').catch(() => ({})),
         ]);
         const contactsData = await api.get('/contacts').catch(() => []);
 
@@ -193,6 +203,10 @@ export function DataProvider({ children }) {
         setCategoriesDF(categoriesDFData || []);
         setImpactStudies(impactStudiesData || []);
         setSeancePresences(seancePresencesData || []);
+        // Fusionner avec les fallbacks pour les clés absentes
+        if (appConfigData && Object.keys(appConfigData).length > 0) {
+          setAppConfig(prev => ({ ...FALLBACK_CONFIG, ...prev, ...appConfigData }));
+        }
         // Générer les présences manquantes puis re-fetch (toujours, pour avoir les validations à jour)
         api.post('/seance-presences/generate')
           .then(() => api.get('/seance-presences'))
@@ -1454,9 +1468,11 @@ export function DataProvider({ children }) {
       .sort((a, b) => (b.beneficiaires || 0) - (a.beneficiaires || 0))
       .slice(0, 5);
 
-    // ── Alertes budget (pôles >= 80%) ─────────────────────────────────────────
+    // ── Alertes budget (pôles >= seuil configurable) ─────────────��────────────
+    // Note: appConfig est hors du useMemo — on lit directement FALLBACK pour éviter
+    // une dépendance circulaire. Le seuil s'applique au rechargement de la page.
     const budgetAlerts = POLES.filter(p =>
-      budgetExecution[p]?.allocated > 0 && budgetExecution[p].pct >= 80
+      budgetExecution[p]?.allocated > 0 && budgetExecution[p].pct >= FALLBACK_CONFIG.thresholds.budgetWarnPct
     );
 
     // ── Comparaison cycle précédent ───────────────────────────────────────────
@@ -1858,6 +1874,46 @@ export function DataProvider({ children }) {
     }
   };
 
+  // ─── APP CONFIG ─────────────────────────────────────────────────────────────
+
+  /**
+   * Retourne le label affiché pour une valeur stockée.
+   * Si renommé, affiche le nouveau label avec l'ancien en petit.
+   * Si archivé et absent des actifs, retourne la valeur brute (données historiques).
+   */
+  const getConfigLabel = (key, value) => {
+    if (!value) return value;
+    const list = appConfig[key];
+    if (!Array.isArray(list)) return value;
+    const item = list.find(i => i.value === value);
+    if (!item) return value; // valeur historique inconnue
+    return item; // { value, label, renamedFrom?, archived? }
+  };
+
+  /** Liste active (non archivée) d'une clé de config */
+  const getActiveConfigList = (key) => {
+    const list = appConfig[key];
+    if (!Array.isArray(list)) return [];
+    return list.filter(i => !i.archived);
+  };
+
+  /** Seuil numérique depuis appConfig.thresholds avec fallback */
+  const getThreshold = (key) => {
+    return appConfig?.thresholds?.[key] ?? FALLBACK_CONFIG.thresholds[key];
+  };
+
+  /** Sauvegarde une clé de config (admin) */
+  const handleSaveAppConfig = async (key, value) => {
+    try {
+      const updated = await api.patch(`/app-config/${key}`, { value });
+      setAppConfig(prev => ({ ...prev, [key]: updated.value }));
+      addToast('Configuration sauvegardée.');
+    } catch (err) {
+      addToast(err.message || 'Erreur lors de la sauvegarde', 'error');
+      throw err;
+    }
+  };
+
   // ─── PRÉSENCES SÉANCES ────────────────────────────────────────────────────
   const fetchSeancePresences = async () => {
     try {
@@ -1990,6 +2046,8 @@ export function DataProvider({ children }) {
       // Études d'impact
       impactStudies, handleSaveImpactStudy, handleDeleteImpactStudy,
       seancePresences, refreshSeancePresences, handleRespValidation, handleRhValidation,
+      // App Config
+      appConfig, getConfigLabel, getActiveConfigList, getThreshold, handleSaveAppConfig,
     }}>
       {children}
     </DataContext.Provider>

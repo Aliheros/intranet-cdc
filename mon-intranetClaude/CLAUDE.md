@@ -64,6 +64,8 @@ src/
 
 1. **`pickActionFields` (backend `routes/actions.js`)** : tout nouveau champ du modèle Action DOIT y être ajouté (`'field' in body`), sinon il n'est jamais persisté en DB.
 
+0. **AppConfig — intégrité des listes configurables** : `value` d'un item (type d'action, niveau, labelRep) = ce qui est stocké en DB → **ne jamais changer**. Seul `label` est modifiable. La suppression d'un item utilisé par des actions existantes est bloquée côté frontend. Archiver = masquer du formulaire sans toucher aux données.
+
 2. **GeoSearch dropdown** : `position: fixed` + `getBoundingClientRect()` obligatoire — sinon coupé par `overflow:auto` de la modale. Département toujours `readOnly`.
 
 3. **SpaceView hooks** : tous les `useState` au niveau du composant racine, jamais dans des IIFEs ou conditions. Préfixer par onglet (`rhmX`, etc.).

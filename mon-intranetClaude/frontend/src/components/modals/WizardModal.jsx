@@ -184,7 +184,12 @@ const STEPS = [
   { num: 4, label: "Automatisation" },
 ];
 
-export default function WizardModal({ cycles, directory, onClose, onComplete, currentUser }) {
+export default function WizardModal({ cycles, directory, onClose, onComplete, currentUser,
+  configTypesAction, configNiveaux, configLabelsRep }) {
+  // Listes configurables avec fallback sur les constantes
+  const typesAction = (configTypesAction && configTypesAction.length > 0) ? configTypesAction : TYPES_ACTION.map(v => ({ value: v, label: v }));
+  const niveaux     = (configNiveaux     && configNiveaux.length > 0)     ? configNiveaux     : [];
+  const labelsRep   = (configLabelsRep   && configLabelsRep.length > 0)   ? configLabelsRep   : ['Hors REP','REP','REP+'].map(v => ({ value: v, label: v }));
   const { isClosing, handleClose } = useModalClose(onClose);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ ...EMPTY_FORM, cycle: cycles[0] });
@@ -297,7 +302,11 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
                   <label className="form-label">Type d'action *</label>
                   <select className="form-select" value={form.type} onChange={e => set("type", e.target.value)}>
                     <option value="">— Sélectionner —</option>
-                    {TYPES_ACTION.map(t => <option key={t} value={t}>{t}</option>)}
+                    {typesAction.map(t => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}{t.renamedFrom ? ` (ex: ${t.renamedFrom})` : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -363,7 +372,7 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
                 <label className="form-label">Label REP</label>
                 <select className="form-select" value={form.labelRep} onChange={e => set("labelRep", e.target.value)}>
                   <option value="">Non renseigné</option>
-                  {LABEL_REP.map(l => <option key={l} value={l}>{l}</option>)}
+                  {labelsRep.map(l => <option key={l.value} value={l.value}>{l.label}{l.renamedFrom ? ` (ex: ${l.renamedFrom})` : ''}</option>)}
                 </select>
               </div>
 
@@ -446,7 +455,10 @@ export default function WizardModal({ cycles, directory, onClose, onComplete, cu
                   <label className="form-label">Type de classe</label>
                   <select className="form-select" value={form.type_classe} onChange={e => set("type_classe", e.target.value)}>
                     <option value="">— Aucun —</option>
-                    {TYPES_CLASSE.map(c => <option key={c} value={c}>{c}</option>)}
+                    {niveaux.length > 0
+                      ? niveaux.map(c => <option key={c.value} value={c.value}>{c.label}{c.renamedFrom ? ` (ex: ${c.renamedFrom})` : ''}</option>)
+                      : TYPES_CLASSE.map(c => <option key={c} value={c}>{c}</option>)
+                    }
                   </select>
                 </div>
               </div>

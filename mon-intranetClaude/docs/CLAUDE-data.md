@@ -111,6 +111,33 @@ signataire?, signedAt?, motifRefus?
 transactionId?, createdBy, createdById?
 ```
 
+### AppConfig
+```
+key  String @id   — clés autorisées : types_action | niveaux_classe | labels_rep | thresholds
+value Json         — contenu (voir ci-dessous)
+updatedBy String?
+```
+
+**Structure des listes configurables** (types_action, niveaux_classe, labels_rep) :
+```json
+[{ "value": "Simulation Parlementaire — format long", "label": "Sim. Parl. Long", "renamedFrom": "Simulation Parlementaire — format long", "archived": false }]
+```
+- `value` : identifiant stable stocké en DB sur les actions → **JAMAIS modifié**
+- `label` : libellé affiché, modifiable librement
+- `renamedFrom` : ancien label, affiché discrètement dans les formulaires
+- `archived` : masqué des selects mais conservé pour les données historiques
+
+**Structure thresholds** :
+```json
+{ "overloadTasks": 6, "annulationRateWarn": 25, "budgetWarnPct": 80, "ndfBacklogWarn": 5 }
+```
+
+**Seed** : `backend/src/lib/seedAppConfig.js` injecte les valeurs par défaut au boot (idempotent — ne modifie pas si déjà présent).
+
+**Frontend** : `DataContext` expose `appConfig`, `getActiveConfigList(key)`, `getConfigLabel(key, value)`, `getThreshold(key)`, `handleSaveAppConfig(key, value)`.
+
+**Fallback** : `FALLBACK_CONFIG` dans DataContext — si l'API échoue, les constantes de `constants.js` sont utilisées.
+
 ### AutomationRule
 ```
 id, nom, description?

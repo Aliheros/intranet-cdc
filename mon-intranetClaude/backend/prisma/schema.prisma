@@ -435,6 +435,18 @@ model ImpactStudy {
   updatedAt DateTime @updatedAt
 }
 
+// ─── Configuration applicative ───────────────────────────────────────────────
+// Stocke les listes de référence et seuils configurables depuis l'admin.
+// Chaque entrée est un couple clé/valeur JSON.
+// Les valeurs par défaut sont injectées au boot (seedAppConfig) si absentes.
+
+model AppConfig {
+  key       String   @id       // ex: "types_action", "niveaux_classe", "thresholds"
+  value     Json                // contenu libre (tableau, objet…)
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
 // ─── Automatisation ──────────────────────────────────────────────────────────
 
 model AutomationRule {

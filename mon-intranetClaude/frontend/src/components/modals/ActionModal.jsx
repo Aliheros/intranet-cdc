@@ -171,7 +171,11 @@ const GeoSearch = ({ ville, departement, onSelect }) => {
   );
 };
 
-const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, notesFrais = [] }) => {
+const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, notesFrais = [],
+  onTaskRequest, configTypesAction, configNiveaux, configLabelsRep, getConfigLabel }) => {
+  const typesAction = (configTypesAction && configTypesAction.length > 0) ? configTypesAction : TYPES_ACTION.map(v => ({ value: v, label: v }));
+  const niveaux     = (configNiveaux     && configNiveaux.length > 0)     ? configNiveaux     : NIVEAUX_CLASSE.map(v => ({ value: v, label: v }));
+  const labelsRep   = (configLabelsRep   && configLabelsRep.length > 0)   ? configLabelsRep   : ['Hors REP','REP','REP+'].map(v => ({ value: v, label: v }));
   const { isClosing, handleClose } = useModalClose(onClose);
   const [form, setForm] = useState(action || {});
   const [geoPostalCodes, setGeoPostalCodes] = useState([]);
@@ -270,7 +274,7 @@ const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, 
               </label>
               <select className="form-select" value={form.labelRep || ""} onChange={(e) => set("labelRep", e.target.value)}>
                 <option value="">Non renseigné</option>
-                {LABEL_REP.map(l => <option key={l} value={l}>{l}</option>)}
+                {labelsRep.map(l => <option key={l.value} value={l.value}>{l.label}{l.renamedFrom ? ` (ex: ${l.renamedFrom})` : ''}</option>)}
               </select>
             </div>
           </div>
@@ -290,12 +294,16 @@ const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, 
           <div className="form-3col">
             <div>
               <label className="form-label">Type d'action</label>
-              <select className="form-select" value={form.type || TYPES_ACTION[0]} onChange={(e) => {
+              <select className="form-select" value={form.type || typesAction[0]?.value || ''} onChange={(e) => {
                 set("type", e.target.value);
                 // Réinitialise institution si on sort des simulations
                 if (!isSimulation(e.target.value)) set("institutionSimulee", "");
               }}>
-                {TYPES_ACTION.map(t => <option key={t} value={t}>{t}</option>)}
+                {typesAction.map(t => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}{t.renamedFrom ? ` (ex: ${t.renamedFrom})` : ''}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -313,7 +321,7 @@ const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, 
           </div>
 
           {/* ── Institution simulée (conditionnelle) ── */}
-          {isSimulation(form.type || TYPES_ACTION[0]) && (
+          {isSimulation(form.type || typesAction[0]?.value || '') && (
             <div style={{ background: "rgba(26,86,219,0.04)", border: "1px dashed rgba(26,86,219,0.2)", borderRadius: 8, padding: "12px 14px" }}>
               <label className="form-label" style={{ color: "#1a56db" }}>Institution simulée</label>
               <select className="form-select" value={form.institutionSimulee || ""} onChange={(e) => set("institutionSimulee", e.target.value)}>
@@ -357,7 +365,7 @@ const ActionModal = ({ action, onClose, onSave, directory, cycles, currentUser, 
               <label className="form-label">Public / Niveau</label>
               <select className="form-select" value={form.type_classe || ""} onChange={(e) => set("type_classe", e.target.value)}>
                 <option value="">Sélectionner...</option>
-                {NIVEAUX_CLASSE.map(n => <option key={n} value={n}>{n}</option>)}
+                {niveaux.map(n => <option key={n.value} value={n.value}>{n.label}{n.renamedFrom ? ` (ex: ${n.renamedFrom})` : ''}</option>)}
               </select>
             </div>
             <div>

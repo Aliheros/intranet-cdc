@@ -110,6 +110,7 @@ function App() {
     handlePrendreEnChargeDevisFacture, handleSignerDevisFacture,
     refreshDevisFacture,
     dfConfig,
+    getActiveConfigList, getConfigLabel,
   } = useDataContext();
 
   // ─── TUTORIEL — déclenche automatiquement si mustTakeTutorial ───────────────
@@ -522,6 +523,10 @@ function App() {
 
       <ActionModal action={actionModal} onClose={() => setActionModal(null)} onSave={handleSaveAction} directory={directory} cycles={cycles} currentUser={currentUser} notesFrais={notesFrais}
         onTaskRequest={req => api.post('/tasks/requests', req).then(created => { if (created?.id) setTaskRequests(prev => [...prev, created]); }).catch(console.error)}
+        configTypesAction={getActiveConfigList('types_action')}
+        configNiveaux={getActiveConfigList('niveaux_classe')}
+        configLabelsRep={getActiveConfigList('labels_rep')}
+        getConfigLabel={getConfigLabel}
       />
 
 
@@ -543,7 +548,11 @@ function App() {
 
       {budgetModalOpen && <BudgetModal budgets={budgets} onSave={(b) => { handleSaveBudgets(b); setBudgetModalOpen(false); }} onClose={() => setBudgetModalOpen(false)} />}
 
-      {showWizard && <WizardModal cycles={cycles} directory={directory} actions={actions} currentUser={currentUser} onClose={() => setShowWizard(false)} onComplete={handleWizardComplete} />}
+      {showWizard && <WizardModal cycles={cycles} directory={directory} actions={actions} currentUser={currentUser} onClose={() => setShowWizard(false)} onComplete={handleWizardComplete}
+        configTypesAction={getActiveConfigList('types_action')}
+        configNiveaux={getActiveConfigList('niveaux_classe')}
+        configLabelsRep={getActiveConfigList('labels_rep')}
+      />}
 
       {missionModal !== null && (
         <MissionModal
