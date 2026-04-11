@@ -39,7 +39,8 @@
 */
 .gradient-layer {
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0;
+  left: 248px; /* skip sidebar — ne jamais couvrir la sidebar */
   z-index: 0;
   pointer-events: none;
   will-change: transform;
@@ -69,8 +70,14 @@
 
 /* ── Fond dégradé animé ─────────────────────────────────────────────────── */
 .main-gradient {
-  background: transparent !important;
+  /* background-color conservé pour la piste de défilement (Windows) */
+  background-color: #f0f4ff !important;
+  background-image: none !important;
   position: relative;
+}
+.dark-theme .main-gradient {
+  background-color: #0f172a !important;
+  background-image: none !important;
 }
 
 /* ── Wrapper contenu au-dessus du gradient layer ────────────────────────── */
