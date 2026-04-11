@@ -4,6 +4,7 @@ import { AvatarInner, isAvatarUrl } from '../ui/AvatarDisplay';
 import { POLE_COLORS, PROJET_COLORS } from '../../data/constants';
 import { LogOut, Moon, Sun, Settings, Search, X, Bell, ClipboardList, MessageCircle, LayoutDashboard, Zap, Users, Receipt, Crown, Shield, Calendar, User, Target, Menu, ExternalLink, HelpCircle, FileSignature, BarChart2, ChevronRight } from 'lucide-react';
 import { useDataContext } from '../../contexts/DataContext';
+import { useAppContext } from '../../contexts/AppContext';
 
 const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, darkMode, setDarkMode, currentUser, isAdmin = false, isBureau = false, accessiblePoles = [], accessibleProjets = [], myTeamSpaces = [], onOpenProfile, onOpenMyProfile, onRemoveAvatar, onLogout, globalQuery = "", setGlobalQuery, upcomingNotifications = [], notifBadgeCount = 0, onOpenNotifPanel, bannerHeight = 0, directory = [], actions = [], evenements = [], missions = [], onSelectMember, onSelectAction, onSelectEvent, onSelectMission }) => {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -31,6 +32,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
   }, []);
 
   const { notifLues, setNotifLues, visibleNotifs, personalNotifs } = useDataContext();
+  const { contextBar } = useAppContext();
 
   const PAGE_LABELS = {
     dashboard: 'Tableau de bord', actions: 'Suivi des actions', coordination: 'Coordination',
@@ -550,6 +552,21 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
 
             </div>
           </div>
+
+          {/* ── BARRE CONTEXTUELLE (sous-onglets pôle/projet) ───────────────── */}
+          {contextBar && (
+            <div style={{
+              position: 'sticky', top: 62, zIndex: 40,
+              background: 'rgba(255,255,255,0.72)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
+              borderBottom: '1px solid rgba(0,0,0,0.07)',
+              padding: '0 44px',
+              display: 'flex', alignItems: 'center', gap: 2,
+            }}>
+              {contextBar}
+            </div>
+          )}
 
           {/* ── PAGE CONTENT ────────────────────────────────────────────────── */}
           <div className={page === 'dashboard' ? 'gradient-content' : ''} style={page !== 'dashboard' ? { padding: '28px 44px 44px' } : undefined}>

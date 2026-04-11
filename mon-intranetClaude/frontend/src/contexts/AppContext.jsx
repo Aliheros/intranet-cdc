@@ -118,6 +118,14 @@ export function AppProvider({ children }) {
   const [noteFraisModal,          setNoteFraisModal]          = useState(null);
   const [devisFactureModal,       setDevisFactureModal]       = useState(null);
 
+  // ─── BARRE CONTEXTUELLE (sous-onglets pôle/projet) ───────────────────────
+  // Contenu JSX rendu juste sous la topbar principale. Chaque page qui en a
+  // besoin l'alimente via setContextBar(). Réinitialisé à null à chaque nav.
+  const [contextBar, setContextBar] = useState(null);
+
+  // Réinitialise la contextBar à chaque changement de page
+  useEffect(() => { setContextBar(null); }, [page, subPage]);
+
   // ─── TUTORIEL ─────────────────────────────────────────────────────────────
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -164,6 +172,8 @@ export function AppProvider({ children }) {
       missionModal, setMissionModal,
       noteFraisModal, setNoteFraisModal,
       devisFactureModal, setDevisFactureModal,
+      // Barre contextuelle (sous-onglets pôle/projet)
+      contextBar, setContextBar,
       // Tutoriel
       showTutorial, setShowTutorial,
     }}>

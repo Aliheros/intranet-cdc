@@ -197,6 +197,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
     handleNav: navigate,
     setHighlightedActionId, setActiveEventId, setHighlightedEventId,
     highlightedTaskId, setHighlightedTaskId,
+    setContextBar,
     setEditSpaceModal, setManageTeamModal, setSectionModal,
     setTransactionModal,
     setMissionModal, setNoteFraisModal, setDevisFactureModal,
@@ -303,6 +304,37 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const [rhmApplyModal, setRhmApplyModal] = useState(null);
   const [rhmApplyMsg, setRhmApplyMsg] = useState("");
 
+  // ── Alimente la barre contextuelle (onglets) dans la topbar ─────────────
+  useEffect(() => {
+    setContextBar(
+      <>
+        <button className={`ctx-tab ${activeTab === "contenu" ? "active" : ""}`} onClick={() => setActiveTab("contenu")}>
+          <Folder size={12} strokeWidth={1.8}/> Contenu
+        </button>
+        {subPage === "Trésorerie" && acc === "edit" && <>
+          <button className={`ctx-tab ${activeTab === "tresorerie" ? "active" : ""}`} onClick={() => setActiveTab("tresorerie")}><BarChart2 size={12} strokeWidth={1.8}/> Finance</button>
+          <button className={`ctx-tab ${activeTab === "ndf_treso" ? "active" : ""}`} onClick={() => setActiveTab("ndf_treso")}><Receipt size={12} strokeWidth={1.8}/> Notes de frais</button>
+          <button className={`ctx-tab ${activeTab === "df_treso" ? "active" : ""}`} onClick={() => setActiveTab("df_treso")}><FileText size={12} strokeWidth={1.8}/> Devis &amp; Factures</button>
+        </>}
+        {subPage === "Ressources Humaines" && <>
+          <button className={`ctx-tab ${activeTab === "rh_suivi" ? "active" : ""}`} onClick={() => setActiveTab("rh_suivi")}><Users size={12} strokeWidth={1.8}/> Suivi RH</button>
+          <button className={`ctx-tab ${activeTab === "rh_missions" ? "active" : ""}`} onClick={() => setActiveTab("rh_missions")}><Target size={12} strokeWidth={1.8}/> Bourses aux missions</button>
+        </>}
+        {subPage === "Etudes" && <button className={`ctx-tab ${activeTab === "etudes_stats" ? "active" : ""}`} onClick={() => setActiveTab("etudes_stats")}><BarChart2 size={12} strokeWidth={1.8}/> Statistiques</button>}
+        {subPage === "Relations Publiques" && <button className={`ctx-tab ${activeTab === "rp_contacts" ? "active" : ""}`} onClick={() => setActiveTab("rp_contacts")}><Users size={12} strokeWidth={1.8}/> Contacts &amp; Sollicitations</button>}
+        {acc === "edit" && <button className={`ctx-tab ${activeTab === "corbeille" ? "active" : ""}`} onClick={() => setActiveTab("corbeille")}><Trash2 size={12} strokeWidth={1.8}/> Corbeille</button>}
+      </>
+    );
+  }, [subPage, activeTab, acc]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Toast contextuel pôle/projet ─────────────────────────────────────────
+  const [spaceToastVisible, setSpaceToastVisible] = useState(true);
+  useEffect(() => {
+    setSpaceToastVisible(true);
+    const t = setTimeout(() => setSpaceToastVisible(false), 2800);
+    return () => clearTimeout(t);
+  }, [subPage]);
+
   // Auto-réinitialise le surlignage après 2.5 secondes
   useEffect(() => {
     if (highlightedTaskId) {
@@ -336,77 +368,49 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
 
   return (
     <>
-      {/* --- EN-TÊTE FIXE --- */}
-      <div className="space-sticky-header">
-        <div className="sh" style={{
-          borderRadius: 16, marginBottom: 18,
-          background: `linear-gradient(135deg, ${color} 0%, ${color}bb 100%)`,
-          position: "relative", overflow: "hidden",
+      {/* ── Toast contextuel pôle/projet ─────────────────────────────────── */}
+      {spaceToastVisible && (
+        <div style={{
+          position: "fixed", top: 112, right: 28, zIndex: 9999,
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 16px 10px 12px",
+          background: color,
+          borderRadius: 12,
+          boxShadow: "0 8px 28px rgba(0,0,0,0.18)",
+          animation: "spaceToastIn .3s cubic-bezier(.16,1,.3,1)",
+          opacity: 1,
+          pointerEvents: "none",
+          maxWidth: 260,
         }}>
-          {/* Cercle décoratif en fond */}
-          <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", bottom: -30, right: 60, width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
-
-          {/* Icône badge */}
           <div style={{
-            width: 52, height: 52, borderRadius: 14, flexShrink: 0,
-            background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
+            width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+            background: "rgba(255,255,255,0.2)",
             border: "1px solid rgba(255,255,255,0.3)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 22, fontWeight: 800, color: "#fff", textTransform: "uppercase",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
           }}>
-            {SPACE_LOGO[subPage] ?? (page === "pole" ? subPage.charAt(0) : <Hexagon size={24} strokeWidth={1.5} />)}
+            {SPACE_LOGO[subPage] ?? (page === "pole" ? <span style={{fontSize:14,fontWeight:800,color:"#fff"}}>{subPage.charAt(0)}</span> : <Hexagon size={18} strokeWidth={1.5} color="#fff"/>)}
           </div>
-
-          {/* Texte */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 4 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", lineHeight: 1 }}>
               {page === "pole" ? "Pôle" : "Projet"}
             </div>
-            <div className="stitle" style={{ fontFamily: "var(--font-display)", fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "var(--font-display)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {subPage}
             </div>
-            {meta.description && (
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 6, lineHeight: 1.5, maxWidth: 480 }}>
-                {meta.description}
-              </div>
-            )}
           </div>
-
-          {/* Badges droite */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end", flexShrink: 0 }}>
-            <Badge label={acc === "edit" ? "Éditeur" : "Lecteur"} bg="rgba(255,255,255,0.18)" c="#fff" size={11} />
-            {canManageSpace && (
-              <button onClick={() => setEditSpaceModal(subPage)} style={{
-                background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)",
-                borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 600,
-                color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)",
-                display: "inline-flex", alignItems: "center", gap: 5,
-                transition: "background 0.2s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}
-              onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
-              >
-                <Settings size={11} strokeWidth={1.8}/> Paramétrer
-              </button>
-            )}
-          </div>
+          {canManageSpace && (
+            <button onClick={() => setEditSpaceModal(subPage)} title="Paramétrer" style={{
+              pointerEvents: "auto",
+              background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)",
+              borderRadius: 7, width: 28, height: 28, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <Settings size={13} strokeWidth={1.8} color="#fff"/>
+            </button>
+          )}
         </div>
-
-        {/* ONGLETS */}
-        <div className="tab-scroll-wrap" style={{ gap: 10 }}>
-          <button className={`tab-btn ${activeTab === "contenu" ? "active" : ""}`} onClick={() => setActiveTab("contenu")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Folder size={12} strokeWidth={1.8}/> Contenu de l'espace</span></button>
-          {subPage === "Trésorerie" && acc === "edit" && <button className={`tab-btn ${activeTab === "tresorerie" ? "active" : ""}`} onClick={() => setActiveTab("tresorerie")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><BarChart2 size={12} strokeWidth={1.8}/> Finance</span></button>}
-          {subPage === "Trésorerie" && acc === "edit" && <button className={`tab-btn ${activeTab === "ndf_treso" ? "active" : ""}`} onClick={() => setActiveTab("ndf_treso")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Receipt size={12} strokeWidth={1.8}/> Notes de frais</span></button>}
-          {subPage === "Trésorerie" && acc === "edit" && <button className={`tab-btn ${activeTab === "df_treso" ? "active" : ""}`} onClick={() => setActiveTab("df_treso")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><FileText size={12} strokeWidth={1.8}/> Devis &amp; Factures</span></button>}
-          {subPage === "Ressources Humaines" && <button className={`tab-btn ${activeTab === "rh_suivi" ? "active" : ""}`} onClick={() => setActiveTab("rh_suivi")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Users size={12} strokeWidth={1.8}/> Suivi RH</span></button>}
-          {subPage === "Ressources Humaines" && <button className={`tab-btn ${activeTab === "rh_missions" ? "active" : ""}`} onClick={() => setActiveTab("rh_missions")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Target size={12} strokeWidth={1.8}/> Bourses aux missions</span></button>}
-          {subPage === "Etudes" && <button className={`tab-btn ${activeTab === "etudes_stats" ? "active" : ""}`} onClick={() => setActiveTab("etudes_stats")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><BarChart2 size={12} strokeWidth={1.8}/> Statistiques</span></button>}
-          {subPage === "Relations Publiques" && <button className={`tab-btn ${activeTab === "rp_contacts" ? "active" : ""}`} onClick={() => setActiveTab("rp_contacts")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Users size={12} strokeWidth={1.8}/> Contacts & Sollicitations</span></button>}
-          {acc === "edit" && <button className={`tab-btn ${activeTab === "corbeille" ? "active" : ""}`} onClick={() => setActiveTab("corbeille")}><span style={{display:"inline-flex",alignItems:"center",gap:5}}><Trash2 size={12} strokeWidth={1.8}/> Corbeille ({spaceTrash.length})</span></button>}
-        </div>
-      </div>
+      )}
 
       {/* --- MODALE DES TÂCHES --- */}
       {taskModal && (
