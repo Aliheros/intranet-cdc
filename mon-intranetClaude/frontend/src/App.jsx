@@ -216,7 +216,7 @@ function App() {
     <>
       {/* ── Écran de chargement post-login ────────────────────────────────── */}
       {showLoader && (
-        <LoginLoader onDone={() => setShowLoader(false)} />
+        <LoginLoader onDone={() => setShowLoader(false)} fromLogin />
       )}
 
 

@@ -11,7 +11,7 @@ const HALOS = [
   { cls: 'r2', light: false },
 ];
 
-export default function LoginLoader({ onDone }) {
+export default function LoginLoader({ onDone, fromLogin = false }) {
   const rootRef  = useRef(null);
   const haloEls  = useRef([]);
 
@@ -73,6 +73,12 @@ export default function LoginLoader({ onDone }) {
           src="/logoCDC.png"
           alt="Cité des Chances"
           className="ll-logo"
+          style={fromLogin ? {
+            // Logo déjà visible (vient de l'écran de connexion) — pas de reveal, juste la flottaison
+            opacity: 1,
+            animation: 'll-float-logo 4s ease-in-out infinite',
+            transform: 'scale(1)',
+          } : undefined}
           onError={e => { e.currentTarget.style.display = 'none'; }}
         />
         <div className="ll-text">Chargement</div>
