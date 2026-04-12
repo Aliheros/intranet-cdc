@@ -361,15 +361,17 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
 
   return (
     <>
-      {/* ── Header fin pôle/projet ───────────────────────────────────────── */}
+      {/* ── Header pleine largeur pôle/projet ───────────────────────────── */}
       <div style={{
         display: "flex", alignItems: "center", gap: 12,
-        padding: "10px 0 10px 14px", marginBottom: 20,
-        borderLeft: `3px solid ${color || "var(--accent)"}`,
+        padding: "12px 44px",
+        margin: "-28px -44px 24px",
+        background: color || "var(--accent)",
       }}>
         <div style={{
           width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-          background: color || "var(--accent)",
+          background: "rgba(255,255,255,0.18)",
+          border: "1px solid rgba(255,255,255,0.25)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
           {SPACE_LOGO[subPage] ?? (page === "pole"
@@ -377,20 +379,20 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             : <Hexagon size={16} strokeWidth={1.5} color="#fff" />)}
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", lineHeight: 1, marginBottom: 2 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", lineHeight: 1, marginBottom: 2 }}>
             {page === "pole" ? "Pôle" : "Projet"}
           </div>
-          <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "var(--font-display)", color: "var(--text-base)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "var(--font-display)", color: "#fff", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {subPage}
           </div>
         </div>
-        <Badge label={acc === "edit" ? "Éditeur" : "Lecteur"} bg={acc === "edit" ? "rgba(26,86,219,0.1)" : "var(--bg-hover)"} c={acc === "edit" ? "#1a56db" : "var(--text-dim)"} style={{ marginLeft: 4, flexShrink: 0 }} />
+        <Badge label={acc === "edit" ? "Éditeur" : "Lecteur"} bg="rgba(255,255,255,0.2)" c="#fff" style={{ marginLeft: 4, flexShrink: 0 }} />
         {canManageSpace && (
           <button onClick={() => setEditSpaceModal(subPage)} title="Paramétrer" style={{
             marginLeft: "auto", display: "flex", alignItems: "center", gap: 5,
-            padding: "5px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600,
-            background: "var(--bg-hover)", border: "1px solid var(--border-light)",
-            color: "var(--text-dim)", cursor: "pointer",
+            padding: "5px 12px", borderRadius: 7, fontSize: 11, fontWeight: 600,
+            background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.3)",
+            color: "#fff", cursor: "pointer",
           }}>
             <Settings size={12} strokeWidth={1.8} /> Paramétrer
           </button>
