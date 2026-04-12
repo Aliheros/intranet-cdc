@@ -304,6 +304,10 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const [rhmApplyModal, setRhmApplyModal] = useState(null);
   const [rhmApplyMsg, setRhmApplyMsg] = useState("");
 
+  const acc = accessObj?.canInteract ? "edit" : accessObj?.canView ? "view" : "none";
+  const canManageSpace = accessObj?.canManage;
+  const color = page === "pole" ? POLE_COLORS[subPage] : PROJET_COLORS[subPage];
+
   // ── Alimente la barre contextuelle (onglets) dans la topbar ─────────────
   useEffect(() => {
     setContextBar(
@@ -345,9 +349,6 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
     }
   }, [highlightedTaskId, setHighlightedTaskId]);
 
-  const acc = accessObj?.canInteract ? "edit" : accessObj?.canView ? "view" : "none";
-  const canManageSpace = accessObj?.canManage;
-  const color = page === "pole" ? POLE_COLORS[subPage] : PROJET_COLORS[subPage];
   const docs = (docsData && docsData[subPage]) ? docsData[subPage] : [];
   const meta = (spaceInfos && spaceInfos[subPage]) ? spaceInfos[subPage] : { description: "", instructions: "" };
   const currentSections = (spaceSections && spaceSections[subPage]) ? spaceSections[subPage] : ["Général", "Archives"];
