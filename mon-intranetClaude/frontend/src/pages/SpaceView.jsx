@@ -1,5 +1,5 @@
 // src/pages/SpaceView.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { AvatarInner, isAvatarUrl, findMemberByName } from '../components/ui/AvatarDisplay';
 import Badge from '../components/ui/Badge';
 import DocRow from '../components/ui/DocRow';
@@ -309,7 +309,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const color = page === "pole" ? POLE_COLORS[subPage] : PROJET_COLORS[subPage];
 
   // ── Alimente la barre contextuelle (onglets) dans la topbar ─────────────
-  useEffect(() => {
+  useLayoutEffect(() => {
     setContextBar(
       <>
         <button className={`ctx-tab ${activeTab === "contenu" ? "active" : ""}`} onClick={() => setActiveTab("contenu")}>
@@ -330,14 +330,6 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
       </>
     );
   }, [subPage, activeTab, acc]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Toast contextuel pôle/projet ─────────────────────────────────────────
-  const [spaceToastVisible, setSpaceToastVisible] = useState(true);
-  useEffect(() => {
-    setSpaceToastVisible(true);
-    const t = setTimeout(() => setSpaceToastVisible(false), 2800);
-    return () => clearTimeout(t);
-  }, [subPage]);
 
   // Auto-réinitialise le surlignage après 2.5 secondes
   useEffect(() => {
@@ -369,49 +361,41 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
 
   return (
     <>
-      {/* ── Toast contextuel pôle/projet ─────────────────────────────────── */}
-      {spaceToastVisible && (
+      {/* ── Header fin pôle/projet ───────────────────────────────────────── */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "10px 0 10px 14px", marginBottom: 20,
+        borderLeft: `3px solid ${color || "var(--accent)"}`,
+      }}>
         <div style={{
-          position: "fixed", top: 112, right: 28, zIndex: 9999,
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 16px 10px 12px",
-          background: color,
-          borderRadius: 12,
-          boxShadow: "0 8px 28px rgba(0,0,0,0.18)",
-          animation: "spaceToastIn .3s cubic-bezier(.16,1,.3,1)",
-          opacity: 1,
-          pointerEvents: "none",
-          maxWidth: 260,
+          width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+          background: color || "var(--accent)",
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-            background: "rgba(255,255,255,0.2)",
-            border: "1px solid rgba(255,255,255,0.3)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            {SPACE_LOGO[subPage] ?? (page === "pole" ? <span style={{fontSize:14,fontWeight:800,color:"#fff"}}>{subPage.charAt(0)}</span> : <Hexagon size={18} strokeWidth={1.5} color="#fff"/>)}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", lineHeight: 1 }}>
-              {page === "pole" ? "Pôle" : "Projet"}
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "var(--font-display)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {subPage}
-            </div>
-          </div>
-          {canManageSpace && (
-            <button onClick={() => setEditSpaceModal(subPage)} title="Paramétrer" style={{
-              pointerEvents: "auto",
-              background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)",
-              borderRadius: 7, width: 28, height: 28, cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0,
-            }}>
-              <Settings size={13} strokeWidth={1.8} color="#fff"/>
-            </button>
-          )}
+          {SPACE_LOGO[subPage] ?? (page === "pole"
+            ? <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{subPage.charAt(0)}</span>
+            : <Hexagon size={16} strokeWidth={1.5} color="#fff" />)}
         </div>
-      )}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", lineHeight: 1, marginBottom: 2 }}>
+            {page === "pole" ? "Pôle" : "Projet"}
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "var(--font-display)", color: "var(--text-base)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {subPage}
+          </div>
+        </div>
+        <Badge label={acc === "edit" ? "Éditeur" : "Lecteur"} bg={acc === "edit" ? "rgba(26,86,219,0.1)" : "var(--bg-hover)"} c={acc === "edit" ? "#1a56db" : "var(--text-dim)"} style={{ marginLeft: 4, flexShrink: 0 }} />
+        {canManageSpace && (
+          <button onClick={() => setEditSpaceModal(subPage)} title="Paramétrer" style={{
+            marginLeft: "auto", display: "flex", alignItems: "center", gap: 5,
+            padding: "5px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600,
+            background: "var(--bg-hover)", border: "1px solid var(--border-light)",
+            color: "var(--text-dim)", cursor: "pointer",
+          }}>
+            <Settings size={12} strokeWidth={1.8} /> Paramétrer
+          </button>
+        )}
+      </div>
 
       {/* --- MODALE DES TÂCHES --- */}
       {taskModal && (
