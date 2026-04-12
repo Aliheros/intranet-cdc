@@ -8,6 +8,7 @@ import { useDataContext } from './contexts/DataContext';
 import { PROJETS } from './data/constants';
 import Layout from './components/layout/Layout';
 import Login from './pages/Login';
+import LoginLoader from './components/ui/LoginLoader';
 import api from './api/apiClient';
 
 // Icônes utilisées dans le shell
@@ -51,6 +52,11 @@ import TutorialOverlay      from './components/tutorial/TutorialOverlay';
 
 function App() {
   const { currentUser, loading: authLoading, logout, updateCurrentUser } = useAuth();
+
+  // ─── LOADER POST-LOGIN — state + refs (useEffect plus bas, après handleNav) ─
+  const [showLoader, setShowLoader] = useState(false);
+  const wasLoadingRef = useRef(true);  // true tant que la session initiale n'est pas résolue
+  const prevUserRef   = useRef(null);  // dernier utilisateur connu
 
   const {
     page, setPage, subPage, setSubPage, activeTab, setActiveTab, darkMode, setDarkMode,
@@ -172,6 +178,24 @@ function App() {
     setBannerHeight(isBannerActive ? bannerOuterRef.current.offsetHeight : 0);
   }, [isBannerActive, unreadVisibleNotifs.length]);
 
+  // ─── LOADER POST-LOGIN — détection premier login ─────────────────────────
+  // handleNav est maintenant disponible (déclaré au-dessus via useAppContext).
+  useEffect(() => {
+    if (!authLoading) {
+      const wasLoading = wasLoadingRef.current;
+      wasLoadingRef.current = false;
+      const prevUser = prevUserRef.current;
+      prevUserRef.current = currentUser;
+      // Restauration de session au démarrage → pas de loader
+      if (wasLoading) return;
+      // Connexion manuelle : prevUser était null, currentUser vient d'être défini
+      if (!prevUser && currentUser) {
+        handleNav('dashboard'); // gradient du dashboard déjà prêt sous le loader
+        setShowLoader(true);
+      }
+    }
+  }, [currentUser, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── GARDE AUTH ────────────────────────────────────────────────────────────
   if (authLoading) {
     return (
@@ -186,6 +210,16 @@ function App() {
   // ─── RENDER ────────────────────────────────────────────────────────────────
   return (
     <>
+      {/* ── Écran de chargement post-login ────────────────────────────────── */}
+      {showLoader && (
+        <LoginLoader
+          onDone={() => {
+            setShowLoader(false);
+            handleNav('dashboard');
+          }}
+        />
+      )}
+
       <style>{`
         @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; max-height: 0; } to { transform: translateY(0); opacity: 1; max-height: 150px; } }
         @keyframes slideUpOut { from { opacity: 1; transform: translateY(0); max-height: 150px; } to { opacity: 0; transform: translateY(-100%); max-height: 0; } }

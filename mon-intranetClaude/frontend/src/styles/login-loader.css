@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   login-loader.css — Écran de chargement post-login
+   Affiché une seule fois après la première connexion.
+   Transition : dégradé sombre (bleu marine/rouge/violet) → fond dashboard.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes gradient animé ─────────────────────────────────────────────── */
+@keyframes ll-gradient {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+/* ── Keyframes halos flottants ────────────────────────────────────────────── */
+@keyframes ll-float1 { 0% { transform: translate(0,0)   scale(1);    } 100% { transform: translate(15vw,10vh)   scale(1.1);  } }
+@keyframes ll-float2 { 0% { transform: translate(0,0)   scale(1);    } 100% { transform: translate(-10vw,-15vh) scale(1.05); } }
+@keyframes ll-float3 { 0% { transform: translate(0,0)   scale(1);    } 100% { transform: translate(12vw,-8vh)   scale(1.15); } }
+@keyframes ll-float4 { 0% { transform: translate(0,0)   scale(1);    } 100% { transform: translate(20vw,-15vh)  scale(1.2);  } }
+@keyframes ll-float5 { 0% { transform: translate(0,0)   scale(1);    } 100% { transform: translate(-20vw,20vh)  scale(1.1);  } }
+@keyframes ll-float6 { 0% { transform: translate(0,0)   scale(1);    } 100% { transform: translate(-10vw,-10vh) scale(1.25); } }
+
+/* ── Keyframes logo ────────────────────────────────────────────────────────── */
+@keyframes ll-reveal-logo {
+  0%   { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1);   }
+}
+@keyframes ll-float-logo {
+  0%, 100% { transform: translateY(0);     }
+  50%       { transform: translateY(-10px); }
+}
+
+/* ── Keyframe texte ────────────────────────────────────────────────────────── */
+@keyframes ll-text-in {
+  0%   { letter-spacing: 0px;  opacity: 0; }
+  100% { letter-spacing: 8px;  opacity: 1; }
+}
+
+/* ── Keyframe glow pulsé ──────────────────────────────────────────────────── */
+@keyframes ll-pulse-glow {
+  0%, 100% { transform: scale(0.8); opacity: 0.5; }
+  50%       { transform: scale(1.2); opacity: 0.9; }
+}
+
+/* ── Conteneur principal ──────────────────────────────────────────────────── */
+.ll-root {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  /* Fond de base pendant la transition de sortie */
+  background: #050510;
+}
+
+/* ── Couche dégradé animé ─────────────────────────────────────────────────── */
+.ll-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(270deg, #0f2d5e, #e63946, #4c1d95);
+  background-size: 400% 400%;
+  animation: ll-gradient 20s ease infinite;
+  opacity: 0.85;
+}
+
+/* ── Glow central ─────────────────────────────────────────────────────────── */
+.ll-glow {
+  position: absolute;
+  width: 50vw; height: 50vw;
+  max-width: 600px; max-height: 600px;
+  background: radial-gradient(circle, rgba(230,57,70,.4), transparent 70%);
+  animation: ll-pulse-glow 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Halos ────────────────────────────────────────────────────────────────── */
+.ll-halos { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+
+.ll-hw {
+  position: absolute;
+  pointer-events: none;
+  transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+}
+.ll-hw .ll-halo {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  filter: blur(90px);
+}
+
+/* Bleu foncé */
+.ll-hw.b1 { width: 50vw; height: 50vw; top: -10%;  left: -10%; }
+.ll-hw.b1 .ll-halo { background: #3b82f6; opacity: .35; animation: ll-float1 22s infinite alternate ease-in-out; }
+.ll-hw.b2 { width: 25vw; height: 25vw; bottom: 10%; right:  5%; }
+.ll-hw.b2 .ll-halo { background: #1d4ed8; opacity: .45; animation: ll-float2 18s infinite alternate ease-in-out; }
+
+/* Rouge CDC */
+.ll-hw.r1 { width: 45vw; height: 45vw; bottom: -10%; left: 15%; }
+.ll-hw.r1 .ll-halo { background: #e63946; opacity: .3;  animation: ll-float3 25s infinite alternate ease-in-out; }
+.ll-hw.r2 { width: 20vw; height: 20vw; top:  15%; right: 10%; }
+.ll-hw.r2 .ll-halo { background: #f43f5e; opacity: .4;  animation: ll-float4 19s infinite alternate ease-in-out; }
+
+/* Violet pastel (attraction) */
+.ll-hw.l1 { width: 55vw; height: 55vw; top:  10%; left: 30%; }
+.ll-hw.l1 .ll-halo { background: #e9d5ff; opacity: .85; animation: ll-float5 28s infinite alternate ease-in-out; }
+.ll-hw.l2 { width: 30vw; height: 30vw; bottom: 15%; left: 45%; }
+.ll-hw.l2 .ll-halo { background: #d8b4fe; opacity: .8;  animation: ll-float6 20s infinite alternate ease-in-out; }
+
+/* ── Contenu centré ────────────────────────────────────────────────────────── */
+.ll-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ll-logo {
+  width: 120px;
+  opacity: 0;
+  animation:
+    ll-reveal-logo 1s ease forwards 0.3s,
+    ll-float-logo  4s ease-in-out infinite 1.3s;
+  filter: drop-shadow(0 0 25px rgba(255,255,255,.6));
+}
+
+.ll-text {
+  margin-top: 30px;
+  font-family: 'Poppins', 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  opacity: 0;
+  animation: ll-text-in 2s ease forwards 0.5s;
+}
