@@ -329,6 +329,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
         {acc === "edit" && <button className={`ctx-tab ${activeTab === "corbeille" ? "active" : ""}`} onClick={() => setActiveTab("corbeille")}><Trash2 size={12} strokeWidth={1.8}/> Corbeille</button>}
       </>
     );
+    return () => setContextBar(null);
   }, [subPage, activeTab, acc]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-réinitialise le surlignage après 2.5 secondes

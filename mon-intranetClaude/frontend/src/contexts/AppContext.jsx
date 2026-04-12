@@ -123,8 +123,7 @@ export function AppProvider({ children }) {
   // besoin l'alimente via setContextBar(). Réinitialisé à null à chaque nav.
   const [contextBar, setContextBar] = useState(null);
 
-  // Réinitialise la contextBar à chaque changement de page
-  useEffect(() => { setContextBar(null); }, [page, subPage]);
+  // contextBar est réinitialisée par le cleanup du useLayoutEffect de chaque page.
 
   // ─── TUTORIEL ─────────────────────────────────────────────────────────────
   const [showTutorial, setShowTutorial] = useState(false);
