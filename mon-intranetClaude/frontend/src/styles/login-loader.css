@@ -192,3 +192,13 @@
   border-radius: 2px;
   animation: ll-progress 2.3s cubic-bezier(.4, 0, .6, 1) forwards 1.2s;
 }
+
+/* Barre indéterminée pendant l'appel API (Login en état submitting) */
+@keyframes ll-progress-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%);  }
+}
+.ll-progress-indeterminate {
+  width: 40% !important;
+  animation: ll-progress-slide 1.2s cubic-bezier(.4, 0, .6, 1) infinite !important;
+}
