@@ -41,15 +41,86 @@ const Dashboard = () => {
   const onEndCongeNow = handleEndCongeNow;
   const onEditConge = ({ id, ...updatedConge }) => handleEditConge(id, updatedConge);
   const onDeleteConge = (id) => handleDeleteConge(id);
+  // ── Restart fiable de la transition au login (marche aussi à la re-connexion) ─
+  useEffect(() => {
+    if (!freshLogin) return;
+    const layer = document.querySelector('.gradient-layer');
+    if (!layer) return;
+    // Force opacity 0 immédiatement (annule tout état précédent)
+    layer.style.transition = 'none';
+    layer.style.opacity = '0';
+    // Puis fondu entrant après le loader
+    const t = setTimeout(() => {
+      layer.style.transition = 'opacity 3s ease-in-out';
+      layer.style.opacity = '1';
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [freshLogin]);
+
+  // ── Drift animé + magnétisme souris sur les halos de fond ───────────────
+  useEffect(() => {
+    const layer = document.querySelector('.gradient-layer');
+    if (!layer) return;
+
+    // Paramètres de dérive sinusoïdale pour chaque halo (cx/cy = centre, ax/ay = amplitude, fx/fy = fréquence, px/py = phase)
+    const HALOS = [
+      { cx: 0.14, cy: 0.14, ax: 0.22, ay: 0.20, fx: 1.0, fy: 1.3, px: 0.0, py: 0.5 },
+      { cx: 0.82, cy: 0.18, ax: 0.18, ay: 0.22, fx: 0.7, fy: 1.1, px: 1.2, py: 0.0 },
+      { cx: 0.50, cy: 0.82, ax: 0.24, ay: 0.17, fx: 1.1, fy: 0.8, px: 2.1, py: 1.6 },
+      { cx: 0.10, cy: 0.72, ax: 0.19, ay: 0.23, fx: 0.9, fy: 1.5, px: 3.0, py: 2.3 },
+    ];
+    const MAGNET_RADIUS   = 0.38; // portée en unités normalisées (0-1)
+    const MAGNET_STRENGTH = 0.14; // intensité d'attraction
+
+    let mouseX = -1, mouseY = -1;
+    let rafId;
+
+    const onMove = (e) => {
+      const rect = layer.getBoundingClientRect();
+      mouseX = (e.clientX - rect.left)  / rect.width;
+      mouseY = (e.clientY - rect.top)   / rect.height;
+    };
+
+    const tick = (t) => {
+      const s = t / 14000; // vitesse du drift (plus grand = plus lent)
+      HALOS.forEach((h, i) => {
+        let x = h.cx + Math.sin(s * h.fx + h.px) * h.ax;
+        let y = h.cy + Math.cos(s * h.fy + h.py) * h.ay;
+        // Attraction magnétique vers le curseur
+        if (mouseX >= 0) {
+          const dx   = mouseX - x;
+          const dy   = mouseY - y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MAGNET_RADIUS && dist > 0.001) {
+            const force = (1 - dist / MAGNET_RADIUS) * MAGNET_STRENGTH;
+            x += dx * force;
+            y += dy * force;
+          }
+        }
+        layer.style.setProperty(`--gx${i + 1}`, `${(x * 100).toFixed(2)}%`);
+        layer.style.setProperty(`--gy${i + 1}`, `${(y * 100).toFixed(2)}%`);
+      });
+      rafId = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   // ── Effet tilt 3D sur les cartes dashboard ────────────────────────────────
   useEffect(() => {
-    const intensity = 40;
     const attachTilt = (el) => {
       let rafId = null;
       let pendingRx = 0, pendingRy = 0;
 
       const onMove = (e) => {
         const { left, top, width, height } = el.getBoundingClientRect();
+        // Intensité proportionnelle à la taille : même angle max quelle que soit la carte
+        const intensity = Math.max(width, height) / 5;
         pendingRx = ((e.clientY - top  - height / 2) / intensity) * -1;
         pendingRy =  (e.clientX - left - width  / 2) / intensity;
         if (rafId) return; // déjà en attente → on accumule juste les valeurs
@@ -75,7 +146,7 @@ const Dashboard = () => {
         el.removeEventListener('mouseenter', onEnter);
       };
     };
-    const targets = document.querySelectorAll('.kpi-grid .kc, .dash-two-col .sc, .sc[data-tour]');
+    const targets = document.querySelectorAll('.kpi-grid .kc, .dash-two-col .sc, .sc[data-tour], .sc[data-tilt]');
     const cleanups = Array.from(targets).map(el => attachTilt(el));
     return () => cleanups.forEach(f => f());
   }, []);
@@ -227,7 +298,7 @@ const Dashboard = () => {
 
       {/* ── ALERTE PRÉSENCES À VALIDER ────────────────────────────────────── */}
       {seancesAValider.length > 0 && (
-        <div style={{ marginBottom: 20, padding: "14px 18px", background: "rgba(217,119,6,0.06)", border: "1px solid rgba(217,119,6,0.3)", borderLeft: "4px solid #d97706", borderRadius: 10 }}>
+        <div className="sc" data-tilt style={{ marginBottom: 20, borderLeft: "4px solid #d97706" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <Clock size={15} strokeWidth={2} color="#d97706" />
             <span style={{ fontWeight: 700, fontSize: 13, color: "#92400e" }}>
@@ -238,7 +309,7 @@ const Dashboard = () => {
             {seancesAValider.map(({ event, seance, seanceDate, count }, i) => (
               <div key={i}
                 onClick={() => { navigate('coordination'); setActiveEventId(event.id); }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "var(--bg-surface)", border: "1px solid rgba(217,119,6,0.2)", borderRadius: 8, cursor: "pointer", gap: 10 }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "rgba(217,119,6,0.06)", border: "1px solid rgba(217,119,6,0.18)", borderRadius: 8, cursor: "pointer", gap: 10 }}
               >
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: 12, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

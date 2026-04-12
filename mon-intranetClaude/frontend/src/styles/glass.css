@@ -22,12 +22,13 @@
 @property --gy4 { syntax: '<percentage>'; inherits: false; initial-value: 72%; }
 
 @keyframes gradientDrift {
-  0%   { --gx1:18%; --gy1:14%; --gx2:82%; --gy2:22%; --gx3:55%; --gy3:78%; --gx4:12%; --gy4:72% }
-  20%  { --gx1:30%; --gy1:28%; --gx2:70%; --gy2:10%; --gx3:40%; --gy3:60%; --gx4:20%; --gy4:85% }
-  40%  { --gx1:10%; --gy1:50%; --gx2:88%; --gy2:40%; --gx3:65%; --gy3:85%; --gx4:5%;  --gy4:55% }
-  60%  { --gx1:25%; --gy1:8%;  --gx2:75%; --gy2:55%; --gx3:50%; --gy3:65%; --gx4:18%; --gy4:40% }
-  80%  { --gx1:40%; --gy1:35%; --gx2:60%; --gy2:15%; --gx3:30%; --gy3:90%; --gx4:8%;  --gy4:65% }
-  100% { --gx1:15%; --gy1:20%; --gx2:85%; --gy2:30%; --gx3:60%; --gy3:70%; --gx4:15%; --gy4:80% }
+  0%   { --gx1: 8%; --gy1: 10%; --gx2:88%; --gy2:15%; --gx3:50%; --gy3:80%; --gx4: 5%; --gy4:70% }
+  16%  { --gx1:35%; --gy1:30%; --gx2:65%; --gy2: 5%; --gx3:30%; --gy3:55%; --gx4:25%; --gy4:90% }
+  33%  { --gx1:60%; --gy1:55%; --gx2:92%; --gy2:45%; --gx3:70%; --gy3:90%; --gx4: 2%; --gy4:45% }
+  50%  { --gx1:20%; --gy1: 5%; --gx2:75%; --gy2:60%; --gx3:45%; --gy3:60%; --gx4:15%; --gy4:30% }
+  66%  { --gx1:50%; --gy1:40%; --gx2:55%; --gy2:10%; --gx3:25%; --gy3:95%; --gx4: 8%; --gy4:60% }
+  83%  { --gx1:15%; --gy1:70%; --gx2:80%; --gy2:35%; --gx3:65%; --gy3:40%; --gx4:30%; --gy4:85% }
+  100% { --gx1: 8%; --gy1: 10%; --gx2:88%; --gy2:15%; --gx3:50%; --gy3:80%; --gx4: 5%; --gy4:70% }
 }
 
 /* ── Couche gradient fixe (GPU-only) ────────────────────────────────────── */
@@ -39,19 +40,23 @@
 */
 .gradient-layer {
   position: fixed;
-  top: 0; right: 0; bottom: 0;
-  left: 248px; /* skip sidebar — ne jamais couvrir la sidebar */
+  top: -40px; right: -40px; bottom: -40px;
+  left: calc(248px - 40px); /* marge pour absorber le translate souris sans débord visible */
   z-index: 0;
   pointer-events: none;
-  will-change: transform;
-  background-color: #f0f4ff;
+  will-change: --gx1, --gy1, --gx2, --gy2, --gx3, --gy3, --gx4, --gy4;
+  transition: --gx1 0.9s ease, --gy1 0.9s ease,
+              --gx2 0.9s ease, --gy2 0.9s ease,
+              --gx3 0.9s ease, --gy3 0.9s ease,
+              --gx4 0.9s ease, --gy4 0.9s ease;
+  background-color: #e8eeff;
   background-image:
-    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(218,90%,90%,.9)  0px, transparent 55%),
-    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(354,85%,90%,.75) 0px, transparent 50%),
-    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(218,80%,88%,.7)  0px, transparent 50%),
-    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(354,70%,93%,.6)  0px, transparent 45%),
-    radial-gradient(ellipse at 90% 90%,              hsla(218,60%,94%,.5)  0px, transparent 40%);
-  animation: gradientDrift 18s ease-in-out infinite alternate;
+    radial-gradient(ellipse 70% 60% at var(--gx1) var(--gy1), hsla(218,85%,75%,.75) 0px, transparent 100%),
+    radial-gradient(ellipse 55% 50% at var(--gx2) var(--gy2), hsla(354,80%,78%,.65) 0px, transparent 100%),
+    radial-gradient(ellipse 65% 55% at var(--gx3) var(--gy3), hsla(222,75%,72%,.6)  0px, transparent 100%),
+    radial-gradient(ellipse 50% 45% at var(--gx4) var(--gy4), hsla(340,70%,80%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 80% 70% at 85% 85%,               hsla(210,60%,82%,.45) 0px, transparent 100%);
+  /* animation pilotée par JS (Dashboard.jsx) via RAF + magnétisme souris */
 }
 .dark-theme .gradient-layer {
   background-color: #0f172a;

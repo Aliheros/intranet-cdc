@@ -59,8 +59,39 @@ body { background: var(--bg-base); color: var(--text-base); font-family: var(--f
   animation: gradientBgShift 20s ease infinite, fadeOutDarkBg 5s ease-in-out 2.5s forwards;
 }
 
-/* ── Sidebar : overlay indépendant qui s'évapore vers le bleu de la sidebar ─ */
-/* z-index: 0 = au-dessus du fond de la sidebar, sous le contenu (s-top, nav) */
+/* ── Zone principale : fond sombre → gradient clair, textes blanc → foncé ─── */
+/* @property permet d'animer --login-txt comme une vraie couleur CSS            */
+@property --login-txt {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgb(30, 41, 59);
+}
+@keyframes loginTxtReveal {
+  from { --login-txt: rgb(255, 255, 255); }
+  to   { --login-txt: rgb(30, 41, 59);   }
+}
+@keyframes loginTxtMutedReveal {
+  from { --login-txt-muted: rgb(220, 230, 255); }
+  to   { --login-txt-muted: rgb(100, 116, 139); }
+}
+@property --login-txt-muted {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgb(100, 116, 139);
+}
+.main.login-transition {
+  background-color: #050510 !important;
+  background-image: linear-gradient(270deg, #0f2d5e 0%, #e63946 50%, #4c1d95 100%) !important;
+  background-size: 400% 400% !important;
+  animation: gradientBgShift 20s ease infinite, loginTxtReveal 4s ease-in-out 2.5s forwards, loginTxtMutedReveal 4s ease-in-out 2.5s forwards !important;
+  /* Override des variables de texte → tous les enfants qui utilisent --text-base / --text-muted héritent */
+  --text-base:  var(--login-txt);
+  --text-muted: var(--login-txt-muted);
+  --login-txt:  rgb(255, 255, 255);
+  --login-txt-muted: rgb(220, 230, 255);
+}
+/* opacity du gradient-layer gérée en JS (Dashboard.jsx) pour garantir le restart à chaque connexion */
+
 .sidebar.login-transition::before {
   content: ''; position: absolute; inset: 0; z-index: 0;
   pointer-events: none;
@@ -70,7 +101,19 @@ body { background: var(--bg-base); color: var(--text-base); font-family: var(--f
 }
 
 /* -- SIDEBAR ET NAVIGATION (Le design d'origine !) -- */
-.sidebar { width: 248px; background: #0f2d5e; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; position: relative; z-index: 10; }
+@keyframes sidebarShift {
+  0%   { background-position: 0%   0%;   }
+  33%  { background-position: 100% 50%;  }
+  66%  { background-position: 50%  100%; }
+  100% { background-position: 0%   0%;   }
+}
+.sidebar {
+  width: 248px;
+  background: linear-gradient(145deg, #0a1f42 0%, #0f2d5e 25%, #1a3f7a 50%, #0d2550 75%, #0a1f42 100%);
+  background-size: 300% 300%;
+  animation: sidebarShift 18s ease infinite;
+  display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; position: relative; z-index: 10;
+}
 .s-top    { padding: 22px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; position: relative; z-index: 1; }
 .s-bottom { position: relative; z-index: 1; }
 .logo-badge { display: inline-block; background: #e63946; color: #fff; font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; margin-bottom: 9px; }

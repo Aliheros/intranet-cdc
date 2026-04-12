@@ -9,8 +9,6 @@ const HALOS = [
   { cls: 'b2', light: false },
   { cls: 'r1', light: false },
   { cls: 'r2', light: false },
-  { cls: 'l1', light: true  },
-  { cls: 'l2', light: true  },
 ];
 
 export default function LoginLoader({ onDone }) {

@@ -383,7 +383,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
         </aside>
 
         {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────────── */}
-        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'main-gradient' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
+        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'main-gradient' : ''}${freshLogin ? ' login-transition' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
           {page === 'dashboard' && <div className="gradient-layer" aria-hidden="true" />}
 
           {/* ── TOPBAR STICKY ───────────────────────────────────────────────── */}
