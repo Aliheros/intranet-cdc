@@ -218,18 +218,6 @@ function App() {
         <LoginLoader onDone={() => setShowLoader(false)} />
       )}
 
-      {/* ── Overlay sombre post-login (s'évapore en 5s à t=2.5s)
-           Révèle progressivement le gradient du dashboard.
-           Identique au .app-dark-overlay du prototype HTML.           ─── */}
-      {freshLogin && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          pointerEvents: 'none',
-          background: 'linear-gradient(270deg, #0f2d5e, #e63946, #4c1d95)',
-          backgroundSize: '400% 400%',
-          animation: 'll-gradient 20s ease infinite, ll-fadeout-overlay 5s ease-in-out 2.5s forwards',
-        }} />
-      )}
 
       <style>{`
         @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; max-height: 0; } to { transform: translateY(0); opacity: 1; max-height: 150px; } }

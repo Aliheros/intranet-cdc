@@ -32,7 +32,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
   }, []);
 
   const { notifLues, setNotifLues, visibleNotifs, personalNotifs } = useDataContext();
-  const { contextBar } = useAppContext();
+  const { contextBar, freshLogin } = useAppContext();
 
   const PAGE_LABELS = {
     dashboard: 'Tableau de bord', actions: 'Suivi des actions', coordination: 'Coordination',
@@ -174,6 +174,9 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
   return (
     <div className={`app ${darkMode ? "dark-theme" : "light-theme"}`}>
 
+      {/* Overlay post-login : même dégradé que le loader, s'évapore en 5s */}
+      {freshLogin && <div className="app-dark-overlay" aria-hidden="true" />}
+
       {/* ── BARRE DU HAUT MOBILE ──────────────────────────────────────────────── */}
       <div className="mobile-topbar mobile-only" style={{ alignItems: "center" }}>
         <button
@@ -212,7 +215,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
         )}
 
         {/* ── SIDEBAR ────────────────────────────────────────────────────────── */}
-        <aside className={`sidebar ${sidebarOpen ? "mobile-open" : ""}`} data-tour="sidebar">
+        <aside className={`sidebar ${sidebarOpen ? "mobile-open" : ""}${freshLogin ? " login-transition" : ""}`} data-tour="sidebar">
           <div className="s-top" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 20px 16px" }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
               <img

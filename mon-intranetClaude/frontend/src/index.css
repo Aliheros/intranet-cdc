@@ -35,17 +35,49 @@
 
 body { background: var(--bg-base); color: var(--text-base); font-family: var(--font-body); overflow-x: hidden; }
 
-.app { display: flex; flex-direction: column; height: 100vh; background: var(--bg-base); overflow: hidden; }
-.body-row { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.app { display: flex; flex-direction: column; height: 100vh; background: var(--bg-base); overflow: hidden; position: relative; }
+.body-row { display: flex; flex: 1; min-height: 0; overflow: hidden; position: relative; z-index: 3; }
+
+/* ── Overlay post-login (identique au prototype) ─────────────────────────── */
+/* Mécanisme : position absolute dans .app, z-index 2 → body-row (z:3) est
+   au-dessus. La zone main est transparente → l'overlay est visible à travers.
+   Animation : même dégradé que le loader, s'évapore en 5s à t=2.5s. */
+@keyframes fadeOutDarkBg {
+  0%   { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+@keyframes gradientBgShift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+.app-dark-overlay {
+  position: absolute; inset: 0; z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(270deg, #0f2d5e, #e63946, #4c1d95);
+  background-size: 400% 400%;
+  animation: gradientBgShift 20s ease infinite, fadeOutDarkBg 5s ease-in-out 2.5s forwards;
+}
+
+/* ── Sidebar : overlay indépendant qui s'évapore vers le bleu de la sidebar ─ */
+/* z-index: 0 = au-dessus du fond de la sidebar, sous le contenu (s-top, nav) */
+.sidebar.login-transition::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(270deg, #0f2d5e, #e63946, #4c1d95);
+  background-size: 400% 400%;
+  animation: gradientBgShift 20s ease infinite, fadeOutDarkBg 5s ease-in-out 2.5s forwards;
+}
 
 /* -- SIDEBAR ET NAVIGATION (Le design d'origine !) -- */
 .sidebar { width: 248px; background: #0f2d5e; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; position: relative; z-index: 10; }
-.s-top { padding: 22px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; }
+.s-top    { padding: 22px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; position: relative; z-index: 1; }
+.s-bottom { position: relative; z-index: 1; }
 .logo-badge { display: inline-block; background: #e63946; color: #fff; font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; margin-bottom: 9px; }
 .logo-title { font-family: var(--font-display); font-size: 16px; font-weight: 800; color: #fff; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.03em; }
 .logo-sub { font-size: 11px; color: rgba(255,255,255,0.28); margin-top: 3px; }
 
-.nav { flex: 1; padding: 10px 0 14px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; }
+.nav { flex: 1; padding: 10px 0 14px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; position: relative; z-index: 1; }
 .nav::-webkit-scrollbar { width: 4px; }
 .nav::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
 .nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 4px; transition: background 0.2s; }
