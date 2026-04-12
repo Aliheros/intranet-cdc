@@ -51,8 +51,10 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  /* Fond de base pendant la transition de sortie */
-  background: #050510;
+  /* Fond transparent : le dashboard est rendu en dessous.
+     Pendant l'évaporation de .ll-bg, les couleurs du dashboard
+     apparaissent progressivement (bleu/rose du gradient-layer). */
+  background: transparent;
 }
 
 /* ── Couche dégradé animé ─────────────────────────────────────────────────── */

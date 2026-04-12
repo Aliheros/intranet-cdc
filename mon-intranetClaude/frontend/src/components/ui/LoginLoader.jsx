@@ -1,11 +1,16 @@
 // src/components/ui/LoginLoader.jsx
 // Écran de chargement post-login.
-// Affiché une seule fois après la première connexion réussie.
-// Durée : 2.5s visible → 0.9s fondu (blur + scale + opacité) → onDone().
+//
+// Séquence de transition (identique au prototype HTML) :
+//   t=0      → loader visible : fond sombre animé + halos + logo
+//   t=2500ms → contenu (logo, halos, glow) : fondu rapide 600ms
+//   t=2500ms → fond sombre (ll-bg) : évaporation lente 2000ms
+//              → les couleurs du dashboard apparaissent progressivement
+//   t=4600ms → onDone() : loader retiré du DOM
 import React, { useEffect, useRef } from 'react';
 import '../../styles/login-loader.css';
 
-// Halos : true = attraction vers le curseur, false = répulsion
+// Halos : light=true → attraction vers curseur, light=false → répulsion
 const HALOS = [
   { cls: 'b1', light: false },
   { cls: 'b2', light: false },
@@ -16,15 +21,18 @@ const HALOS = [
 ];
 
 export default function LoginLoader({ onDone }) {
-  const rootRef  = useRef(null);
-  const halosRef = useRef([]);
+  const bgRef      = useRef(null);   // fond sombre → fade lent
+  const contentRef = useRef(null);   // logo + texte → fade rapide
+  const halosRef   = useRef(null);   // halos → fade rapide
+  const glowRef    = useRef(null);   // glow → fade rapide
+  const haloEls    = useRef([]);     // refs individuelles pour l'interaction souris
 
   // ── Interaction souris : attraction / répulsion ──────────────────────────
   useEffect(() => {
     const handleMove = (e) => {
       const mx = e.clientX;
       const my = e.clientY;
-      halosRef.current.forEach(({ el, light }) => {
+      haloEls.current.forEach(({ el, light }) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const hx = rect.left + rect.width  / 2;
@@ -51,39 +59,47 @@ export default function LoginLoader({ onDone }) {
     return () => window.removeEventListener('mousemove', handleMove);
   }, []);
 
-  // ── Minuterie : 2.5s + fondu 0.9s → onDone ──────────────────────────────
+  // ── Séquence de transition ────────────────────────────────────────────────
   useEffect(() => {
-    const fadeTimer = setTimeout(() => {
-      const el = rootRef.current;
-      if (!el) { onDone?.(); return; }
-      el.style.transition = 'opacity 0.9s ease, transform 0.9s cubic-bezier(.4,0,.2,1), filter 0.9s ease';
-      el.style.opacity   = '0';
-      el.style.filter    = 'blur(12px)';
-      el.style.transform = 'scale(1.05)';
+    // t=2500ms : fade rapide du contenu (logo, halos, glow)
+    const fadeContent = setTimeout(() => {
+      [contentRef, halosRef, glowRef].forEach(r => {
+        if (!r.current) return;
+        r.current.style.transition = 'opacity 0.6s ease';
+        r.current.style.opacity = '0';
+      });
+
+      // Simultanément : fond sombre s'évapore lentement (2000ms)
+      // → les couleurs du dashboard apparaissent progressivement en dessous
+      if (bgRef.current) {
+        bgRef.current.style.transition = 'opacity 2s ease-in-out';
+        bgRef.current.style.opacity = '0';
+      }
     }, 2500);
 
-    const doneTimer = setTimeout(() => {
-      onDone?.();
-    }, 3400);
+    // t=4600ms : loader retiré du DOM
+    const done = setTimeout(() => onDone?.(), 4600);
 
-    return () => { clearTimeout(fadeTimer); clearTimeout(doneTimer); };
+    return () => { clearTimeout(fadeContent); clearTimeout(done); };
   }, [onDone]);
 
   return (
-    <div className="ll-root" ref={rootRef}>
-      {/* Fond dégradé animé */}
-      <div className="ll-bg" />
+    // ll-root : fond transparent → le dashboard est visible en dessous
+    // pendant l'évaporation du ll-bg
+    <div className="ll-root">
+      {/* Fond sombre animé — s'évapore lentement pour révéler le dashboard */}
+      <div className="ll-bg" ref={bgRef} />
 
       {/* Glow central pulsé */}
-      <div className="ll-glow" />
+      <div className="ll-glow" ref={glowRef} />
 
       {/* Halos flottants */}
-      <div className="ll-halos">
+      <div className="ll-halos" ref={halosRef}>
         {HALOS.map(({ cls, light }, i) => (
           <div
             key={cls}
             className={`ll-hw ${cls}`}
-            ref={el => { halosRef.current[i] = { el, light }; }}
+            ref={el => { haloEls.current[i] = { el, light }; }}
           >
             <div className="ll-halo" />
           </div>
@@ -91,7 +107,7 @@ export default function LoginLoader({ onDone }) {
       </div>
 
       {/* Logo + texte */}
-      <div className="ll-content">
+      <div className="ll-content" ref={contentRef}>
         <img
           src="/logoCDC.png"
           alt="Cité des Chances"
