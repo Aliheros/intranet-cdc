@@ -10,6 +10,7 @@ import { AvatarInner, isAvatarUrl, findMemberByName } from '../components/ui/Ava
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
+import '../styles/login-loader.css';
 
 const URGENCE_COLOR = { haute: "#e63946", normale: "#d97706", basse: "#16a34a" };
 
@@ -18,7 +19,7 @@ const Dashboard = () => {
   const {
     requestConfirm, addToast, handleNav,
     setActiveEventId, highlightedTaskId, setHighlightedTaskId, setHighlightedActionId, setHighlightedEventId,
-    setNoteFraisModal, openMemberProfile,
+    setNoteFraisModal, openMemberProfile, freshLogin,
   } = useAppContext();
   const onNewNoteFrais = () => setNoteFraisModal({});
   const navigate = handleNav;
@@ -167,11 +168,11 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="eyebrow">Cité des Chances</div>
-      <div className="ptitle">Bonjour, {currentUser.nom.split(" ")[0]} 👋</div>
+      <div className={`eyebrow${freshLogin ? ' dash-stagger-1 dash-text-to-dark' : ''}`}>Cité des Chances</div>
+      <div className={`ptitle${freshLogin ? ' dash-stagger-1 dash-text-to-dark' : ''}`}>Bonjour, {currentUser.nom.split(" ")[0]} 👋</div>
 
       {/* ── KPIs RAPIDES ──────────────────────────────────────────────────── */}
-      <div className="kpi-grid" style={{ marginBottom: 24 }} data-tour="dashboard-main">
+      <div className={`kpi-grid${freshLogin ? ' dash-stagger-2' : ''}`} style={{ marginBottom: 24 }} data-tour="dashboard-main">
         <div className="kc">
           <div className="kl">Mes tâches actives</div>
           <div className="kv" style={myOverdueTasks.length > 0 ? { color: "#e63946" } : {}}>{myPendingTasks.length}</div>

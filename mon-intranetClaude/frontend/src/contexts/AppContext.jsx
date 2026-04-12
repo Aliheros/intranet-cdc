@@ -125,6 +125,11 @@ export function AppProvider({ children }) {
 
   // contextBar est réinitialisée par le cleanup du useLayoutEffect de chaque page.
 
+  // ─── LOGIN FRESH (transition post-login) ─────────────────────────────────
+  // true pendant les ~8s après la connexion manuelle — permet au dashboard
+  // d'appliquer les animations textToDark et slideUp.
+  const [freshLogin, setFreshLogin] = useState(false);
+
   // ─── TUTORIEL ─────────────────────────────────────────────────────────────
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -173,6 +178,8 @@ export function AppProvider({ children }) {
       devisFactureModal, setDevisFactureModal,
       // Barre contextuelle (sous-onglets pôle/projet)
       contextBar, setContextBar,
+      // Login fresh
+      freshLogin, setFreshLogin,
       // Tutoriel
       showTutorial, setShowTutorial,
     }}>

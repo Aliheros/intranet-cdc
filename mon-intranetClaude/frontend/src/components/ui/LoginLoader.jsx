@@ -1,16 +1,9 @@
 // src/components/ui/LoginLoader.jsx
-// Écran de chargement post-login.
-//
-// Séquence de transition (identique au prototype HTML) :
-//   t=0      → loader visible : fond sombre animé + halos + logo
-//   t=2500ms → contenu (logo, halos, glow) : fondu rapide 600ms
-//   t=2500ms → fond sombre (ll-bg) : évaporation lente 2000ms
-//              → les couleurs du dashboard apparaissent progressivement
-//   t=4600ms → onDone() : loader retiré du DOM
+// Écran de chargement post-login — disparaît vite (0.8s) à t=2.5s.
+// La transition de couleurs est assurée par AppDarkOverlay dans App.jsx.
 import React, { useEffect, useRef } from 'react';
 import '../../styles/login-loader.css';
 
-// Halos : light=true → attraction vers curseur, light=false → répulsion
 const HALOS = [
   { cls: 'b1', light: false },
   { cls: 'b2', light: false },
@@ -21,35 +14,24 @@ const HALOS = [
 ];
 
 export default function LoginLoader({ onDone }) {
-  const bgRef      = useRef(null);   // fond sombre → fade lent
-  const contentRef = useRef(null);   // logo + texte → fade rapide
-  const halosRef   = useRef(null);   // halos → fade rapide
-  const glowRef    = useRef(null);   // glow → fade rapide
-  const haloEls    = useRef([]);     // refs individuelles pour l'interaction souris
+  const rootRef  = useRef(null);
+  const haloEls  = useRef([]);
 
-  // ── Interaction souris : attraction / répulsion ──────────────────────────
+  // ── Interaction souris ───────────────────────────────────────────────────
   useEffect(() => {
     const handleMove = (e) => {
-      const mx = e.clientX;
-      const my = e.clientY;
       haloEls.current.forEach(({ el, light }) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
-        const hx = rect.left + rect.width  / 2;
-        const hy = rect.top  + rect.height / 2;
-        const dx = hx - mx;
-        const dy = hy - my;
+        const dx = (rect.left + rect.width  / 2) - e.clientX;
+        const dy = (rect.top  + rect.height / 2) - e.clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const maxDist = 600;
         if (dist < maxDist) {
           const force = (maxDist - dist) / maxDist;
-          const moveX = light
-            ? -(dx / dist) * force * 150   // attraction
-            :  (dx / dist) * force * 150;  // répulsion
-          const moveY = light
-            ? -(dy / dist) * force * 150
-            :  (dy / dist) * force * 150;
-          el.style.transform = `translate(${moveX}px, ${moveY}px)`;
+          const mx = light ? -(dx / dist) * force * 150 :  (dx / dist) * force * 150;
+          const my = light ? -(dy / dist) * force * 150 :  (dy / dist) * force * 150;
+          el.style.transform = `translate(${mx}px, ${my}px)`;
         } else {
           el.style.transform = 'translate(0px, 0px)';
         }
@@ -59,42 +41,25 @@ export default function LoginLoader({ onDone }) {
     return () => window.removeEventListener('mousemove', handleMove);
   }, []);
 
-  // ── Séquence de transition ────────────────────────────────────────────────
+  // ── Fade rapide à t=2.5s (opacity + blur + scale) ───────────────────────
   useEffect(() => {
-    // t=2500ms : fade rapide du contenu (logo, halos, glow)
-    const fadeContent = setTimeout(() => {
-      [contentRef, halosRef, glowRef].forEach(r => {
-        if (!r.current) return;
-        r.current.style.transition = 'opacity 0.6s ease';
-        r.current.style.opacity = '0';
-      });
-
-      // Simultanément : fond sombre s'évapore lentement (2000ms)
-      // → les couleurs du dashboard apparaissent progressivement en dessous
-      if (bgRef.current) {
-        bgRef.current.style.transition = 'opacity 2s ease-in-out';
-        bgRef.current.style.opacity = '0';
-      }
+    const fadeTimer = setTimeout(() => {
+      const el = rootRef.current;
+      if (!el) { onDone?.(); return; }
+      el.style.transition = 'opacity 0.8s ease, transform 0.8s cubic-bezier(.4,0,.2,1), filter 0.8s ease';
+      el.style.opacity   = '0';
+      el.style.filter    = 'blur(10px)';
+      el.style.transform = 'scale(1.05)';
     }, 2500);
-
-    // t=4600ms : loader retiré du DOM
-    const done = setTimeout(() => onDone?.(), 4600);
-
-    return () => { clearTimeout(fadeContent); clearTimeout(done); };
+    const doneTimer = setTimeout(() => onDone?.(), 3300);
+    return () => { clearTimeout(fadeTimer); clearTimeout(doneTimer); };
   }, [onDone]);
 
   return (
-    // ll-root : fond transparent → le dashboard est visible en dessous
-    // pendant l'évaporation du ll-bg
-    <div className="ll-root">
-      {/* Fond sombre animé — s'évapore lentement pour révéler le dashboard */}
-      <div className="ll-bg" ref={bgRef} />
-
-      {/* Glow central pulsé */}
-      <div className="ll-glow" ref={glowRef} />
-
-      {/* Halos flottants */}
-      <div className="ll-halos" ref={halosRef}>
+    <div className="ll-root" ref={rootRef}>
+      <div className="ll-bg" />
+      <div className="ll-glow" />
+      <div className="ll-halos">
         {HALOS.map(({ cls, light }, i) => (
           <div
             key={cls}
@@ -105,9 +70,7 @@ export default function LoginLoader({ onDone }) {
           </div>
         ))}
       </div>
-
-      {/* Logo + texte */}
-      <div className="ll-content" ref={contentRef}>
+      <div className="ll-content">
         <img
           src="/logoCDC.png"
           alt="Cité des Chances"

@@ -19,7 +19,36 @@
 @keyframes ll-float5 { 0% { transform: translate(0,0)   scale(1);    } 100% { transform: translate(-20vw,20vh)  scale(1.1);  } }
 @keyframes ll-float6 { 0% { transform: translate(0,0)   scale(1);    } 100% { transform: translate(-10vw,-10vh) scale(1.25); } }
 
-/* ── Keyframes logo ────────────────────────────────────────────────────────── */
+/* ── Keyframe overlay app (s'évapore lentement, révèle le dashboard) ─────── */
+@keyframes ll-fadeout-overlay {
+  0%   { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+/* ── Keyframe texte blanc → sombre (dashboard titre/eyebrow) ─────────────── */
+@keyframes ll-text-to-dark {
+  0%   { color: #ffffff; text-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+  100% { color: var(--text-base); text-shadow: none; }
+}
+
+/* ── Keyframe slide-up (entrée du contenu dashboard) ─────────────────────── */
+@keyframes ll-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Classes appliquées au dashboard juste après login ──────────────────────── */
+.dash-text-to-dark {
+  animation: ll-text-to-dark 5s ease-in-out 2.5s both;
+}
+.dash-stagger-1 {
+  animation: ll-slide-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+.dash-stagger-2 {
+  animation: ll-slide-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+}
+
+/* ── Keyframe logo ────────────────────────────────────────────────────────── */
 @keyframes ll-reveal-logo {
   0%   { opacity: 0; transform: scale(0.5); }
   100% { opacity: 1; transform: scale(1);   }
@@ -54,7 +83,7 @@
   /* Fond transparent : le dashboard est rendu en dessous.
      Pendant l'évaporation de .ll-bg, les couleurs du dashboard
      apparaissent progressivement (bleu/rose du gradient-layer). */
-  background: transparent;
+  background: #050510;
 }
 
 /* ── Couche dégradé animé ─────────────────────────────────────────────────── */

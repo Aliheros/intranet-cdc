@@ -87,6 +87,7 @@ function App() {
     noteFraisModal,      setNoteFraisModal,
     devisFactureModal,   setDevisFactureModal,
     showTutorial,        setShowTutorial,
+    freshLogin,          setFreshLogin,
   } = useAppContext();
 
   const {
@@ -179,7 +180,6 @@ function App() {
   }, [isBannerActive, unreadVisibleNotifs.length]);
 
   // ─── LOADER POST-LOGIN — détection premier login ─────────────────────────
-  // handleNav est maintenant disponible (déclaré au-dessus via useAppContext).
   useEffect(() => {
     if (!authLoading) {
       const wasLoading = wasLoadingRef.current;
@@ -190,8 +190,11 @@ function App() {
       if (wasLoading) return;
       // Connexion manuelle : prevUser était null, currentUser vient d'être défini
       if (!prevUser && currentUser) {
-        handleNav('dashboard'); // gradient du dashboard déjà prêt sous le loader
+        handleNav('dashboard');
         setShowLoader(true);
+        setFreshLogin(true);
+        // Retire freshLogin après 8.5s (overlay entièrement évaporé)
+        setTimeout(() => setFreshLogin(false), 8500);
       }
     }
   }, [currentUser, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -212,12 +215,20 @@ function App() {
     <>
       {/* ── Écran de chargement post-login ────────────────────────────────── */}
       {showLoader && (
-        <LoginLoader
-          onDone={() => {
-            setShowLoader(false);
-            handleNav('dashboard');
-          }}
-        />
+        <LoginLoader onDone={() => setShowLoader(false)} />
+      )}
+
+      {/* ── Overlay sombre post-login (s'évapore en 5s à t=2.5s)
+           Révèle progressivement le gradient du dashboard.
+           Identique au .app-dark-overlay du prototype HTML.           ─── */}
+      {freshLogin && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          pointerEvents: 'none',
+          background: 'linear-gradient(270deg, #0f2d5e, #e63946, #4c1d95)',
+          backgroundSize: '400% 400%',
+          animation: 'll-gradient 20s ease infinite, ll-fadeout-overlay 5s ease-in-out 2.5s forwards',
+        }} />
       )}
 
       <style>{`
