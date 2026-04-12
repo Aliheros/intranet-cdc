@@ -41,11 +41,12 @@
 .gradient-layer {
   position: fixed;
   top: -40px; right: -40px; bottom: -40px;
-  left: calc(248px - 40px); /* marge pour absorber le translate souris sans débord visible */
+  left: calc(248px - 40px); /* marge pour absorber le translate souris sans débord visible — ajusté si sidebar réduite */
   z-index: 0;
   pointer-events: none;
   will-change: --gx1, --gy1, --gx2, --gy2, --gx3, --gy3, --gx4, --gy4;
-  transition: --gx1 0.9s ease, --gy1 0.9s ease,
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              --gx1 0.9s ease, --gy1 0.9s ease,
               --gx2 0.9s ease, --gy2 0.9s ease,
               --gx3 0.9s ease, --gy3 0.9s ease,
               --gx4 0.9s ease, --gy4 0.9s ease;
@@ -71,6 +72,11 @@
 /* Pause animation pendant le scroll (ajout/retrait de classe via JS) */
 .main.scrolling .gradient-layer {
   animation-play-state: paused;
+}
+
+/* Sidebar réduite → décale le gradient-layer (transition sur la règle de base pour les deux sens) */
+.body-row:has(.sidebar-collapsed) .gradient-layer {
+  left: calc(60px - 40px);
 }
 
 /* ── Fond dégradé animé ─────────────────────────────────────────────────── */
@@ -146,6 +152,1119 @@
 }
 .dark-theme .main-gradient .sc .dash-row:hover {
   background: rgba(255,255,255,.08) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROJET EUROPE — Identité visuelle unique
+   Palette : bleu roi EU (#003399) + or (#FFD700) + marine profond
+   Fond clair : bleu-blanc ivoire   |   Fond sombre : minuit bleu-marine
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Fond de page Europe + variables de texte EU ───────────────────────── */
+/*    Les vars CSS sont héritées par TOUS les enfants — inline var() inclus.  */
+/*    Résultat : gris neutres remplacés par des bleus EU lisibles et stylés.  */
+.europe-gradient {
+  background-color: #e8eeff !important;
+  background-image: none !important;
+  position: relative;
+
+  /* Texte */
+  --text-base:  #0b1d45;   /* bleu marine — riche, lisible sur blanc-bleuté */
+  --text-dim:   #2c4d96;   /* bleu EU moyen — remplace le gris #64748b       */
+  --text-muted: #4a6cb8;   /* bleu EU doux — remplace le gris clair #94a3b8  */
+
+  /* Surfaces & bordures — teinte bleutée EU */
+  --bg-surface: rgba(240, 248, 255, 0.82);
+  --bg-alt:     rgba(220, 235, 255, 0.55);
+  --bg-hover:   rgba(210, 228, 255, 0.60);
+  --border-light: rgba(170, 205, 255, 0.50);
+}
+.dark-theme .europe-gradient {
+  background-color: #04091a !important;
+  background-image: none !important;
+
+  --text-base:  #eef3ff;   /* blanc légèrement bleuté */
+  --text-dim:   #9db8e8;   /* bleu pâle — remplace #cbd5e1  */
+  --text-muted: #6888c0;   /* bleu-gris — remplace #94a3b8  */
+
+  --bg-surface: rgba(8, 20, 55, 0.75);
+  --bg-alt:     rgba(12, 28, 70, 0.60);
+  --bg-hover:   rgba(15, 35, 85, 0.65);
+  --border-light: rgba(80, 120, 220, 0.18);
+}
+
+/* ── Gradient layer Europe — bleu roi + or ──────────────────────────────── */
+.europe-gradient .gradient-layer {
+  background-color: #dce8ff;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(220, 92%, 42%, .60) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(46,  100%, 58%, .42) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(228, 88%, 36%, .52) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(42,  90%,  62%, .32) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%,               hsla(215, 75%, 52%, .28) 0px, transparent 100%);
+  /* Animation CSS douce — pas de JS sur les pages Espace */
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .europe-gradient .gradient-layer {
+  background-color: #04091a;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(220, 90%, 22%, .95) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(44,  80%, 28%, .55) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(230, 88%, 18%, .80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(42,  70%, 32%, .45) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%,               hsla(218, 60%, 12%, .55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+
+/* ── Cartes glass Europe ─────────────────────────────────────────────────── */
+/*    Bordure : givre bleu pâle (pas de blanc pur) + shadow pour la profondeur */
+.europe-gradient .kc,
+.europe-gradient .sc {
+  background: rgba(255, 255, 255, .46) !important;
+  backdrop-filter: blur(14px) saturate(145%);
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+  border: 1px solid rgba(170, 205, 255, .45) !important;
+  box-shadow: 0 20px 40px rgba(0, 20, 80, .09), inset 0 1px 0 rgba(255, 255, 255, .75);
+  transform-style: preserve-3d;
+  transition: box-shadow .3s ease, border-color .3s ease, transform .3s ease;
+}
+.europe-gradient .kc:hover,
+.europe-gradient .sc:hover {
+  box-shadow: 0 30px 60px rgba(0, 20, 80, .14), inset 0 1px 0 rgba(255, 255, 255, .92);
+  border-color: rgba(180, 215, 255, .70) !important;
+}
+
+/* Désactiver le blur pendant le scroll */
+.main.scrolling .europe-gradient .kc,
+.main.scrolling .europe-gradient .sc {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Thème sombre — fond bleu marine profond pour les cartes */
+.dark-theme .europe-gradient .kc,
+.dark-theme .europe-gradient .sc {
+  background: rgba(4, 14, 40, .62) !important;
+  border-color: rgba(100, 150, 255, .12) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, .40), inset 0 1px 0 rgba(100, 150, 255, .08);
+}
+.dark-theme .europe-gradient .kc:hover,
+.dark-theme .europe-gradient .sc:hover {
+  border-color: rgba(255, 215, 0, .18) !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 215, 0, .07);
+}
+
+/* Lignes internes */
+.europe-gradient .sc .dash-row {
+  background: rgba(255, 255, 255, .38) !important;
+}
+.europe-gradient .sc .dash-row:hover {
+  background: rgba(255, 255, 255, .65) !important;
+}
+.dark-theme .europe-gradient .sc .dash-row {
+  background: rgba(255, 255, 255, .04) !important;
+}
+.dark-theme .europe-gradient .sc .dash-row:hover {
+  background: rgba(255, 215, 0, .05) !important;
+}
+
+/* ── Instructions de l'équipe — visible sur fond gradient EU ─────────────── */
+.europe-gradient .space-instructions {
+  background: rgba(255, 255, 255, .42) !important;
+  border: 1px solid rgba(170, 205, 255, .50) !important;
+  border-style: solid !important;           /* écrase le dashed inline */
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  box-shadow: 0 8px 24px rgba(0, 20, 80, .06), inset 0 1px 0 rgba(255, 255, 255, .7);
+  border-radius: 12px;
+}
+.dark-theme .europe-gradient .space-instructions {
+  background: rgba(4, 14, 40, .55) !important;
+  border-color: rgba(100, 150, 255, .14) !important;
+  border-style: solid !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .20);
+}
+
+/* ── Boutons et barres d'outils — glass transparent + blur ──────────────── */
+/* toolbar-wrap (barre cycles / trier docs) */
+.europe-gradient .toolbar-wrap {
+  background: rgba(255, 255, 255, .46) !important;
+  border: 1px solid rgba(170, 205, 255, .45) !important;
+  backdrop-filter: blur(14px) saturate(145%);
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+  box-shadow: 0 20px 40px rgba(0, 20, 80, .09), inset 0 1px 0 rgba(255, 255, 255, .75);
+}
+.europe-gradient .toolbar-wrap:hover {
+  box-shadow: 0 30px 60px rgba(0, 20, 80, .14), inset 0 1px 0 rgba(255, 255, 255, .92);
+  border-color: rgba(180, 215, 255, .70) !important;
+}
+.dark-theme .europe-gradient .toolbar-wrap {
+  background: rgba(4, 14, 40, .62) !important;
+  border-color: rgba(100, 150, 255, .12) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, .40), inset 0 1px 0 rgba(100, 150, 255, .08);
+}
+
+/* btn-secondary */
+.europe-gradient .btn-secondary {
+  background: rgba(255, 255, 255, .35) !important;
+  border-color: rgba(170, 205, 255, .50) !important;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+.europe-gradient .btn-secondary:hover {
+  background: rgba(255, 255, 255, .58) !important;
+  border-color: rgba(140, 185, 255, .70) !important;
+}
+.dark-theme .europe-gradient .btn-secondary {
+  background: rgba(255, 255, 255, .07) !important;
+  border-color: rgba(100, 150, 255, .18) !important;
+}
+.dark-theme .europe-gradient .btn-secondary:hover {
+  background: rgba(255, 255, 255, .13) !important;
+}
+
+/* year-tab (sélecteur cycle) */
+.europe-gradient .year-tab {
+  background: rgba(255, 255, 255, .25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.europe-gradient .year-tab.active {
+  background: rgba(26, 86, 219, .18) !important;
+  border-color: rgba(26, 86, 219, .35) !important;
+}
+.dark-theme .europe-gradient .year-tab {
+  background: rgba(255, 255, 255, .05) !important;
+}
+.dark-theme .europe-gradient .year-tab.active {
+  background: rgba(96, 165, 250, .15) !important;
+  border-color: rgba(96, 165, 250, .35) !important;
+}
+
+/* Topbar teintée EU en mode Europe */
+.europe-gradient .topbar {
+  background: rgba(210, 228, 255, .70);
+  border-bottom-color: rgba(170, 205, 255, .55);
+}
+.dark-theme .europe-gradient .topbar {
+  background: rgba(4, 9, 26, .88);
+  border-bottom-color: rgba(100, 150, 255, .10);
+}
+
+/* ── Titres de sections (Général, Archives, sections custom) ─────────────── */
+.europe-gradient .section-title {
+  color: #1a3a80 !important;
+  border-bottom: 2px solid rgba(100, 150, 255, .30) !important;
+  letter-spacing: -0.01em;
+}
+.dark-theme .europe-gradient .section-title {
+  color: #a8c8f0 !important;
+  border-bottom-color: rgba(80, 130, 220, .25) !important;
+}
+
+/* ── Boutons de contrôle de section (↑ ↓ rename delete) ─────────────────── */
+.europe-gradient .section-ctrl {
+  background: rgba(255, 255, 255, .38) !important;
+  border-color: rgba(150, 190, 255, .45) !important;
+  color: #2c4d96 !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.europe-gradient .section-ctrl:hover {
+  background: rgba(255, 255, 255, .65) !important;
+  border-color: rgba(26, 86, 219, .55) !important;
+  color: #1a3a80 !important;
+  box-shadow: 0 2px 8px rgba(0, 20, 80, .12);
+}
+.dark-theme .europe-gradient .section-ctrl {
+  background: rgba(255, 255, 255, .06) !important;
+  border-color: rgba(100, 150, 255, .20) !important;
+  color: #9db8e8 !important;
+}
+.dark-theme .europe-gradient .section-ctrl:hover {
+  background: rgba(100, 150, 255, .12) !important;
+  border-color: rgba(100, 150, 255, .40) !important;
+  color: #c8deff !important;
+}
+
+/* ── Header Europe — gradient animé + shimmer or ────────────────────────── */
+@keyframes euHeaderDrift {
+  0%   { background-position: 0% 60%; }
+  50%  { background-position: 100% 40%; }
+  100% { background-position: 0% 60%; }
+}
+@keyframes euShimmer {
+  0%   { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+  4%   { opacity: 1; }
+  9%   { opacity: 1; }
+  13%  { transform: translateX(250%) skewX(-15deg); opacity: 0; }
+  100% { transform: translateX(250%) skewX(-15deg); opacity: 0; }
+}
+
+.eu-space-header {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(130deg,
+    #002b8a 0%,
+    #1a4fcc 20%,
+    #003399 40%,
+    #1564e8 58%,
+    #002f9e 78%,
+    #1a56db 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(0, 20, 100, .30);
+}
+
+/* Liseré or en bas du header */
+.eu-space-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 215, 0, .55) 30%,
+    rgba(255, 215, 0, .80) 50%,
+    rgba(255, 215, 0, .55) 70%,
+    transparent 100%
+  );
+}
+
+/* Balayage lumineux périodique */
+.eu-space-header::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, .18),
+    transparent
+  );
+  animation: euShimmer 22s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Mode sombre : marine profond + reflets bleu-or discrets */
+.dark-theme .eu-space-header {
+  background: linear-gradient(130deg,
+    #010e28 0%,
+    #041852 20%,
+    #020d35 40%,
+    #071d60 58%,
+    #010c25 78%,
+    #041852 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, .50);
+}
+/* Liseré or plus brillant en mode sombre */
+.dark-theme .eu-space-header::after {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 215, 0, .35) 30%,
+    rgba(255, 215, 0, .65) 50%,
+    rgba(255, 215, 0, .35) 70%,
+    transparent 100%
+  );
+}
+
+/* ── Barre de sous-onglets Europe (sticky sous la topbar) ───────────────── */
+.eu-tab-bar {
+  background: rgba(205, 225, 255, .68) !important;
+  border-bottom: 1px solid rgba(160, 200, 255, .40) !important;
+}
+.dark-theme .eu-tab-bar {
+  background: rgba(4, 10, 30, .82) !important;
+  border-bottom: 1px solid rgba(80, 120, 220, .18) !important;
+}
+
+/* ── Onglets de navigation (Contenu, Corbeille…) ────────────────────────── */
+.europe-gradient .ctx-tab {
+  color: #2c4d96 !important;
+}
+.europe-gradient .ctx-tab:hover {
+  color: #0b1d45 !important;
+}
+.europe-gradient .ctx-tab.active {
+  color: #1a3a80 !important;
+  border-bottom-color: #1a3a80 !important;
+}
+.dark-theme .europe-gradient .ctx-tab {
+  color: #6888c0 !important;
+}
+.dark-theme .europe-gradient .ctx-tab:hover {
+  color: #9db8e8 !important;
+}
+.dark-theme .europe-gradient .ctx-tab.active {
+  color: #a8c8f0 !important;
+  border-bottom-color: #a8c8f0 !important;
+}
+
+/* ── Chips glass — action bleue (liens vers actions, navigation) ─────────── */
+.europe-gradient .eu-chip-blue {
+  background: rgba(30, 70, 200, .14) !important;
+  border: 1px solid rgba(100, 155, 255, .40) !important;
+  color: #1a3a80 !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all .2s ease;
+}
+.europe-gradient .eu-chip-blue:hover {
+  background: rgba(30, 70, 200, .26) !important;
+  border-color: rgba(100, 155, 255, .65) !important;
+}
+.dark-theme .europe-gradient .eu-chip-blue {
+  background: rgba(255, 255, 255, .06) !important;
+  border-color: rgba(120, 170, 255, .30) !important;
+  color: #9db8e8 !important;
+}
+.dark-theme .europe-gradient .eu-chip-blue:hover {
+  background: rgba(255, 255, 255, .12) !important;
+  border-color: rgba(160, 205, 255, .50) !important;
+}
+
+/* ── Chips glass — danger / refus (rouge) ────────────────────────────────── */
+.europe-gradient .eu-chip-danger {
+  background: rgba(220, 38, 38, .10) !important;
+  border: 1px solid rgba(220, 38, 38, .28) !important;
+  color: #b91c1c !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all .2s ease;
+}
+.europe-gradient .eu-chip-danger:hover {
+  background: rgba(220, 38, 38, .20) !important;
+  border-color: rgba(220, 38, 38, .50) !important;
+}
+.dark-theme .europe-gradient .eu-chip-danger {
+  background: rgba(220, 38, 38, .08) !important;
+  border-color: rgba(220, 38, 38, .22) !important;
+  color: #f87171 !important;
+}
+.dark-theme .europe-gradient .eu-chip-danger:hover {
+  background: rgba(220, 38, 38, .16) !important;
+}
+
+/* ── Chips glass — succès / restaurer (vert) ─────────────────────────────── */
+.europe-gradient .eu-chip-success {
+  background: rgba(22, 163, 74, .10) !important;
+  border: 1px solid rgba(22, 163, 74, .28) !important;
+  color: #15803d !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all .2s ease;
+}
+.europe-gradient .eu-chip-success:hover {
+  background: rgba(22, 163, 74, .20) !important;
+  border-color: rgba(22, 163, 74, .50) !important;
+}
+.dark-theme .europe-gradient .eu-chip-success {
+  background: rgba(22, 163, 74, .08) !important;
+  border-color: rgba(22, 163, 74, .22) !important;
+  color: #4ade80 !important;
+}
+.dark-theme .europe-gradient .eu-chip-success:hover {
+  background: rgba(22, 163, 74, .16) !important;
+}
+
+/* ── Titre "Documents" et séparateurs .sec ───────────────────────────────── */
+.europe-gradient .sec {
+  color: #1a3a80 !important;
+}
+.europe-gradient .sec::after {
+  background: rgba(100, 150, 255, .28) !important;
+}
+.dark-theme .europe-gradient .sec {
+  color: #9db8e8 !important;
+}
+.dark-theme .europe-gradient .sec::after {
+  background: rgba(80, 130, 220, .22) !important;
+}
+
+/* ── Boutons primaires EU (Envoyer, Ajouter un fichier, Nouvelle section) ── */
+/*    Clair : bleu roi translucide + fort blur — clairement un bouton glass   */
+/*    Sombre : fond minuit quasi-transparent + liseré or — identité nocturne  */
+.europe-gradient .btn-primary {
+  background: rgba(30, 70, 200, .55) !important;
+  border: 1px solid rgba(180, 215, 255, .55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(0, 20, 100, .22), inset 0 1px 0 rgba(255, 255, 255, .25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0, 10, 60, .35);
+}
+.europe-gradient .btn-primary:hover {
+  background: rgba(30, 80, 220, .72) !important;
+  border-color: rgba(210, 235, 255, .75) !important;
+  box-shadow: 0 6px 22px rgba(0, 20, 100, .30), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+
+/* Sombre : minuit profond + liseré bleu-or */
+.dark-theme .europe-gradient .btn-primary {
+  background: rgba(255, 255, 255, .07) !important;
+  border: 1px solid rgba(120, 170, 255, .35) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .40), inset 0 1px 0 rgba(255, 255, 255, .06);
+  text-shadow: none;
+}
+.dark-theme .europe-gradient .btn-primary:hover {
+  background: rgba(255, 255, 255, .13) !important;
+  border-color: rgba(255, 215, 0, .35) !important;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .50), inset 0 1px 0 rgba(255, 215, 0, .08);
+}
+
+/* ── Mur de discussion — bulles reçues ──────────────────────────────────── */
+.europe-gradient .msg-bubble {
+  background: rgba(255, 255, 255, .55) !important;
+  border: 1px solid rgba(160, 200, 255, .45) !important;
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  box-shadow: 0 4px 12px rgba(0, 20, 80, .07);
+  color: #0b1d45;
+}
+.europe-gradient .msg-author {
+  color: #4a6cb8 !important;
+  font-weight: 600;
+}
+.europe-gradient .msg-time {
+  color: #2c4d96 !important;
+  opacity: 0.7;
+}
+.dark-theme .europe-gradient .msg-bubble {
+  background: rgba(8, 22, 60, .70) !important;
+  border-color: rgba(80, 130, 220, .20) !important;
+  color: #eef3ff;
+}
+.dark-theme .europe-gradient .msg-author {
+  color: #7090cc !important;
+}
+.dark-theme .europe-gradient .msg-time {
+  color: #6080b8 !important;
+}
+
+/* ── Bulles envoyées (mine) ─────────────────────────────────────────────── */
+.europe-gradient .msg-row.mine .msg-bubble {
+  background: rgba(20, 60, 175, .85) !important;
+  border: 1px solid rgba(100, 160, 255, .40) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 16px rgba(10, 30, 130, .30);
+  color: #fff !important;
+}
+.europe-gradient .msg-row.mine .msg-time {
+  color: rgba(200, 220, 255, .80) !important;
+  opacity: 1;
+}
+.dark-theme .europe-gradient .msg-row.mine .msg-bubble {
+  background: rgba(26, 70, 200, .70) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .30);
+}
+
+/* ── Zone de saisie du mur (input + Envoyer) ────────────────────────────── */
+.europe-gradient .space-wall .form-input {
+  background: rgba(255, 255, 255, .45) !important;
+  border-color: rgba(160, 200, 255, .45) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #0b1d45 !important;
+}
+.europe-gradient .space-wall .form-input::placeholder {
+  color: #6080b0;
+}
+.dark-theme .europe-gradient .space-wall .form-input {
+  background: rgba(8, 22, 60, .55) !important;
+  border-color: rgba(80, 130, 220, .22) !important;
+  color: #eef3ff !important;
+}
+.dark-theme .europe-gradient .space-wall .form-input::placeholder {
+  color: #6888c0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COORDINATION — Thème glass morphism
+   Palette : indigo profond + violet + teal — identité "mission & opérations"
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Variables texte mode clair ─────────────────────────────────────────── */
+.coord-gradient {
+  --text-base:    #0c1a3a;
+  --text-dim:     #1e3a7a;
+  --text-muted:   #3a5a9e;
+  --bg-surface:   rgba(235, 240, 255, 0.96);
+  --bg-alt:       rgba(220, 230, 255, 0.90);
+  --bg-hover:     rgba(210, 225, 255, 0.82);
+  --border-light: rgba(150, 185, 255, 0.45);
+}
+
+/* ── Variables texte mode sombre ────────────────────────────────────────── */
+.dark-theme .coord-gradient {
+  --text-base:    #e8eeff;
+  --text-dim:     #a0b8e8;
+  --text-muted:   #6888c0;
+  --bg-surface:   rgba(8, 16, 42, 0.95);
+  --bg-alt:       rgba(12, 22, 58, 0.90);
+  --bg-hover:     rgba(20, 35, 78, 0.82);
+  --border-light: rgba(80, 120, 220, 0.30);
+}
+
+/* ── Fond Coordination — gradient statique, pas d'animation @property ───── */
+/* On utilise background-position au lieu de @property : GPU-friendly, zéro recalcul layout */
+@keyframes coordBgDrift {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+.coord-gradient .gradient-layer {
+  background-color: #eaedff;
+  background-image:
+    radial-gradient(ellipse 65% 55% at 20% 20%, hsla(230, 80%, 68%, .60) 0px, transparent 70%),
+    radial-gradient(ellipse 55% 50% at 80% 15%, hsla(260, 75%, 62%, .50) 0px, transparent 65%),
+    radial-gradient(ellipse 60% 52% at 55% 80%, hsla(195, 80%, 55%, .45) 0px, transparent 65%),
+    radial-gradient(ellipse 50% 45% at 10% 75%, hsla(215, 85%, 60%, .40) 0px, transparent 60%),
+    radial-gradient(ellipse 75% 65% at 85% 85%, hsla(240, 60%, 72%, .30) 0px, transparent 70%);
+  background-size: 180% 180%;
+  animation: coordBgDrift 40s ease-in-out infinite;
+}
+.dark-theme .coord-gradient .gradient-layer {
+  background-color: #050a1e;
+  background-image:
+    radial-gradient(ellipse 65% 55% at 20% 20%, hsla(230, 70%, 22%, .85) 0px, transparent 55%),
+    radial-gradient(ellipse 55% 50% at 80% 15%, hsla(260, 65%, 20%, .70) 0px, transparent 50%),
+    radial-gradient(ellipse 60% 52% at 55% 80%, hsla(195, 70%, 18%, .65) 0px, transparent 50%),
+    radial-gradient(ellipse 50% 45% at 10% 75%, hsla(215, 75%, 20%, .55) 0px, transparent 45%),
+    radial-gradient(ellipse 75% 65% at 85% 85%, hsla(240, 55%, 15%, .45) 0px, transparent 40%);
+  background-size: 180% 180%;
+}
+
+/* ── Élever le contenu au-dessus du gradient-layer fixe ─────────────────── */
+.coord-gradient > *:not(.gradient-layer):not(.topbar):not(.coord-tab-bar) {
+  position: relative;
+  z-index: 1;
+}
+/* Restaurer sticky sur topbar et tab-bar dans coord */
+.coord-gradient .topbar {
+  position: sticky !important;
+  top: 0 !important;
+}
+.coord-gradient .coord-tab-bar {
+  position: sticky !important;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.coord-gradient .toolbar-wrap {
+  background: rgba(228, 236, 255, 0.96) !important;
+  border: 1px solid rgba(160, 195, 255, 0.50) !important;
+  box-shadow: 0 4px 20px rgba(20, 50, 140, 0.10), inset 0 1px 0 rgba(255,255,255,.60);
+}
+.dark-theme .coord-gradient .toolbar-wrap {
+  background: rgba(8, 16, 50, 0.97) !important;
+  border-color: rgba(80, 120, 220, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* ── Chips (onglets En cours / Archives / Corbeille) ─────────────────────── */
+.coord-gradient .chip {
+  background: rgba(245, 248, 255, 0.92) !important;
+  border-color: rgba(140, 180, 255, 0.40) !important;
+  color: var(--text-dim) !important;
+}
+.coord-gradient .chip:hover {
+  background: rgba(255,255,255,0.98) !important;
+  border-color: rgba(100, 150, 255, 0.60) !important;
+  color: var(--text-base) !important;
+}
+.coord-gradient .chip.on {
+  background: rgba(30, 60, 180, 0.88) !important;
+  border-color: rgba(80, 130, 255, 0.50) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 12px rgba(30,60,180,0.25);
+}
+.dark-theme .coord-gradient .chip {
+  background: rgba(15, 28, 72, 0.92) !important;
+  border-color: rgba(80, 120, 200, 0.25) !important;
+  color: var(--text-dim) !important;
+}
+.dark-theme .coord-gradient .chip.on {
+  background: rgba(40, 80, 200, 0.90) !important;
+  border-color: rgba(100, 150, 255, 0.40) !important;
+}
+
+/* ── Wrapper contenu padded ──────────────────────────────────────────────── */
+.coord-gradient .coord-page-content {
+  padding: 28px 44px 44px;
+}
+
+/* ── Layout événement (grille principale) ───────────────────────────────── */
+/* Pas de hauteur fixe : le contenu détermine la hauteur, la page scrolle */
+.coord-gradient .event-layout {
+  background: rgba(225, 235, 255, 0.97) !important;
+  border: 1px solid rgba(150, 190, 255, 0.50) !important;
+  box-shadow: 0 8px 32px rgba(20, 50, 140, 0.12), inset 0 1px 0 rgba(255,255,255,.55);
+  height: auto;
+  min-height: 500px;
+}
+.dark-theme .coord-gradient .event-layout {
+  background: rgba(6, 12, 38, 0.97) !important;
+  border-color: rgba(70, 110, 210, 0.25) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.45);
+}
+/* Panneaux : pas de scroll interne — une seule barre de défilement globale */
+.coord-gradient .event-list,
+.coord-gradient .event-detail {
+  overflow: visible;
+  height: auto;
+}
+
+/* ── Liste événements (colonne gauche) ──────────────────────────────────── */
+.coord-gradient .event-list {
+  background: transparent !important;
+  border-right-color: rgba(140, 180, 255, 0.30) !important;
+}
+.coord-gradient .event-list-header {
+  border-bottom-color: rgba(140, 180, 255, 0.30) !important;
+}
+.coord-gradient .event-item {
+  border-bottom-color: rgba(140, 180, 255, 0.22) !important;
+  transition: background 0.18s;
+}
+.coord-gradient .event-item:hover {
+  background: rgba(200, 218, 255, 0.70) !important;
+}
+.coord-gradient .event-item.active {
+  background: rgba(190, 215, 255, 0.82) !important;
+  border-left-color: #e63946 !important;
+}
+.dark-theme .coord-gradient .event-item:hover {
+  background: rgba(30, 55, 120, 0.65) !important;
+}
+.dark-theme .coord-gradient .event-item.active {
+  background: rgba(25, 50, 110, 0.80) !important;
+}
+
+/* ── Panneau détail (colonne droite) ────────────────────────────────────── */
+.coord-gradient .event-detail {
+  background: transparent !important;
+}
+
+/* ── Cards génériques (kc, sc, cbox) dans Coordination ─────────────────── */
+.coord-gradient .kc,
+.coord-gradient .sc,
+.coord-gradient .cbox {
+  background: rgba(230, 240, 255, 0.97) !important;
+  border: 1px solid rgba(150, 190, 255, 0.48) !important;
+  box-shadow: 0 4px 18px rgba(20, 50, 140, 0.10), inset 0 1px 0 rgba(255,255,255,.55);
+}
+.dark-theme .coord-gradient .kc,
+.dark-theme .coord-gradient .sc,
+.dark-theme .coord-gradient .cbox {
+  background: rgba(8, 16, 50, 0.97) !important;
+  border-color: rgba(80, 120, 210, 0.28) !important;
+  box-shadow: 0 4px 18px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* ── Boutons primaires ───────────────────────────────────────────────────── */
+.coord-gradient .btn-primary {
+  background: rgba(25, 55, 180, 0.88) !important;
+  border: 1px solid rgba(100, 150, 255, 0.45) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(25,55,180,0.20), inset 0 1px 0 rgba(255,255,255,.15);
+  text-shadow: 0 1px 2px rgba(0,0,0,.20);
+}
+.coord-gradient .btn-primary:hover {
+  background: rgba(30, 65, 200, 0.75) !important;
+  box-shadow: 0 4px 16px rgba(30,65,200,0.30), inset 0 1px 0 rgba(255,255,255,.18);
+}
+.dark-theme .coord-gradient .btn-primary {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(100, 150, 255, 0.30) !important;
+}
+.dark-theme .coord-gradient .btn-primary:hover {
+  background: rgba(255,255,255,0.14) !important;
+  border-color: rgba(130, 180, 255, 0.45) !important;
+}
+
+/* ── Boutons secondaires ────────────────────────────────────────────────── */
+.coord-gradient .btn-secondary {
+  background: rgba(240, 245, 255, 0.95) !important;
+  border: 1px solid rgba(140, 180, 255, 0.40) !important;
+  color: var(--text-dim) !important;
+}
+.coord-gradient .btn-secondary:hover {
+  background: rgba(255,255,255,0.55) !important;
+  border-color: rgba(100, 150, 255, 0.55) !important;
+}
+.dark-theme .coord-gradient .btn-secondary {
+  background: rgba(20, 35, 80, 0.50) !important;
+  border-color: rgba(80, 120, 200, 0.25) !important;
+  color: var(--text-dim) !important;
+}
+
+/* ── Topbar en mode Coordination ────────────────────────────────────────── */
+.coord-gradient .topbar {
+  background: rgba(225, 235, 255, 0.72) !important;
+  border-bottom-color: rgba(150, 190, 255, 0.40) !important;
+}
+.dark-theme .coord-gradient .topbar {
+  background: rgba(5, 10, 30, 0.82) !important;
+  border-bottom-color: rgba(70, 110, 210, 0.18) !important;
+}
+
+/* ── Cartes séances — statuts bien distincts ────────────────────────────── */
+/* Base : card neutre */
+.coord-gradient .seance-card {
+  background: rgba(230, 238, 255, 0.97) !important;
+  border: 1px solid rgba(140, 175, 255, 0.45) !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 10px rgba(20, 50, 140, 0.07), inset 0 1px 0 rgba(255,255,255,.45);
+  contain: layout style;
+}
+.dark-theme .coord-gradient .seance-card {
+  background: rgba(10, 20, 55, 0.97) !important;
+  border-color: rgba(80, 120, 210, 0.28) !important;
+}
+
+/* Séance annulée — rouge nette et lisible */
+.coord-gradient .seance-annulee {
+  background: rgba(220, 38, 38, 0.12) !important;
+  border: 1px solid rgba(220, 38, 38, 0.35) !important;
+  opacity: 1 !important;
+}
+.dark-theme .coord-gradient .seance-annulee {
+  background: rgba(220, 38, 38, 0.16) !important;
+  border-color: rgba(220, 38, 38, 0.40) !important;
+}
+
+/* Prochaine séance — accent bleu fort */
+.coord-gradient .seance-prochaine {
+  background: rgba(30, 80, 220, 0.14) !important;
+  border: 2px solid rgba(30, 80, 220, 0.55) !important;
+  box-shadow: 0 0 0 1px rgba(30, 80, 220, 0.15), 0 4px 16px rgba(30, 80, 220, 0.12) !important;
+  opacity: 1 !important;
+}
+.dark-theme .coord-gradient .seance-prochaine {
+  background: rgba(30, 80, 220, 0.20) !important;
+  border-color: rgba(80, 140, 255, 0.55) !important;
+  box-shadow: 0 0 0 1px rgba(80,140,255,0.20), 0 4px 16px rgba(30,80,220,0.20) !important;
+}
+
+/* Séance passée — atténuée mais lisible */
+.coord-gradient .seance-passee {
+  background: rgba(210, 220, 250, 0.50) !important;
+  border: 1px solid rgba(130, 160, 230, 0.25) !important;
+  opacity: 0.80 !important;
+}
+.dark-theme .coord-gradient .seance-passee {
+  background: rgba(15, 25, 60, 0.60) !important;
+  border-color: rgba(70, 100, 180, 0.20) !important;
+}
+
+/* Badge "ANNULÉE" — fond solide lisible sur glass */
+.coord-gradient .seance-annulee span[style*="fef2f2"],
+.coord-gradient .seance-annulee span[style*="fca5a5"] {
+  background: rgba(220, 38, 38, 0.18) !important;
+  border-color: rgba(220, 38, 38, 0.45) !important;
+  color: #ef4444 !important;
+}
+
+/* Boîtes "À venir" et "Bilan" — fonds plus opaques pour lisibilité */
+.coord-gradient [style*="rgba(217,119,6,0.1)"] {
+  background: rgba(217, 119, 6, 0.18) !important;
+  border-left: 3px solid rgba(217, 119, 6, 0.6);
+}
+.coord-gradient [style*="rgba(16,185,129,0.1)"] {
+  background: rgba(16, 185, 129, 0.16) !important;
+  border-left: 3px solid rgba(16, 185, 129, 0.55);
+}
+
+/* ── Autres cartes harmonisées ──────────────────────────────────────────── */
+
+/* Métadonnées (date, lieu, cycle, pôles) */
+.coord-gradient .coord-meta-box {
+  background: rgba(220, 232, 255, 0.97) !important;
+  border-color: rgba(140, 178, 255, 0.48) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.50);
+}
+.dark-theme .coord-gradient .coord-meta-box {
+  background: rgba(12, 22, 60, 0.97) !important;
+  border-color: rgba(80, 120, 210, 0.28) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* Description */
+.coord-gradient .coord-desc-box {
+  background: rgba(215, 228, 255, 0.97) !important;
+  border-left: 3px solid rgba(80, 130, 230, 0.65) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
+}
+.dark-theme .coord-gradient .coord-desc-box {
+  background: rgba(10, 20, 55, 0.97) !important;
+  border-left-color: rgba(80, 130, 220, 0.55) !important;
+}
+
+/* Boîte fichiers */
+.coord-gradient .coord-files-box {
+  background: rgba(225, 235, 255, 0.97) !important;
+  border-color: rgba(140, 178, 255, 0.48) !important;
+  box-shadow: 0 4px 16px rgba(20, 50, 140, 0.10), inset 0 1px 0 rgba(255,255,255,.55);
+}
+.dark-theme .coord-gradient .coord-files-box {
+  background: rgba(8, 16, 50, 0.97) !important;
+  border-color: rgba(80, 120, 210, 0.28) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* Pills membres équipe — lisibilité sur fond glass */
+.coord-gradient .event-detail [style*="rgba(22,163,74,0.12)"] {
+  background: rgba(22, 163, 74, 0.20) !important;
+  border-color: rgba(22, 163, 74, 0.40) !important;
+}
+.coord-gradient .event-detail [style*="rgba(26,86,219,0.12)"] {
+  background: rgba(26, 86, 219, 0.20) !important;
+  border-color: rgba(26, 86, 219, 0.38) !important;
+}
+
+/* Fiches présence (présent / absent / en attente) */
+.coord-gradient [style*="rgba(22,163,74,0.06)"] {
+  background: rgba(22, 163, 74, 0.14) !important;
+  border-color: rgba(22, 163, 74, 0.30) !important;
+}
+.coord-gradient [style*="rgba(220,38,38,0.05)"] {
+  background: rgba(220, 38, 38, 0.12) !important;
+  border-color: rgba(220, 38, 38, 0.28) !important;
+}
+
+/* Carte action liée — compacte, harmonisée glass */
+.coord-gradient .coord-linked-action {
+  background: rgba(15, 45, 94, 0.92);
+  border: 1px solid rgba(80, 140, 255, 0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 14px rgba(15, 45, 94, 0.25), inset 0 1px 0 rgba(255,255,255,.10);
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.coord-gradient .coord-linked-action:hover {
+  background: rgba(26, 70, 140, 0.88);
+  box-shadow: 0 6px 20px rgba(15, 45, 94, 0.35), inset 0 1px 0 rgba(255,255,255,.12);
+}
+.dark-theme .coord-gradient .coord-linked-action {
+  background: rgba(5, 12, 35, 0.88);
+  border-color: rgba(70, 120, 220, 0.28);
+}
+
+/* ── Performance scroll : pause animation gradient ──────────────────────── */
+.coord-gradient.scrolling .gradient-layer { animation-play-state: paused; }
+
+/* ── Barre de sous-onglets Coordination (sticky sous la topbar) ─────────── */
+.coord-tab-bar {
+  position: sticky;
+  top: 62px;
+  z-index: 49;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 44px;
+  height: 42px;
+  flex-shrink: 0;
+  background: rgba(205, 225, 255, 0.68);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(160, 200, 255, 0.40);
+}
+.dark-theme .coord-gradient .coord-tab-bar {
+  background: rgba(4, 10, 30, 0.82);
+  border-bottom-color: rgba(80, 120, 220, 0.18);
+}
+
+.coord-tab-bar__tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.coord-tab-bar__sep {
+  width: 1px;
+  height: 18px;
+  background: rgba(100, 140, 230, 0.30);
+  margin: 0 6px;
+  flex-shrink: 0;
+}
+
+.coord-tab-bar__cycles {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.coord-tab-bar__sort {
+  margin-left: auto;
+}
+.coord-tab-bar__sort select {
+  font-size: 11px;
+  font-family: var(--font-body);
+  padding: 3px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(100, 150, 255, 0.35);
+  background: rgba(220, 232, 255, 0.70);
+  color: var(--text-dim, #1e3a7a);
+  outline: none;
+  cursor: pointer;
+}
+.dark-theme .coord-gradient .coord-tab-bar__sort select {
+  background: rgba(12, 22, 58, 0.80);
+  border-color: rgba(70, 110, 200, 0.30);
+  color: #a0b8e8;
+}
+
+/* ── Header Espace Coordination ─────────────────────────────────────────── */
+/*    Identité "transversale/système" : pas de couleur de pôle/projet,
+      fond sombre indigo avec texture diagonale, badge Shield distinctif   */
+.coord-space-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 44px;
+  background:
+    repeating-linear-gradient(
+      -55deg,
+      rgba(255,255,255,0.025) 0px,
+      rgba(255,255,255,0.025) 1px,
+      transparent 1px,
+      transparent 18px
+    ),
+    linear-gradient(135deg, rgba(15, 35, 90, 0.96) 0%, rgba(30, 20, 80, 0.94) 60%, rgba(10, 50, 100, 0.92) 100%);
+  border-bottom: 1px solid rgba(100, 140, 255, 0.22);
+  position: relative;
+  overflow: hidden;
+}
+/* Lueur d'accentuation en haut à droite */
+.coord-space-header::after {
+  content: '';
+  position: absolute;
+  top: -30px; right: 60px;
+  width: 180px; height: 80px;
+  background: radial-gradient(ellipse, rgba(99, 102, 241, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+.dark-theme .coord-gradient .coord-space-header {
+  background:
+    repeating-linear-gradient(
+      -55deg,
+      rgba(255,255,255,0.018) 0px,
+      rgba(255,255,255,0.018) 1px,
+      transparent 1px,
+      transparent 18px
+    ),
+    linear-gradient(135deg, rgba(4, 10, 30, 0.98) 0%, rgba(12, 8, 40, 0.96) 60%, rgba(4, 18, 42, 0.95) 100%);
+  border-bottom-color: rgba(70, 100, 220, 0.18);
+}
+
+.coord-space-header__icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.18);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+.coord-space-header__eyebrow {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(160, 185, 255, 0.70);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+.coord-space-header__title {
+  font-size: 15px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.coord-space-header__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(99, 102, 241, 0.22);
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  color: rgba(199, 210, 255, 0.90);
+  flex-shrink: 0;
+}
+
+.coord-space-header__stats {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(200, 215, 255, 0.65);
+}
+.coord-space-header__stats span { display: flex; align-items: baseline; gap: 3px; }
+.coord-space-header__stats em { font-style: normal; font-size: 10px; font-weight: 400; color: rgba(160, 185, 255, 0.45); }
+.coord-space-header__stats-sep {
+  width: 1px; height: 12px;
+  background: rgba(130, 160, 255, 0.20);
+  display: inline-block;
+}
+
+/* ctx-tab dans contexte Coordination */
+.coord-gradient .ctx-tab {
+  color: #2a4888 !important;
+}
+.coord-gradient .ctx-tab:hover {
+  color: #0c1a3a !important;
+}
+.coord-gradient .ctx-tab.active {
+  color: #1a3a80 !important;
+  border-bottom-color: #1a3a80 !important;
+}
+.dark-theme .coord-gradient .ctx-tab {
+  color: #6888c0 !important;
+}
+.dark-theme .coord-gradient .ctx-tab:hover {
+  color: #9db8e8 !important;
+}
+.dark-theme .coord-gradient .ctx-tab.active {
+  color: #a8c8f0 !important;
+  border-bottom-color: #a8c8f0 !important;
+}
+
+/* Badge compteur sur onglets */
+.ctx-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(80, 120, 220, 0.18);
+  color: inherit;
+  margin-left: 4px;
+  line-height: 1;
+}
+.coord-gradient .ctx-tab.active .ctx-tab-count {
+  background: rgba(26, 58, 128, 0.22);
+}
+.dark-theme .coord-gradient .ctx-tab.active .ctx-tab-count {
+  background: rgba(168, 200, 240, 0.18);
 }
 
 /* ── Topbar sticky ───────────────────────────────────────────────────────── */

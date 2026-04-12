@@ -12,6 +12,7 @@ Mise à jour : 2026-04-11
 | `docs/CLAUDE-data.md` | Tous les modèles Prisma, formats, statuts, conventions |
 | `docs/CLAUDE-pages.md` | Fonctionnalités détaillées par page |
 | `docs/CLAUDE-systemes.md` | GeoSearch, heures bénévoles, automatisation, routes API, helpers |
+| `docs/CLAUDE-espace-theme.md` | Système de thématisation visuelle par pôle/projet — template CSS + checklist |
 
 ---
 

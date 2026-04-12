@@ -1,9 +1,9 @@
 // src/pages/Coordination.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Badge from '../components/ui/Badge';
 import { POLE_COLORS, PROJET_COLORS, STATUT_STYLE } from '../data/constants';
 import { formatDateShort, formatDateLong, isPastDate } from '../utils/utils';
-import { Archive, Pencil, Trash2, Calendar, MapPin, RefreshCw, Users, Lightbulb, Lock, Clock, Timer, ClipboardList, FileText, Link2, Zap, RotateCcw, Paperclip, Upload, Download, X, BookMarked, Plus, Settings, Shield, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Archive, Pencil, Trash2, Calendar, MapPin, RefreshCw, Users, Lightbulb, Lock, Clock, Timer, ClipboardList, FileText, Link2, Zap, RotateCcw, Paperclip, Upload, Download, X, BookMarked, Plus, Settings, Shield, CheckCircle2, XCircle, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
@@ -12,7 +12,7 @@ import api from '../api/apiClient';
 const Coordination = () => {
   const { currentUser } = useAuth();
   const {
-    handleNav, activeEventId, setActiveEventId, highlightedEventId, setHighlightedEventId, setHighlightedActionId,
+    handleNav, activeEventId, setActiveEventId, setHighlightedEventId, setHighlightedActionId,
     setEventModal,
   } = useAppContext();
   const navigate = handleNav;
@@ -56,41 +56,46 @@ const Coordination = () => {
     setShowNewDossier(false);
   }, [activeEventId]);
 
-  // Filtrage et Tri
-  let finalEvents = eventsTab === "corbeille" ? [] : evenements.filter((e) => e.isArchived === (eventsTab === "archives"));
-  if (eventsCycle !== "Toutes") {
-    finalEvents = finalEvents.filter((e) => e.cycle === eventsCycle);
-  }
-  
-  finalEvents.sort((a, b) => {
-    if (eventsSort === "date_asc") return (a.date || "").localeCompare(b.date || "");
-    if (eventsSort === "date_desc") return (b.date || "").localeCompare(a.date || "");
-    if (eventsSort === "nom_asc") return a.titre.localeCompare(b.titre);
-    if (eventsSort === "nom_desc") return b.titre.localeCompare(a.titre);
-    return 0;
-  });
+  // Filtrage et Tri — memoïsé pour éviter les recalculs à chaque render
+  const finalEvents = useMemo(() => {
+    if (eventsTab === "corbeille") return [];
+    let list = evenements.filter((e) => e.isArchived === (eventsTab === "archives"));
+    if (eventsCycle !== "Toutes") list = list.filter((e) => e.cycle === eventsCycle);
+    return [...list].sort((a, b) => {
+      if (eventsSort === "date_asc") return (a.date || "").localeCompare(b.date || "");
+      if (eventsSort === "date_desc") return (b.date || "").localeCompare(a.date || "");
+      if (eventsSort === "nom_asc") return a.titre.localeCompare(b.titre);
+      if (eventsSort === "nom_desc") return b.titre.localeCompare(a.titre);
+      return 0;
+    });
+  }, [evenements, eventsTab, eventsCycle, eventsSort]);
 
-  const activeEvent = finalEvents.find((e) => e.id === activeEventId) || finalEvents[0];
-  const linkedAction = activeEvent ? actions.find((a) => a.id === activeEvent.actionId) : null;
+  const activeEvent = useMemo(
+    () => finalEvents.find((e) => e.id === activeEventId) || finalEvents[0],
+    [finalEvents, activeEventId]
+  );
+
+  const linkedAction = useMemo(
+    () => activeEvent ? actions.find((a) => a.id === activeEvent.actionId) : null,
+    [activeEvent, actions]
+  );
+
   const isActionResponsable  = !!(linkedAction && (linkedAction.responsables || []).includes(currentUser?.nom));
   const isEventResponsable   = !!(activeEvent && (activeEvent.responsables  || []).includes(currentUser?.nom));
-  // Peut modifier / archiver / supprimer : Admin, Bureau, responsable d'espace, responsable action liée, ou responsable de l'évènement
   const canManageEvent = isAdmin || isResponsable || isActionResponsable || isEventResponsable;
   const canEditEvent   = canManageEvent && !activeEvent?.isArchived;
-  // Peut gérer la bibliothèque : admin, responsable de pôle/projet, ou responsable de l'action liée
   const canManageBibliotheque = isResponsable || isActionResponsable;
 
-  // Calcul de la prochaine séance
-  const getNextSeanceId = (seances) => {
-    if (!seances || seances.length === 0) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const futureSeances = seances
+  // Calcul de la prochaine séance — memoïsé
+  const nextSeanceId = useMemo(() => {
+    const seances = activeEvent?.seances;
+    if (!seances?.length) return null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const future = seances
       .filter((s) => !s.annulee && new Date(s.date + "T00:00:00") >= today)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-    return futureSeances.length > 0 ? futureSeances[0].id : null;
-  };
-  const nextSeanceId = activeEvent ? getNextSeanceId(activeEvent.seances) : null;
+    return future.length > 0 ? future[0].id : null;
+  }, [activeEvent?.seances]);
 
   const fmtSize = (bytes) => {
     if (bytes < 1024) return `${bytes} o`;
@@ -193,52 +198,74 @@ const Coordination = () => {
 
   return (
     <>
-      <div className="eyebrow">Actions transversales</div>
-      <div style={{ marginBottom: 22 }}>
-        <div className="ptitle" style={{ marginBottom: 0 }}>Coordination</div>
+      {/* ── HEADER ESPACE COORDINATION ───────────────────────────────────── */}
+      <div className="coord-space-header">
+        {/* Icône système — grille de nœuds reliés */}
+        <div className="coord-space-header__icon">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="5"  r="2.8" fill="rgba(255,255,255,0.9)"/>
+            <circle cx="5"  cy="21" r="2.8" fill="rgba(255,255,255,0.9)"/>
+            <circle cx="23" cy="21" r="2.8" fill="rgba(255,255,255,0.9)"/>
+            <circle cx="14" cy="14" r="2"   fill="rgba(255,255,255,0.55)"/>
+            <line x1="14" y1="7.8"  x2="14"  y2="12"  stroke="rgba(255,255,255,0.55)" strokeWidth="1.4"/>
+            <line x1="12.2" y1="15.2" x2="6.8"  y2="18.5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.4"/>
+            <line x1="15.8" y1="15.2" x2="21.2" y2="18.5" stroke="rgba(255,255,255,0.55)" strokeWidth="1.4"/>
+            <line x1="7.8"  y1="21"   x2="20.2" y2="21"   stroke="rgba(255,255,255,0.30)" strokeWidth="1.2" strokeDasharray="2.5 2"/>
+          </svg>
+        </div>
+
+        {/* Texte */}
+        <div style={{ minWidth: 0 }}>
+          <div className="coord-space-header__eyebrow">Espace transversal</div>
+          <div className="coord-space-header__title">Coordination</div>
+        </div>
+
+        {/* Tag distinctif */}
+        <div className="coord-space-header__tag">
+          <Shield size={10} strokeWidth={2} />
+          Pilotage &amp; Suivi
+        </div>
+
+        {/* Stats rapides */}
+        <div className="coord-space-header__stats">
+          <span>{evenements.filter(e => !e.isArchived).length} <em>actifs</em></span>
+          <span className="coord-space-header__stats-sep" />
+          <span>{cycles.length} <em>{cycles.length > 1 ? "cycles" : "cycle"}</em></span>
+        </div>
       </div>
 
-      {/* BARRE D'OUTILS */}
-      <div className="toolbar-wrap" style={{ marginBottom: 16 }}>
-        <div className="toolbar-group" style={{ borderRight: "1px solid var(--border-light)", paddingRight: "12px" }}>
-          <button className={`chip ${eventsTab === "actifs" ? "on" : ""}`} style={{ border: "none" }} onClick={() => { setEventsTab("actifs"); setActiveEventId(null); }}>
-            En cours ({evenements.filter((e) => !e.isArchived && (eventsCycle === "Toutes" || e.cycle === eventsCycle)).length})
+      {/* ── BARRE CONTEXTUELLE STICKY (sous le header) ───────────────────── */}
+      <div className="coord-tab-bar">
+        <div className="coord-tab-bar__tabs">
+          <button className={`ctx-tab ${eventsTab === "actifs" ? "active" : ""}`} onClick={() => { setEventsTab("actifs"); setActiveEventId(null); }}>
+            En cours <span className="ctx-tab-count">{evenements.filter((e) => !e.isArchived && (eventsCycle === "Toutes" || e.cycle === eventsCycle)).length}</span>
           </button>
-          <button className={`chip ${eventsTab === "archives" ? "on" : ""}`} style={{ border: "none" }} onClick={() => { setEventsTab("archives"); setActiveEventId(null); }}>
-            <span style={{display:"inline-flex",alignItems:"center",gap:5}}><Archive size={12} strokeWidth={1.8}/> Archives ({evenements.filter((e) => e.isArchived && (eventsCycle === "Toutes" || e.cycle === eventsCycle)).length})</span>
+          <button className={`ctx-tab ${eventsTab === "archives" ? "active" : ""}`} onClick={() => { setEventsTab("archives"); setActiveEventId(null); }}>
+            <Archive size={11} strokeWidth={1.8}/> Archives <span className="ctx-tab-count">{evenements.filter((e) => e.isArchived && (eventsCycle === "Toutes" || e.cycle === eventsCycle)).length}</span>
           </button>
-          <button className={`chip ${eventsTab === "corbeille" ? "on" : ""}`} style={{ border: "none" }} onClick={() => { setEventsTab("corbeille"); setActiveEventId(null); }}>
-            <span style={{display:"inline-flex",alignItems:"center",gap:5}}>
-              <Trash2 size={12} strokeWidth={1.8}/>
-              Corbeille ({isResponsable
-                ? trash.filter(t => t.type === "event").length
-                : trash.filter(t => t.type === "event" && t.deletedBy === currentUser?.nom).length})
-            </span>
+          <button className={`ctx-tab ${eventsTab === "corbeille" ? "active" : ""}`} onClick={() => { setEventsTab("corbeille"); setActiveEventId(null); }}>
+            <Trash2 size={11} strokeWidth={1.8}/> Corbeille <span className="ctx-tab-count">{isResponsable ? trash.filter(t => t.type === "event").length : trash.filter(t => t.type === "event" && t.deletedBy === currentUser?.nom).length}</span>
           </button>
         </div>
-
-        <div className="toolbar-group cycles-group" style={{ paddingLeft: "12px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0 }}>Cycle&nbsp;:</span>
+        <div className="coord-tab-bar__sep" />
+        <div className="coord-tab-bar__cycles">
           {cycles.map((y) => (
-            <div key={y} className={`year-tab ${eventsCycle === y ? "active" : ""}`} onClick={() => { setEventsCycle(y); setActiveEventId(null); }}>
-              {y}
-            </div>
+            <button key={y} className={`ctx-tab ${eventsCycle === y ? "active" : ""}`} onClick={() => { setEventsCycle(y); setActiveEventId(null); }}>{y}</button>
           ))}
-          <div className={`year-tab ${eventsCycle === "Toutes" ? "active" : ""}`} onClick={() => { setEventsCycle("Toutes"); setActiveEventId(null); }}>
-            Tous
-          </div>
+          <button className={`ctx-tab ${eventsCycle === "Toutes" ? "active" : ""}`} onClick={() => { setEventsCycle("Toutes"); setActiveEventId(null); }}>Tous</button>
         </div>
-
-        <div className="toolbar-group" style={{ marginLeft: "auto", borderLeft: "1px solid var(--border-light)", paddingLeft: "12px" }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0 }}>Trier par&nbsp;:</span>
-          <select className="form-select" style={{ width: "auto", border: "none", background: "transparent", paddingLeft: 4 }} value={eventsSort} onChange={(e) => setEventsSort(e.target.value)}>
-            <option value="date_desc">Date (Récents)</option>
-            <option value="date_asc">Date (Anciens)</option>
-            <option value="nom_asc">Nom (A-Z)</option>
-            <option value="nom_desc">Nom (Z-A)</option>
+        <div className="coord-tab-bar__sort">
+          <select className="form-select" style={{ fontSize: 11, padding: "3px 6px", border: "none", background: "transparent", color: "var(--text-dim)", cursor: "pointer" }} value={eventsSort} onChange={(e) => setEventsSort(e.target.value)}>
+            <option value="date_desc">↓ Date</option>
+            <option value="date_asc">↑ Date</option>
+            <option value="nom_asc">A → Z</option>
+            <option value="nom_desc">Z → A</option>
           </select>
         </div>
       </div>
+
+      {/* ── CONTENU (padded) ──────────────────────────────────────────────── */}
+      <div className="coord-page-content">
 
       {/* CORBEILLE */}
       {eventsTab === "corbeille" && (() => {
@@ -324,13 +351,7 @@ const Coordination = () => {
 
         {/* COLONNE DROITE: DETAILS */}
         {activeEvent ? (
-          <div className="event-detail" style={{
-            background: highlightedEventId === activeEvent.id ? "rgba(26,86,219,0.045)" : "var(--bg-surface)",
-            animation: highlightedEventId === activeEvent.id ? "eventHighlight 1.6s ease-in-out infinite" : "none",
-            boxShadow: highlightedEventId === activeEvent.id ? undefined : "none",
-            borderTop: highlightedEventId === activeEvent.id ? "2px solid rgba(26,86,219,0.5)" : "2px solid transparent",
-            transition: "background 0.5s ease, box-shadow 0.6s ease, border-top 0.4s ease",
-          }}>
+          <div className="event-detail">
             {/* ── Titre + statut + boutons inline ── */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -376,7 +397,7 @@ const Coordination = () => {
             </div>
 
             {/* ── Métadonnées ── */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", marginBottom: 14, padding: "8px 12px", background: "var(--bg-hover)", borderRadius: 8, border: "1px solid var(--border-light)" }}>
+            <div className="coord-meta-box" style={{ display: "flex", flexWrap: "wrap", gap: "6px 18px", marginBottom: 14, padding: "8px 12px", background: "var(--bg-hover)", borderRadius: 8, border: "1px solid var(--border-light)" }}>
               {activeEvent.date && <span style={{ fontSize: 12, color: "var(--text-dim)", display:"flex", alignItems:"center", gap:4 }}><Calendar size={11} strokeWidth={1.8}/> {formatDateShort(activeEvent.date)}</span>}
               {activeEvent.lieu && <span style={{ fontSize: 12, color: "var(--text-dim)", display:"flex", alignItems:"center", gap:4 }}><MapPin size={11} strokeWidth={1.8}/> {activeEvent.lieu}</span>}
               {activeEvent.cycle && <span style={{ fontSize: 12, color: "var(--text-dim)", display:"flex", alignItems:"center", gap:4 }}><RefreshCw size={11} strokeWidth={1.8}/> {activeEvent.cycle}</span>}
@@ -391,7 +412,7 @@ const Coordination = () => {
 
             {/* ── Description ── */}
             {activeEvent.description && (
-              <div style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.6, marginBottom: 14, padding: "10px 14px", background: "var(--bg-alt)", borderRadius: 8, whiteSpace: "pre-wrap", wordBreak: "break-word", borderLeft: "3px solid var(--border-light)" }}>
+              <div className="coord-desc-box" style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.6, marginBottom: 14, padding: "10px 14px", background: "var(--bg-alt)", borderRadius: 8, whiteSpace: "pre-wrap", wordBreak: "break-word", borderLeft: "3px solid var(--border-light)" }}>
                 {activeEvent.description}
               </div>
             )}
@@ -536,7 +557,7 @@ const Coordination = () => {
               </div>
 
               {/* ── Colonne droite : Fichiers ── */}
-              <div style={{ width: 420, flexShrink: 0, display: "flex", flexDirection: "column", background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 10, padding: "10px 10px 8px", position: "relative" }}>
+              <div className="coord-files-box" style={{ width: 420, flexShrink: 0, display: "flex", flexDirection: "column", background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 10, padding: "10px 10px 8px", position: "relative" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
                     <Paperclip size={11} strokeWidth={1.8}/> Fichiers
@@ -736,18 +757,25 @@ const Coordination = () => {
 
             {/* ── RACCOURCI SUIVI TERRAIN ──────────────────────────────────────────── */}
             {linkedAction && (
-              <div onClick={() => { navigate("actions"); setHighlightedActionId(linkedAction.id); setTimeout(() => setHighlightedActionId(null), 3000); }} style={{ marginTop: 20, background: "linear-gradient(135deg, #0f2d5e, #1a56db)", borderRadius: 12, padding: "18px 22px", cursor: "pointer" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 6, display:"flex", alignItems:"center", gap:4 }}><Link2 size={9} strokeWidth={1.8}/> Lié au suivi terrain</div>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 800, color: "#fff" }}>{linkedAction.etablissement}</div>
-                {(linkedAction.adresse || linkedAction.ville) && (
-                  <div style={{ marginTop: 6, display: "flex", alignItems: "flex-start", gap: 5 }}>
-                    <span style={{ fontSize: 9, flexShrink: 0, marginTop: 1 }}>📍</span>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.85)", lineHeight: 1.4 }}>
-                      {linkedAction.adresse && <div style={{ fontWeight: 600 }}>{linkedAction.adresse}</div>}
-                      {linkedAction.ville && <div style={{ opacity: 0.75 }}>{linkedAction.ville}{linkedAction.departement ? ` (${linkedAction.departement})` : ''}</div>}
-                    </div>
+              <div
+                onClick={() => { navigate("actions"); setHighlightedActionId(linkedAction.id); setTimeout(() => setHighlightedActionId(null), 3000); }}
+                className="coord-linked-action"
+                style={{ marginTop: 16, cursor: "pointer" }}
+              >
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  <Link2 size={9} strokeWidth={2}/> Suivi terrain
+                </span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                    <span style={{ fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{linkedAction.etablissement}</span>
+                    {(linkedAction.ville) && (
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.60)", display:"flex", alignItems:"center", gap:3, flexShrink: 0 }}>
+                        <MapPin size={10} strokeWidth={1.8}/>{linkedAction.ville}{linkedAction.departement ? ` (${linkedAction.departement})` : ''}
+                      </span>
+                    )}
                   </div>
-                )}
+                  <ChevronRight size={14} strokeWidth={2} style={{ color: "rgba(255,255,255,0.55)", flexShrink: 0 }}/>
+                </div>
               </div>
             )}
 
@@ -782,14 +810,16 @@ const Coordination = () => {
                     const isInTeam = (activeEvent.equipe || []).includes(currentUser.nom);
 
                     return (
-                      <div key={s.id} style={{
-                        background: s.annulee ? "rgba(231,68,68,0.04)" : isNext && !isLocked ? "rgba(26,86,219,0.05)" : "var(--bg-hover)",
-                        padding: "12px 14px", borderRadius: 8,
-                        border: s.annulee ? "1px solid #fca5a5" : isNext && !isLocked ? "2px solid #1a56db" : "1px solid var(--border-light)",
-                        opacity: isPast && !s.annulee ? 0.75 : s.annulee ? 0.85 : 1,
-                        position: "relative",
-                        overflow: "hidden",
-                      }}>
+                      <div key={s.id}
+                        className={`seance-card${s.annulee ? " seance-annulee" : isNext && !isLocked ? " seance-prochaine" : isPast ? " seance-passee" : ""}`}
+                        style={{
+                          background: s.annulee ? "rgba(231,68,68,0.04)" : isNext && !isLocked ? "rgba(26,86,219,0.05)" : "var(--bg-hover)",
+                          padding: "12px 14px", borderRadius: 8,
+                          border: s.annulee ? "1px solid #fca5a5" : isNext && !isLocked ? "2px solid #1a56db" : "1px solid var(--border-light)",
+                          opacity: isPast && !s.annulee ? 0.75 : s.annulee ? 0.85 : 1,
+                          position: "relative",
+                          overflow: "hidden",
+                        }}>
                         <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
                           <div style={{ flex: 1 }}>
                             {s.annulee && <span style={{ fontSize: 10, background: "#fef2f2", color: "#dc2626", padding: "2px 6px", borderRadius: 4, fontWeight: 700, marginRight: 8, border: "1px solid #fca5a5" }}>✕ ANNULÉE</span>}
@@ -1005,6 +1035,8 @@ const Coordination = () => {
           </div>
         )}
       </div>}
+
+      </div> {/* end padded content */}
     </>
   );
 };

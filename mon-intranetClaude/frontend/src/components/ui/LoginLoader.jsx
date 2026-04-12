@@ -73,14 +73,12 @@ export default function LoginLoader({ onDone, fromLogin = false }) {
           src="/logoCDC.png"
           alt="Cité des Chances"
           className="ll-logo"
-          style={{
-            width: 80, height: 80,
-            ...(fromLogin ? {
-              // Vient du login : logo déjà visible à la même taille, juste la flottaison
-              opacity: 1,
-              animation: 'll-float-logo 4s ease-in-out infinite',
-            } : {}),
-          }}
+          style={fromLogin ? {
+            // Logo déjà visible (vient de l'écran de connexion) — pas de reveal, juste la flottaison
+            opacity: 1,
+            animation: 'll-float-logo 4s ease-in-out infinite',
+            transform: 'scale(1)',
+          } : undefined}
           onError={e => { e.currentTarget.style.display = 'none'; }}
         />
         <div className="ll-text">Chargement</div>

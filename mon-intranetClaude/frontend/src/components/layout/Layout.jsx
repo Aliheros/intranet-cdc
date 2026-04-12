@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AvatarInner, isAvatarUrl } from '../ui/AvatarDisplay';
 import { POLE_COLORS, PROJET_COLORS } from '../../data/constants';
+import { SPACE_LOGO } from '../../data/spaceLogos';
 import { LogOut, Moon, Sun, Settings, Search, X, Bell, ClipboardList, MessageCircle, LayoutDashboard, Zap, Users, Receipt, Crown, Shield, Calendar, User, Target, Menu, ExternalLink, HelpCircle, FileSignature, BarChart2, ChevronRight } from 'lucide-react';
 import { useDataContext } from '../../contexts/DataContext';
 import { useAppContext } from '../../contexts/AppContext';
@@ -9,6 +10,7 @@ import { useAppContext } from '../../contexts/AppContext';
 const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, darkMode, setDarkMode, currentUser, isAdmin = false, isBureau = false, accessiblePoles = [], accessibleProjets = [], myTeamSpaces = [], onOpenProfile, onOpenMyProfile, onRemoveAvatar, onLogout, globalQuery = "", setGlobalQuery, upcomingNotifications = [], notifBadgeCount = 0, onOpenNotifPanel, bannerHeight = 0, directory = [], actions = [], evenements = [], missions = [], onSelectMember, onSelectAction, onSelectEvent, onSelectMission }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const [avatarHovered, setAvatarHovered] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -215,40 +217,43 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
         )}
 
         {/* ── SIDEBAR ────────────────────────────────────────────────────────── */}
-        <aside className={`sidebar ${sidebarOpen ? "mobile-open" : ""}${freshLogin ? " login-transition" : ""}`} data-tour="sidebar">
-          <div className="s-top" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 20px 16px" }}>
+        <aside className={`sidebar ${sidebarOpen ? "mobile-open" : ""}${sidebarCollapsed ? " sidebar-collapsed" : ""}${freshLogin ? " login-transition" : ""}`} data-tour="sidebar">
+
+          <div className="s-top" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: sidebarCollapsed ? "20px 0 16px" : "20px 20px 16px" }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
               <img
                 src="/logoCDC.png"
                 alt="Cité Des Chances"
-                style={{ width: 80, height: "auto", display: "block", imageRendering: "auto" }}
+                style={{ width: sidebarCollapsed ? 36 : 80, height: "auto", display: "block", imageRendering: "auto", transition: "width 0.3s" }}
               />
-              <div style={{ textAlign: "center", lineHeight: 1.35 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "var(--font-display)" }}>
-                  Cité des Chances
+              {!sidebarCollapsed && (
+                <div style={{ textAlign: "center", lineHeight: 1.35 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "var(--font-display)" }}>
+                    Cité des Chances
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 3 }}>
+                    Intranet · Espace membres
+                  </div>
+                  <a
+                    href="https://www.citedeschances.org/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5,
+                      padding: "4px 10px", borderRadius: 6,
+                      background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)",
+                      color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700,
+                      letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none",
+                      transition: "all 0.15s",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.16)"; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
+                  >
+                    <ExternalLink size={10} strokeWidth={2} />
+                    Extranet
+                  </a>
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.4)", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 3 }}>
-                  Intranet · Espace membres
-                </div>
-                <a
-                  href="https://www.citedeschances.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5,
-                    padding: "4px 10px", borderRadius: 6,
-                    background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)",
-                    color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700,
-                    letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none",
-                    transition: "all 0.15s",
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.16)"; e.currentTarget.style.color = "#fff"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}
-                >
-                  <ExternalLink size={10} strokeWidth={2} />
-                  Extranet
-                </a>
-              </div>
+              )}
             </div>
             {/* Bouton fermer (mobile uniquement) */}
             <button
@@ -264,27 +269,31 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
             {navGroups.map((group, gi) => (
               <div key={group.id}>
                 {group.label ? (
-                  <div className="ns" style={{ marginTop: gi > 0 ? 14 : 4, cursor: "default", pointerEvents: "none", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    {group.label}
-                    {group.id === "main" && notifBadgeCount > 0 && (
+                  <div className="ns" style={{ marginTop: gi > 0 ? 14 : 4, cursor: "default", pointerEvents: "none", display: "flex", justifyContent: sidebarCollapsed ? "center" : "space-between", alignItems: "center", padding: sidebarCollapsed ? "8px 0 4px" : undefined }}>
+                    {!sidebarCollapsed && group.label}
+                    {!sidebarCollapsed && group.id === "main" && notifBadgeCount > 0 && (
                       <span style={{ background: "#e63946", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
                       </span>
                     )}
+                    {sidebarCollapsed && <span style={{ display: "block", width: 20, height: 1, background: "rgba(255,255,255,0.12)", borderRadius: 1 }} />}
                   </div>
                 ) : (
                   <div style={{ paddingTop: 8 }} />
                 )}
                 {group.items.map((item) => (
-                  <a key={item.id} href={navHref(item.id)} className={`ni ${page === item.id ? "active" : ""}`} onClick={e => navClick(e, item.id)} style={{ textDecoration: 'none' }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", marginRight: 8, opacity: page === item.id ? 1 : 0.6 }}>
+                  <a key={item.id} href={navHref(item.id)} className={`ni ${page === item.id ? "active" : ""}${sidebarCollapsed ? " ni-collapsed" : ""}`} onClick={e => navClick(e, item.id)} style={{ textDecoration: 'none', justifyContent: sidebarCollapsed ? "center" : undefined, padding: sidebarCollapsed ? "9px 0" : undefined }} title={sidebarCollapsed ? item.label : undefined}>
+                    <span style={{ display: "inline-flex", alignItems: "center", marginRight: sidebarCollapsed ? 0 : 8, opacity: page === item.id ? 1 : 0.6 }}>
                       <item.IconComp size={15} strokeWidth={1.8} />
                     </span>
-                    {item.label}
-                    {item.id === "dashboard" && notifBadgeCount > 0 && (
+                    {!sidebarCollapsed && item.label}
+                    {!sidebarCollapsed && item.id === "dashboard" && notifBadgeCount > 0 && (
                       <span style={{ marginLeft: "auto", background: "#e63946", color: "#fff", fontSize: 9, fontWeight: 700, borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         {notifBadgeCount > 9 ? "9+" : notifBadgeCount}
                       </span>
+                    )}
+                    {sidebarCollapsed && item.id === "dashboard" && notifBadgeCount > 0 && (
+                      <span style={{ position: "absolute", top: 4, right: 4, width: 8, height: 8, borderRadius: "50%", background: "#e63946" }} />
                     )}
                   </a>
                 ))}
@@ -293,19 +302,28 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
 
             {mySpaceEntries.length > 0 && (
               <>
-                <div className="ns" style={{ marginTop: 14 }}>Mon espace</div>
+                {!sidebarCollapsed && <div className="ns" style={{ marginTop: 14 }}>Mon espace</div>}
+                {sidebarCollapsed && <div className="ns" style={{ marginTop: 14, padding: "8px 0 4px", justifyContent: "center" }}><span style={{ display: "block", width: 20, height: 1, background: "rgba(255,255,255,0.12)", borderRadius: 1 }} /></div>}
                 {mySpaceEntries.map(({ space, role, type }) => {
                   const color = POLE_COLORS[space] || PROJET_COLORS[space] || '#94a3b8';
                   const pageType = type === 'pole' ? "pole" : "projet";
                   const isActive = page === pageType && subPage === space;
                   return (
-                    <a key={space} href={navHref(pageType, space)} className={`ni ${isActive ? "active" : ""}`} onClick={e => navClick(e, pageType, space)} style={{ textDecoration: 'none' }}>
-                      <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: color, marginRight: 8, flexShrink: 0 }} />
-                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{space}</span>
-                      {role && (
-                        <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.55)", flexShrink: 0, marginLeft: 4 }}>
-                          {ROLE_LABEL_SHORT[role] || role}
+                    <a key={space} href={navHref(pageType, space)} className={`ni ${isActive ? "active" : ""}${sidebarCollapsed ? " ni-collapsed" : ""}`} onClick={e => navClick(e, pageType, space)} style={{ textDecoration: 'none', justifyContent: sidebarCollapsed ? "center" : undefined, padding: sidebarCollapsed ? "7px 0" : undefined }} title={sidebarCollapsed ? space : undefined}>
+                      {sidebarCollapsed ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: 8, background: color, flexShrink: 0 }}>
+                          {SPACE_LOGO[space] || <span style={{ color: "#fff", fontSize: 11, fontWeight: 800 }}>{space.charAt(0).toUpperCase()}</span>}
                         </span>
+                      ) : (
+                        <>
+                          <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: color, marginRight: 8, flexShrink: 0 }} />
+                          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{space}</span>
+                          {role && (
+                            <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.55)", flexShrink: 0, marginLeft: 4 }}>
+                              {ROLE_LABEL_SHORT[role] || role}
+                            </span>
+                          )}
+                        </>
                       )}
                     </a>
                   );
@@ -315,10 +333,17 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
 
             {extraPoles.length > 0 && (
               <>
-                <div className="ns" style={{ marginTop: 14 }}>Pôles</div>
+                {!sidebarCollapsed && <div className="ns" style={{ marginTop: 14 }}>Pôles</div>}
+                {sidebarCollapsed && <div className="ns" style={{ marginTop: 14, padding: "8px 0 4px", justifyContent: "center" }}><span style={{ display: "block", width: 20, height: 1, background: "rgba(255,255,255,0.12)", borderRadius: 1 }} /></div>}
                 {extraPoles.map(p => (
-                  <a key={p} href={navHref("pole", p)} className={`ni ${page === "pole" && subPage === p ? "active" : ""}`} onClick={e => navClick(e, "pole", p, p === "Trésorerie" ? "tresorerie" : "contenu")} style={{ textDecoration: 'none' }}>
-                    <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: POLE_COLORS[p], marginRight: 8, flexShrink: 0 }} />{p}
+                  <a key={p} href={navHref("pole", p)} className={`ni ${page === "pole" && subPage === p ? "active" : ""}${sidebarCollapsed ? " ni-collapsed" : ""}`} onClick={e => navClick(e, "pole", p, p === "Trésorerie" ? "tresorerie" : "contenu")} style={{ textDecoration: 'none', justifyContent: sidebarCollapsed ? "center" : undefined, padding: sidebarCollapsed ? "7px 0" : undefined }} title={sidebarCollapsed ? p : undefined}>
+                    {sidebarCollapsed ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: 8, background: POLE_COLORS[p] || '#94a3b8', flexShrink: 0 }}>
+                        {SPACE_LOGO[p] || <span style={{ color: "#fff", fontSize: 11, fontWeight: 800 }}>{p.charAt(0).toUpperCase()}</span>}
+                      </span>
+                    ) : (
+                      <><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: POLE_COLORS[p], marginRight: 8, flexShrink: 0 }} />{p}</>
+                    )}
                   </a>
                 ))}
               </>
@@ -326,22 +351,30 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
 
             {extraProjets.length > 0 && (
               <>
-                <div className="ns" style={{ marginTop: 14 }}>Projets</div>
+                {!sidebarCollapsed && <div className="ns" style={{ marginTop: 14 }}>Projets</div>}
+                {sidebarCollapsed && <div className="ns" style={{ marginTop: 14, padding: "8px 0 4px", justifyContent: "center" }}><span style={{ display: "block", width: 20, height: 1, background: "rgba(255,255,255,0.12)", borderRadius: 1 }} /></div>}
                 {extraProjets.map(p => (
-                  <a key={p} href={navHref("projet", p)} className={`ni ${page === "projet" && subPage === p ? "active" : ""}`} onClick={e => navClick(e, "projet", p)} style={{ textDecoration: 'none' }}>
-                    <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: PROJET_COLORS[p], marginRight: 8, flexShrink: 0 }} />{p}
+                  <a key={p} href={navHref("projet", p)} className={`ni ${page === "projet" && subPage === p ? "active" : ""}${sidebarCollapsed ? " ni-collapsed" : ""}`} onClick={e => navClick(e, "projet", p)} style={{ textDecoration: 'none', justifyContent: sidebarCollapsed ? "center" : undefined, padding: sidebarCollapsed ? "7px 0" : undefined }} title={sidebarCollapsed ? p : undefined}>
+                    {sidebarCollapsed ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 30, height: 30, borderRadius: 8, background: PROJET_COLORS[p] || '#94a3b8', flexShrink: 0 }}>
+                        {SPACE_LOGO[p] || <span style={{ color: "#fff", fontSize: 11, fontWeight: 800 }}>{p.charAt(0).toUpperCase()}</span>}
+                      </span>
+                    ) : (
+                      <><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: PROJET_COLORS[p], marginRight: 8, flexShrink: 0 }} />{p}</>
+                    )}
                   </a>
                 ))}
               </>
             )}
           </nav>
 
-          <div className="s-bottom" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 0' }}>
+          <div className="s-bottom" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8, padding: sidebarCollapsed ? "12px 0" : undefined }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '2px 0', justifyContent: sidebarCollapsed ? "center" : undefined }}>
               <div
                 style={{ position: 'relative', flexShrink: 0 }}
                 onMouseEnter={() => setAvatarHovered(true)}
                 onMouseLeave={() => setAvatarHovered(false)}
+                title={sidebarCollapsed ? currentUser.nom : undefined}
               >
                 <div className="uav" style={{ background: isAvatarUrl(currentUser.avatar) ? "transparent" : undefined, overflow: "hidden", padding: 0 }}>
                   <AvatarInner avatar={currentUser.avatar} nom={currentUser.nom} />
@@ -356,10 +389,12 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
                   </button>
                 )}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="uname">{currentUser.nom}</div>
-                <div className="urole">{currentUser.role}</div>
-              </div>
+              {!sidebarCollapsed && (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="uname">{currentUser.nom}</div>
+                  <div className="urole">{currentUser.role}</div>
+                </div>
+              )}
             </div>
             {onLogout && (
               <button
@@ -369,22 +404,36 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
                   background: 'rgba(230,57,70,0.15)',
                   border: '1px solid rgba(230,57,70,0.3)',
                   borderRadius: 8, color: '#ff6b7a',
-                  padding: '7px 10px', cursor: 'pointer',
+                  padding: sidebarCollapsed ? '7px 0' : '7px 10px', cursor: 'pointer',
                   fontSize: 13, transition: 'all 0.2s',
                   width: '100%', fontWeight: 600, letterSpacing: '0.3px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(230,57,70,0.25)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(230,57,70,0.15)'; }}
               >
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><LogOut size={15} strokeWidth={1.8} /> Déconnexion</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: sidebarCollapsed ? 0 : 6 }}>
+                  <LogOut size={15} strokeWidth={1.8} />
+                  {!sidebarCollapsed && " Déconnexion"}
+                </span>
               </button>
             )}
           </div>
         </aside>
 
+        {/* ── BOUTON COLLAPSE SIDEBAR (triangle à la jonction sidebar/topbar) ── */}
+        <button
+          className={`sidebar-collapse-tab desktop-only${sidebarCollapsed ? " sidebar-collapse-tab--collapsed" : ""}`}
+          onClick={() => setSidebarCollapsed(v => { const next = !v; localStorage.setItem('sidebarCollapsed', next); return next; })}
+          title={sidebarCollapsed ? "Développer la sidebar" : "Réduire la sidebar"}
+          aria-label={sidebarCollapsed ? "Développer la sidebar" : "Réduire la sidebar"}
+        >
+          <ChevronRight size={12} strokeWidth={2.5} className="sidebar-collapse-tab__icon" />
+        </button>
+
         {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────────── */}
-        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'main-gradient' : ''}${freshLogin ? ' login-transition' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
-          {page === 'dashboard' && <div className="gradient-layer" aria-hidden="true" />}
+        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'main-gradient' : ''}${(page === 'projet' && subPage === 'Europe') ? ' europe-gradient' : ''}${page === 'coordination' ? ' coord-gradient' : ''}${freshLogin ? ' login-transition' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
+          {(page === 'dashboard' || (page === 'projet' && subPage === 'Europe') || page === 'coordination') && <div className="gradient-layer" aria-hidden="true" />}
 
           {/* ── TOPBAR STICKY ───────────────────────────────────────────────── */}
           <div className="topbar">
@@ -572,7 +621,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
           )}
 
           {/* ── PAGE CONTENT ────────────────────────────────────────────────── */}
-          <div className={page === 'dashboard' ? 'gradient-content' : ''} style={page !== 'dashboard' ? { padding: '28px 44px 44px' } : undefined}>
+          <div className={(page === 'dashboard' || (page === 'projet' && subPage === 'Europe')) ? 'gradient-content' : ''} style={(page !== 'dashboard' && !(page === 'projet' && subPage === 'Europe') && page !== 'coordination') ? { padding: '28px 44px 44px' } : undefined}>
             <div key={page} className="page-transition">{children}</div>
           </div>
 

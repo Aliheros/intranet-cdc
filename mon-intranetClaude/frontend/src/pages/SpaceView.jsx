@@ -84,20 +84,7 @@ const CitizenPath = () => (
     <path d="M19 4 L22 6 L20 9" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
   </svg>
 );
-const SPACE_LOGO = {
-  // Pôles
-  "Relations Publiques":     <Users size={24} strokeWidth={1.5} color="#fff" />,
-  "Ressources Humaines":     <HumanNetwork />,
-  "Plaidoyer":               <ScalesIcon />,
-  "Etudes":                  <GraduationCap size={24} strokeWidth={1.5} color="#fff" />,
-  "Développement Financier": <TrendingUp size={24} strokeWidth={1.5} color="#fff" />,
-  "Communication":           <RadioWaves />,
-  "Trésorerie":              <VaultIcon />,
-  // Projets
-  "Europe":                  <EuStars />,
-  "Parcours Citoyen":        <CitizenPath />,
-  "Orientation":             <Compass size={24} strokeWidth={1.5} color="#fff" />,
-};
+import { SPACE_LOGO } from '../data/spaceLogos';
 
 // --- MODALE DES TÂCHES (100% Sécurisée avec styles intégrés) ---
 const TaskModal = ({ task, onSave, onClose, teamMembers, actions = [], directory = [] }) => {
@@ -344,12 +331,13 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   return (
     <>
       {/* ── Header coloré pleine largeur (défile avec le contenu) ───────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '12px 44px',
-        margin: '-28px -44px 0',
-        background: color || 'var(--accent)',
-      }}>
+      <div className={subPage === 'Europe' ? 'eu-space-header' : ''}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 44px',
+          margin: '-28px -44px 0',
+          background: subPage === 'Europe' ? undefined : (color || 'var(--accent)'),
+        }}>
         <div style={{
           width: 30, height: 30, borderRadius: 7, flexShrink: 0,
           background: 'rgba(255,255,255,0.18)',
@@ -382,14 +370,14 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
       </div>
 
       {/* ── Barre d'onglets sticky (colle sous la topbar au scroll) ─────── */}
-      <div style={{
+      <div className={subPage === 'Europe' ? 'eu-tab-bar' : ''} style={{
         position: 'sticky', top: 62, zIndex: 40,
         display: 'flex', alignItems: 'center', gap: 2,
         margin: '0 -44px', padding: '0 44px',
-        background: 'rgba(255,255,255,0.72)',
+        background: subPage === 'Europe' ? undefined : 'rgba(255,255,255,0.72)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
-        borderBottom: '1px solid rgba(0,0,0,0.07)',
+        borderBottom: subPage === 'Europe' ? undefined : '1px solid rgba(0,0,0,0.07)',
         marginBottom: 24,
       }}>
         <button className={`ctx-tab ${activeTab === 'contenu' ? 'active' : ''}`} onClick={() => setActiveTab('contenu')}>
@@ -732,6 +720,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                               <div style={{ fontSize: 10, marginTop: 6, marginLeft: 24 }}>
                                 <button
                                   onClick={() => { if (navigate) { navigate("actions"); setHighlightedActionId?.(relatedAction.id); setTimeout(() => setHighlightedActionId?.(null), 3000); }}}
+                                  className="eu-chip-blue"
                                   style={{ background: "rgba(26, 86, 219, 0.15)", border: "1px solid rgba(26, 86, 219, 0.3)", color: "#1a56db", padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontWeight: 600, fontSize: 10, transition: "all 0.2s" }}
                                   title={`Aller à l'action: ${relatedAction.etablissement}`}
                                 >
@@ -939,8 +928,9 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                           >
                             <span style={{display:"inline-flex",alignItems:"center",gap:4}}><CheckCircle2 size={11} strokeWidth={1.8}/> Assigner</span>
                           </button>
-                          <button 
-                            style={{ padding: "6px 12px", fontSize: 10, background: "rgba(229,57,70,0.15)", border: "1.5px solid rgba(229,57,70,0.3)", color: "#e63946", borderRadius: 6, cursor: "pointer", fontWeight: 600, transition: "all 0.2s", flex: 1 }} 
+                          <button
+                            className="eu-chip-danger"
+                            style={{ padding: "6px 12px", fontSize: 10, background: "rgba(229,57,70,0.15)", border: "1.5px solid rgba(229,57,70,0.3)", color: "#e63946", borderRadius: 6, cursor: "pointer", fontWeight: 600, transition: "all 0.2s", flex: 1 }}
                             onClick={() => requestConfirm(`Refuser la demande de tâche "${tr.text}" ?`, () => handleRefuseTaskRequest(tr.id))}
                             title="Refuser cette demande de tâche"
                           >
@@ -967,6 +957,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                               <div style={{ marginBottom: 8 }}>
                                 <button
                                   onClick={() => { if (navigate) { navigate("actions"); setHighlightedActionId?.(relatedAction.id); setTimeout(() => setHighlightedActionId?.(null), 3000); }}}
+                                  className="eu-chip-blue"
                                   style={{ background: "rgba(26, 86, 219, 0.15)", border: "1px solid rgba(26, 86, 219, 0.3)", color: "#1a56db", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 11, transition: "all 0.2s" }}
                                   title={`Aller à l'action: ${relatedAction.etablissement}`}
                                 >
@@ -1126,7 +1117,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             </div>
 
             {/* DOCUMENTS */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+            <div className="space-card sc" style={{ marginTop: 24, marginBottom: 16, padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
               <div className="sec" style={{ margin: 0 }}>Documents</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 <input ref={spaceFileRef} type="file" multiple style={{ display: "none" }} onChange={async (e) => {
@@ -1177,7 +1168,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
               });
 
               return (
-                <div key={sec} style={{ marginBottom: 32 }}>
+                <div key={sec} className="space-card sc" style={{ marginBottom: 16, padding: "16px 20px 12px" }}>
                   <div className="section-title">
                     <div style={{ flex: 1, display: "inline-flex", alignItems: "center", gap: 5 }}><Folder size={11} strokeWidth={1.8}/> {sec}</div>
                     {acc === "edit" && sec !== "Archives" && (
@@ -1399,12 +1390,14 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
                 </a>
               )}
               <button
+                className="eu-chip-success"
                 onClick={() => restoreTrash(item.id)}
                 style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(22,163,74,0.1)", border: "1px solid rgba(22,163,74,0.3)", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "#16a34a", cursor: "pointer" }}
               >
                 <RotateCcw size={11} strokeWidth={1.8}/> Restaurer
               </button>
               <button
+                className="eu-chip-danger"
                 onClick={() => forceDeleteTrash(item.id)}
                 style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", background: "rgba(230,57,70,0.08)", border: "1px solid rgba(230,57,70,0.25)", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "#e63946", cursor: "pointer" }}
               >
