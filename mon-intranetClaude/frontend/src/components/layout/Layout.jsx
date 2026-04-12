@@ -562,7 +562,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
               WebkitBackdropFilter: 'blur(14px)',
               borderBottom: '1px solid rgba(0,0,0,0.07)',
               padding: '0 44px',
-              display: 'flex', alignItems: 'center', gap: 2,
+              overflow: 'hidden',
             }}>
               {contextBar}
             </div>

@@ -308,29 +308,69 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const canManageSpace = accessObj?.canManage;
   const color = page === "pole" ? POLE_COLORS[subPage] : PROJET_COLORS[subPage];
 
-  // ── Alimente la barre contextuelle (onglets) dans la topbar ─────────────
+  // ── Alimente la barre contextuelle (header + onglets) dans la topbar ────
   useLayoutEffect(() => {
     setContextBar(
-      <>
-        <button className={`ctx-tab ${activeTab === "contenu" ? "active" : ""}`} onClick={() => setActiveTab("contenu")}>
-          <Folder size={12} strokeWidth={1.8}/> Contenu
-        </button>
-        {subPage === "Trésorerie" && acc === "edit" && <>
-          <button className={`ctx-tab ${activeTab === "tresorerie" ? "active" : ""}`} onClick={() => setActiveTab("tresorerie")}><BarChart2 size={12} strokeWidth={1.8}/> Finance</button>
-          <button className={`ctx-tab ${activeTab === "ndf_treso" ? "active" : ""}`} onClick={() => setActiveTab("ndf_treso")}><Receipt size={12} strokeWidth={1.8}/> Notes de frais</button>
-          <button className={`ctx-tab ${activeTab === "df_treso" ? "active" : ""}`} onClick={() => setActiveTab("df_treso")}><FileText size={12} strokeWidth={1.8}/> Devis &amp; Factures</button>
-        </>}
-        {subPage === "Ressources Humaines" && <>
-          <button className={`ctx-tab ${activeTab === "rh_suivi" ? "active" : ""}`} onClick={() => setActiveTab("rh_suivi")}><Users size={12} strokeWidth={1.8}/> Suivi RH</button>
-          <button className={`ctx-tab ${activeTab === "rh_missions" ? "active" : ""}`} onClick={() => setActiveTab("rh_missions")}><Target size={12} strokeWidth={1.8}/> Bourses aux missions</button>
-        </>}
-        {subPage === "Etudes" && <button className={`ctx-tab ${activeTab === "etudes_stats" ? "active" : ""}`} onClick={() => setActiveTab("etudes_stats")}><BarChart2 size={12} strokeWidth={1.8}/> Statistiques</button>}
-        {subPage === "Relations Publiques" && <button className={`ctx-tab ${activeTab === "rp_contacts" ? "active" : ""}`} onClick={() => setActiveTab("rp_contacts")}><Users size={12} strokeWidth={1.8}/> Contacts &amp; Sollicitations</button>}
-        {acc === "edit" && <button className={`ctx-tab ${activeTab === "corbeille" ? "active" : ""}`} onClick={() => setActiveTab("corbeille")}><Trash2 size={12} strokeWidth={1.8}/> Corbeille</button>}
-      </>
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+        {/* Header coloré pleine largeur */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '10px 44px',
+          margin: '0 -44px',
+          background: color || 'var(--accent)',
+        }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 7, flexShrink: 0,
+            background: 'rgba(255,255,255,0.18)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            {SPACE_LOGO[subPage] ?? (page === 'pole'
+              ? <span style={{ fontSize: 12, fontWeight: 800, color: '#fff' }}>{subPage.charAt(0)}</span>
+              : <Hexagon size={15} strokeWidth={1.5} color="#fff" />)}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', lineHeight: 1, marginBottom: 2 }}>
+              {page === 'pole' ? 'Pôle' : 'Projet'}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, fontFamily: 'var(--font-display)', color: '#fff', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {subPage}
+            </div>
+          </div>
+          <Badge label={acc === 'edit' ? 'Éditeur' : 'Lecteur'} bg="rgba(255,255,255,0.2)" c="#fff" style={{ marginLeft: 4, flexShrink: 0 }} />
+          {canManageSpace && (
+            <button onClick={() => setEditSpaceModal(subPage)} title="Paramétrer" style={{
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
+              padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+              background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)',
+              color: '#fff', cursor: 'pointer',
+            }}>
+              <Settings size={11} strokeWidth={1.8} /> Paramétrer
+            </button>
+          )}
+        </div>
+        {/* Onglets */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, padding: '0 44px', margin: '0 -44px' }}>
+          <button className={`ctx-tab ${activeTab === 'contenu' ? 'active' : ''}`} onClick={() => setActiveTab('contenu')}>
+            <Folder size={12} strokeWidth={1.8}/> Contenu
+          </button>
+          {subPage === 'Trésorerie' && acc === 'edit' && <>
+            <button className={`ctx-tab ${activeTab === 'tresorerie' ? 'active' : ''}`} onClick={() => setActiveTab('tresorerie')}><BarChart2 size={12} strokeWidth={1.8}/> Finance</button>
+            <button className={`ctx-tab ${activeTab === 'ndf_treso' ? 'active' : ''}`} onClick={() => setActiveTab('ndf_treso')}><Receipt size={12} strokeWidth={1.8}/> Notes de frais</button>
+            <button className={`ctx-tab ${activeTab === 'df_treso' ? 'active' : ''}`} onClick={() => setActiveTab('df_treso')}><FileText size={12} strokeWidth={1.8}/> Devis &amp; Factures</button>
+          </>}
+          {subPage === 'Ressources Humaines' && <>
+            <button className={`ctx-tab ${activeTab === 'rh_suivi' ? 'active' : ''}`} onClick={() => setActiveTab('rh_suivi')}><Users size={12} strokeWidth={1.8}/> Suivi RH</button>
+            <button className={`ctx-tab ${activeTab === 'rh_missions' ? 'active' : ''}`} onClick={() => setActiveTab('rh_missions')}><Target size={12} strokeWidth={1.8}/> Bourses aux missions</button>
+          </>}
+          {subPage === 'Etudes' && <button className={`ctx-tab ${activeTab === 'etudes_stats' ? 'active' : ''}`} onClick={() => setActiveTab('etudes_stats')}><BarChart2 size={12} strokeWidth={1.8}/> Statistiques</button>}
+          {subPage === 'Relations Publiques' && <button className={`ctx-tab ${activeTab === 'rp_contacts' ? 'active' : ''}`} onClick={() => setActiveTab('rp_contacts')}><Users size={12} strokeWidth={1.8}/> Contacts &amp; Sollicitations</button>}
+          {acc === 'edit' && <button className={`ctx-tab ${activeTab === 'corbeille' ? 'active' : ''}`} onClick={() => setActiveTab('corbeille')}><Trash2 size={12} strokeWidth={1.8}/> Corbeille</button>}
+        </div>
+      </div>
     );
     return () => setContextBar(null);
-  }, [subPage, activeTab, acc]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [subPage, activeTab, acc, color, canManageSpace]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-réinitialise le surlignage après 2.5 secondes
   useEffect(() => {
@@ -362,44 +402,6 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
 
   return (
     <>
-      {/* ── Header pleine largeur pôle/projet ───────────────────────────── */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 12,
-        padding: "12px 44px",
-        margin: "-28px -44px 24px",
-        background: color || "var(--accent)",
-      }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-          background: "rgba(255,255,255,0.18)",
-          border: "1px solid rgba(255,255,255,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {SPACE_LOGO[subPage] ?? (page === "pole"
-            ? <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{subPage.charAt(0)}</span>
-            : <Hexagon size={16} strokeWidth={1.5} color="#fff" />)}
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.65)", lineHeight: 1, marginBottom: 2 }}>
-            {page === "pole" ? "Pôle" : "Projet"}
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "var(--font-display)", color: "#fff", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {subPage}
-          </div>
-        </div>
-        <Badge label={acc === "edit" ? "Éditeur" : "Lecteur"} bg="rgba(255,255,255,0.2)" c="#fff" style={{ marginLeft: 4, flexShrink: 0 }} />
-        {canManageSpace && (
-          <button onClick={() => setEditSpaceModal(subPage)} title="Paramétrer" style={{
-            marginLeft: "auto", display: "flex", alignItems: "center", gap: 5,
-            padding: "5px 12px", borderRadius: 7, fontSize: 11, fontWeight: 600,
-            background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.3)",
-            color: "#fff", cursor: "pointer",
-          }}>
-            <Settings size={12} strokeWidth={1.8} /> Paramétrer
-          </button>
-        )}
-      </div>
-
       {/* --- MODALE DES TÂCHES --- */}
       {taskModal && (
         <TaskModal
