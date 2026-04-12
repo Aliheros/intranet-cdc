@@ -1020,10 +1020,7 @@
   background: rgba(22, 163, 74, 0.20) !important;
   border-color: rgba(22, 163, 74, 0.40) !important;
 }
-.coord-gradient .event-detail [style*="rgba(26,86,219,0.12)"] {
-  background: rgba(26, 86, 219, 0.20) !important;
-  border-color: rgba(26, 86, 219, 0.38) !important;
-}
+/* (override affiné plus bas dans le fichier) */
 
 /* Fiches présence (présent / absent / en attente) */
 .coord-gradient [style*="rgba(22,163,74,0.06)"] {
@@ -1051,6 +1048,55 @@
 .dark-theme .coord-gradient .coord-linked-action {
   background: rgba(5, 12, 35, 0.88);
   border-color: rgba(70, 120, 220, 0.28);
+}
+
+/* ── Harmonisation couleurs — boutons icône 32×32 (archive, edit, delete) ── */
+.coord-gradient .event-detail button[style*="width: 32px"],
+.coord-gradient .event-detail button[style*="width:32px"] {
+  background: rgba(220, 232, 255, 0.80) !important;
+  border-color: rgba(140, 180, 255, 0.45) !important;
+  color: var(--text-dim) !important;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.coord-gradient .event-detail button[style*="width: 32px"]:hover,
+.coord-gradient .event-detail button[style*="width:32px"]:hover {
+  background: rgba(200, 220, 255, 0.95) !important;
+  box-shadow: 0 2px 8px rgba(20, 50, 140, 0.14);
+}
+/* Bouton suppression : garde le rouge mais harmonisé */
+.coord-gradient .event-detail button[style*="rgba(230,57,70"] {
+  background: rgba(230, 57, 70, 0.10) !important;
+  border-color: rgba(230, 57, 70, 0.28) !important;
+  color: #e63946 !important;
+}
+.coord-gradient .event-detail button[style*="rgba(230,57,70"]:hover {
+  background: rgba(230, 57, 70, 0.18) !important;
+}
+.dark-theme .coord-gradient .event-detail button[style*="width: 32px"],
+.dark-theme .coord-gradient .event-detail button[style*="width:32px"] {
+  background: rgba(20, 35, 80, 0.60) !important;
+  border-color: rgba(80, 120, 200, 0.30) !important;
+  color: var(--text-dim) !important;
+}
+
+/* ── Chips membres équipe — couleur moi (bleu → indigo palette) ────────── */
+.coord-gradient .event-detail [style*="rgba(26,86,219,0.12)"] {
+  background: rgba(55, 80, 200, 0.18) !important;
+  border-color: rgba(100, 140, 255, 0.45) !important;
+  color: #3050c0 !important;
+}
+.dark-theme .coord-gradient .event-detail [style*="rgba(26,86,219,0.12)"] {
+  background: rgba(60, 90, 200, 0.22) !important;
+  border-color: rgba(100, 150, 255, 0.35) !important;
+  color: #90b0f0 !important;
+}
+
+/* ── Bouton "Rejoindre" compact — harmonisé indigo ──────────────────────── */
+.coord-gradient .btn-primary[style*="font-size: 11"],
+.coord-gradient .btn-primary[style*="fontSize"] {
+  background: rgba(40, 70, 200, 0.90) !important;
+  border: 1px solid rgba(120, 160, 255, 0.50) !important;
+  box-shadow: 0 2px 8px rgba(40,70,200,0.22), inset 0 1px 0 rgba(255,255,255,.18) !important;
 }
 
 /* ── Performance scroll : pause animation gradient ──────────────────────── */

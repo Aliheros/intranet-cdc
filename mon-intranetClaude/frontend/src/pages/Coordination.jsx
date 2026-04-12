@@ -238,7 +238,7 @@ const Coordination = () => {
       <div className="coord-tab-bar">
         <div className="coord-tab-bar__tabs">
           <button className={`ctx-tab ${eventsTab === "actifs" ? "active" : ""}`} onClick={() => { setEventsTab("actifs"); setActiveEventId(null); }}>
-            En cours <span className="ctx-tab-count">{evenements.filter((e) => !e.isArchived && (eventsCycle === "Toutes" || e.cycle === eventsCycle)).length}</span>
+            <Zap size={11} strokeWidth={1.8}/> En cours <span className="ctx-tab-count">{evenements.filter((e) => !e.isArchived && (eventsCycle === "Toutes" || e.cycle === eventsCycle)).length}</span>
           </button>
           <button className={`ctx-tab ${eventsTab === "archives" ? "active" : ""}`} onClick={() => { setEventsTab("archives"); setActiveEventId(null); }}>
             <Archive size={11} strokeWidth={1.8}/> Archives <span className="ctx-tab-count">{evenements.filter((e) => e.isArchived && (eventsCycle === "Toutes" || e.cycle === eventsCycle)).length}</span>
