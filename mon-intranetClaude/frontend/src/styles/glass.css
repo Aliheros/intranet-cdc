@@ -401,7 +401,7 @@
   100% { transform: translateX(250%) skewX(-15deg); opacity: 0; }
 }
 
-.eu-space-header {
+.eu-space-header, .europe-space-header {
   position: relative;
   overflow: hidden;
   background: linear-gradient(130deg,
@@ -418,7 +418,7 @@
 }
 
 /* Liseré or en bas du header */
-.eu-space-header::after {
+.eu-space-header::after, .europe-space-header::after {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
@@ -433,7 +433,7 @@
 }
 
 /* Balayage lumineux périodique */
-.eu-space-header::before {
+.eu-space-header::before, .europe-space-header::before {
   content: '';
   position: absolute;
   top: -50%; left: 0;
@@ -448,7 +448,7 @@
 }
 
 /* Mode sombre : marine profond + reflets bleu-or discrets */
-.dark-theme .eu-space-header {
+.dark-theme .eu-space-header, .dark-theme .europe-space-header {
   background: linear-gradient(130deg,
     #010e28 0%,
     #041852 20%,
@@ -461,7 +461,7 @@
   box-shadow: 0 2px 20px rgba(0, 0, 0, .50);
 }
 /* Liseré or plus brillant en mode sombre */
-.dark-theme .eu-space-header::after {
+.dark-theme .eu-space-header::after, .dark-theme .europe-space-header::after {
   background: linear-gradient(90deg,
     transparent 0%,
     rgba(255, 215, 0, .35) 30%,
@@ -472,11 +472,12 @@
 }
 
 /* ── Barre de sous-onglets Europe (sticky sous la topbar) ───────────────── */
-.eu-tab-bar {
+.eu-tab-bar, .europe-tab-bar {
   background: rgba(205, 225, 255, .68) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(160, 200, 255, .40) !important;
 }
-.dark-theme .eu-tab-bar {
+.dark-theme .eu-tab-bar, .dark-theme .europe-tab-bar {
   background: rgba(4, 10, 30, .82) !important;
   border-bottom: 1px solid rgba(80, 120, 220, .18) !important;
 }
@@ -1496,3 +1497,43 @@
 .dark-theme .topbar-notif-item:hover { background: rgba(255,255,255,.06); }
 .topbar-notif-item.unread { background: rgba(0,113,227,.04); }
 .dark-theme .topbar-notif-item.unread { background: rgba(0,113,227,.08); }
+
+/* ── DashboardMessageHeader — animations ──────────────────────────────────── */
+@keyframes dmh-aurora {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes dmh-float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(18px, -12px) scale(1.08); }
+  66%       { transform: translate(-10px, 8px) scale(0.94); }
+}
+@keyframes dmh-float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%       { transform: translate(-22px, 10px) scale(1.12); }
+  75%       { transform: translate(14px, -8px) scale(0.90); }
+}
+@keyframes dmh-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30%       { transform: translate(10px, 14px) scale(0.92); }
+  70%       { transform: translate(-16px, -6px) scale(1.10); }
+}
+
+@keyframes dmh-shimmer {
+  0%   { transform: translateX(-120%) skewX(-15deg); }
+  100% { transform: translateX(320%) skewX(-15deg); }
+}
+
+.dmh-aurora {
+  background-size: 250% 250%;
+  animation: dmh-aurora 9s ease infinite;
+}
+.dmh-orb-1 { animation: dmh-float-1 11s ease-in-out infinite; }
+.dmh-orb-2 { animation: dmh-float-2 14s ease-in-out infinite; }
+.dmh-orb-3 { animation: dmh-float-3  9s ease-in-out infinite; }
+.dmh-shimmer-line {
+  animation: dmh-shimmer 5s ease-in-out infinite;
+  animation-delay: 2s;
+}

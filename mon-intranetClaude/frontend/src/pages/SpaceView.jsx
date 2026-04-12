@@ -10,7 +10,7 @@ import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-import { POLE_COLORS, PROJET_COLORS, typeColor } from '../data/constants';
+import { POLE_COLORS, PROJET_COLORS, typeColor, SPACE_CLASS_MAP } from '../data/constants';
 import { isPastDate, formatDateShort, fmtHeure, sortTasksSmart, THREE_DAYS_MS, isTaskEffectivelyDone, isTaskActiveInFeed, formatDuree } from '../utils/utils';
 import { CheckCircle2, XCircle, AlertTriangle, Clock, Calendar, Link2, User, Users, MapPin, Lock, Pencil, Trash2, Folder, BarChart2, Receipt, FileText, GraduationCap, BookOpen, Archive, ScrollText, Pin, Star, Car, Building2, Utensils, Package, Megaphone, Lightbulb, Zap, Target, Settings, ClipboardList, ChevronRight, RotateCcw, Download, Upload, Hexagon, Phone, Mail, Send, Plus, X, Search, Umbrella, CalendarRange, TrendingUp, Compass, Navigation, Info, ExternalLink, Shield } from 'lucide-react';
 import { StatusBadge, MEMBER_STATUS, TASK_STATUS, NDF_STATUS, MISSION_STATUS, ACTION_STATUS } from '../components/ui/StatusIcon';
@@ -331,12 +331,12 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   return (
     <>
       {/* ── Header coloré pleine largeur (défile avec le contenu) ───────── */}
-      <div className={subPage === 'Europe' ? 'eu-space-header' : ''}
+      <div className={SPACE_CLASS_MAP[subPage] ? `${SPACE_CLASS_MAP[subPage]}-space-header` : ''}
         style={{
           display: 'flex', alignItems: 'center', gap: 12,
           padding: '12px 44px',
           margin: '-28px -44px 0',
-          background: subPage === 'Europe' ? undefined : (color || 'var(--accent)'),
+          background: SPACE_CLASS_MAP[subPage] ? undefined : (color || 'var(--accent)'),
         }}>
         <div style={{
           width: 30, height: 30, borderRadius: 7, flexShrink: 0,
@@ -370,14 +370,14 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
       </div>
 
       {/* ── Barre d'onglets sticky (colle sous la topbar au scroll) ─────── */}
-      <div className={subPage === 'Europe' ? 'eu-tab-bar' : ''} style={{
+      <div className={SPACE_CLASS_MAP[subPage] ? `${SPACE_CLASS_MAP[subPage]}-tab-bar` : ''} style={{
         position: 'sticky', top: 62, zIndex: 40,
         display: 'flex', alignItems: 'center', gap: 2,
         margin: '0 -44px', padding: '0 44px',
-        background: subPage === 'Europe' ? undefined : 'rgba(255,255,255,0.72)',
+        background: SPACE_CLASS_MAP[subPage] ? undefined : 'rgba(255,255,255,0.72)',
         backdropFilter: 'blur(14px)',
         WebkitBackdropFilter: 'blur(14px)',
-        borderBottom: subPage === 'Europe' ? undefined : '1px solid rgba(0,0,0,0.07)',
+        borderBottom: SPACE_CLASS_MAP[subPage] ? undefined : '1px solid rgba(0,0,0,0.07)',
         marginBottom: 24,
       }}>
         <button className={`ctx-tab ${activeTab === 'contenu' ? 'active' : ''}`} onClick={() => setActiveTab('contenu')}>

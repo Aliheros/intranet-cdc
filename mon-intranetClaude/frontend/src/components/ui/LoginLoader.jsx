@@ -81,9 +81,14 @@ export default function LoginLoader({ onDone, fromLogin = false }) {
           } : undefined}
           onError={e => { e.currentTarget.style.display = 'none'; }}
         />
-        <div className="ll-text">Chargement</div>
-        <div className="ll-progress-track">
-          <div className="ll-progress-bar" />
+        <div
+          className="ll-progress-track"
+          style={fromLogin ? { opacity: 1, animation: 'none' } : undefined}
+        >
+          <div
+            className="ll-progress-bar"
+            style={fromLogin ? { animation: 'll-progress 2.3s cubic-bezier(.4,0,.6,1) forwards 0s' } : undefined}
+          />
         </div>
       </div>
     </div>

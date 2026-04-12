@@ -81,3 +81,31 @@ export const NIVEAUX_CLASSE = [
   "Tous publics",
   "Autre"
 ];
+
+// Correspondance espace → préfixe CSS (gradient, header, tab-bar)
+export const SPACE_CLASS_MAP = {
+  'Europe':                  'europe',
+  'Parcours Citoyen':        'parcours',
+  'Orientation':             'orientation',
+  'Relations Publiques':     'rp',
+  'Ressources Humaines':     'rh',
+  'Plaidoyer':               'plaidoyer',
+  'Etudes':                  'etudes',
+  'Développement Financier': 'devfin',
+  'Communication':           'comm',
+  'Trésorerie':              'treso',
+};
+
+// Correspondance page → préfixe CSS gradient pour les pages hors pôle/projet
+export const PAGE_GRADIENT_MAP = {
+  'actions':      'actions',
+  'planning':     'planning',
+  'annuaire':     'annuaire',
+  'messagerie':   'messagerie',
+  'analytics':    'analytics',
+  'notefrais':    'notefrais',
+  'devisFactures':'devis',
+  'faq':          'faq',
+  'bureau':       'bureau',
+  'admin':        'admin',
+};

@@ -129,6 +129,7 @@ export function AppProvider({ children }) {
   // true pendant les ~8s après la connexion manuelle — permet au dashboard
   // d'appliquer les animations textToDark et slideUp.
   const [freshLogin, setFreshLogin] = useState(false);
+  const [loginKey, setLoginKey]     = useState(0);
 
   // ─── TUTORIEL ─────────────────────────────────────────────────────────────
   const [showTutorial, setShowTutorial] = useState(false);
@@ -180,6 +181,7 @@ export function AppProvider({ children }) {
       contextBar, setContextBar,
       // Login fresh
       freshLogin, setFreshLogin,
+      loginKey,   setLoginKey,
       // Tutoriel
       showTutorial, setShowTutorial,
     }}>

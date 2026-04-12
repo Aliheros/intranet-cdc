@@ -88,6 +88,7 @@ function App() {
     devisFactureModal,   setDevisFactureModal,
     showTutorial,        setShowTutorial,
     freshLogin,          setFreshLogin,
+    loginKey,            setLoginKey,
   } = useAppContext();
 
   const {
@@ -193,6 +194,7 @@ function App() {
       if (!prevUser && currentUser) {
         handleNav('dashboard');
         setShowLoader(true);
+        setLoginKey(k => k + 1);
         setFreshLogin(true);
         // Retire freshLogin après 8.5s (overlay entièrement évaporé)
         setTimeout(() => setFreshLogin(false), 8500);

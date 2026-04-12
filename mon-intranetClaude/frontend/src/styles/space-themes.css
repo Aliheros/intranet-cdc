@@ -1,0 +1,1034 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   IDENTITÉS VISUELLES — ESPACES PÔLE / PROJET
+   Chaque espace : variables CSS, gradient-layer, space-header, tab-bar
+   Keyframes partagées : euHeaderDrift, euShimmer, gradientDrift (glass.css)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Cartes glass pour tous les espaces thématisés ─────────────────────── */
+.parcours-gradient .kc, .parcours-gradient .sc,
+.orientation-gradient .kc, .orientation-gradient .sc,
+.rp-gradient .kc, .rp-gradient .sc,
+.rh-gradient .kc, .rh-gradient .sc,
+.plaidoyer-gradient .kc, .plaidoyer-gradient .sc,
+.etudes-gradient .kc, .etudes-gradient .sc,
+.devfin-gradient .kc, .devfin-gradient .sc,
+.comm-gradient .kc, .comm-gradient .sc,
+.treso-gradient .kc, .treso-gradient .sc {
+  background: rgba(255,255,255,.46) !important;
+  border-color: rgba(255,255,255,.55) !important;
+}
+.dark-theme .parcours-gradient .kc, .dark-theme .parcours-gradient .sc,
+.dark-theme .orientation-gradient .kc, .dark-theme .orientation-gradient .sc,
+.dark-theme .rp-gradient .kc, .dark-theme .rp-gradient .sc,
+.dark-theme .rh-gradient .kc, .dark-theme .rh-gradient .sc,
+.dark-theme .plaidoyer-gradient .kc, .dark-theme .plaidoyer-gradient .sc,
+.dark-theme .etudes-gradient .kc, .dark-theme .etudes-gradient .sc,
+.dark-theme .devfin-gradient .kc, .dark-theme .devfin-gradient .sc,
+.dark-theme .comm-gradient .kc, .dark-theme .comm-gradient .sc,
+.dark-theme .treso-gradient .kc, .dark-theme .treso-gradient .sc {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.10) !important;
+}
+
+/* ════════════════════════════
+   PARCOURS CITOYEN — rouge civique / chaleur
+   ════════════════════════════ */
+.parcours-gradient {
+  --text-base: #3a0a06; --text-dim: #8a2018; --text-muted: #b84030;
+  --bg-surface: rgba(255,242,240,.82); --bg-alt: rgba(255,225,220,.55);
+  --bg-hover: rgba(255,210,204,.60); --border-light: rgba(210,90,70,.30);
+}
+.dark-theme .parcours-gradient {
+  --text-base: #ffe8e5; --text-dim: #f08070; --text-muted: #c06050;
+  --bg-surface: rgba(55,8,4,.75); --bg-alt: rgba(70,12,6,.60);
+  --bg-hover: rgba(85,16,8,.65); --border-light: rgba(200,60,40,.18);
+}
+.parcours-gradient .gradient-layer {
+  background-color: #fde8e4;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(8,82%,48%,.60) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(28,88%,58%,.42) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(2,78%,40%,.52) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(20,82%,55%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(10,70%,52%,.26) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .parcours-gradient .gradient-layer {
+  background-color: #180502;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(8,85%,22%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(28,75%,18%,.55) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(2,80%,14%,.80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(20,70%,16%,.45) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(6,60%,10%,.55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.parcours-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #6e0a06 0%, #aa1616 20%, #7a0c0c 40%, #bf2020 58%, #880e12 78%, #aa1618 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(100,5,5,.30);
+}
+.dark-theme .parcours-space-header {
+  background: linear-gradient(130deg,
+    #1c0202 0%, #3a0606 20%, #160202 40%, #2e0606 58%, #130202 78%, #320606 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.50);
+}
+.parcours-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,180,120,.22), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.parcours-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,165,60,.55) 30%, rgba(255,200,80,.80) 50%, rgba(255,165,60,.55) 70%, transparent 100%);
+}
+.parcours-tab-bar {
+  background: rgba(255,228,224,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(200,80,60,.25) !important;
+}
+.dark-theme .parcours-tab-bar {
+  background: rgba(30,5,3,.82) !important;
+  border-bottom: 1px solid rgba(180,60,40,.18) !important;
+}
+
+/* ════════════════════════════
+   ORIENTATION — sarcelle / boussole / avenir
+   ════════════════════════════ */
+.orientation-gradient {
+  --text-base: #062420; --text-dim: #0a6858; --text-muted: #1a8a74;
+  --bg-surface: rgba(232,250,248,.82); --bg-alt: rgba(200,240,236,.55);
+  --bg-hover: rgba(180,232,228,.60); --border-light: rgba(60,180,160,.30);
+}
+.dark-theme .orientation-gradient {
+  --text-base: #d0f8f2; --text-dim: #60c8b8; --text-muted: #3a9888;
+  --bg-surface: rgba(3,28,24,.75); --bg-alt: rgba(5,38,32,.60);
+  --bg-hover: rgba(6,48,40,.65); --border-light: rgba(40,160,140,.18);
+}
+.orientation-gradient .gradient-layer {
+  background-color: #d8f5f0;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(174,75%,36%,.62) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(158,65%,42%,.44) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(185,70%,38%,.54) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(168,60%,48%,.34) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(178,55%,44%,.28) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .orientation-gradient .gradient-layer {
+  background-color: #011210;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(174,80%,16%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(158,70%,14%,.56) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(185,75%,12%,.80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(168,65%,16%,.46) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(176,55%,10%,.55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.orientation-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #034438 0%, #0a7862 20%, #045048 40%, #0c8870 58%, #035a4a 78%, #0a7a64 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(0,80,65,.30);
+}
+.dark-theme .orientation-space-header {
+  background: linear-gradient(130deg,
+    #011210 0%, #02261e 20%, #010e0c 40%, #032018 58%, #010c0a 78%, #022218 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.50);
+}
+.orientation-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(120,255,220,.20), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.orientation-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(80,220,190,.55) 30%, rgba(120,255,220,.80) 50%, rgba(80,220,190,.55) 70%, transparent 100%);
+}
+.orientation-tab-bar {
+  background: rgba(200,240,236,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(50,170,150,.25) !important;
+}
+.dark-theme .orientation-tab-bar {
+  background: rgba(3,20,16,.82) !important;
+  border-bottom: 1px solid rgba(30,150,130,.18) !important;
+}
+
+/* ════════════════════════════
+   RELATIONS PUBLIQUES — bleu corporate / confiance
+   ════════════════════════════ */
+.rp-gradient {
+  --text-base: #081840; --text-dim: #1a3e9a; --text-muted: #2e58c4;
+  --bg-surface: rgba(232,240,255,.82); --bg-alt: rgba(210,225,255,.55);
+  --bg-hover: rgba(195,215,255,.60); --border-light: rgba(80,130,240,.28);
+}
+.dark-theme .rp-gradient {
+  --text-base: #dde8ff; --text-dim: #7898e0; --text-muted: #4a68c0;
+  --bg-surface: rgba(4,10,32,.75); --bg-alt: rgba(6,14,46,.60);
+  --bg-hover: rgba(8,18,58,.65); --border-light: rgba(60,100,220,.18);
+}
+.rp-gradient .gradient-layer {
+  background-color: #dce8ff;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(220,90%,52%,.58) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(200,80%,60%,.42) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(230,85%,48%,.52) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(210,75%,65%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(218,70%,56%,.26) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .rp-gradient .gradient-layer {
+  background-color: #020810;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(220,88%,22%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(200,78%,18%,.55) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(230,82%,16%,.80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(210,72%,20%,.45) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(218,62%,12%,.55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.rp-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #0a3090 0%, #1a52d8 20%, #0c3aa8 40%, #1e60e8 58%, #0e40b8 78%, #1a54da 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(10,40,160,.30);
+}
+.dark-theme .rp-space-header {
+  background: linear-gradient(130deg,
+    #020a28 0%, #051440 20%, #020c2e 40%, #06183a 58%, #020c28 78%, #061438 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.50);
+}
+.rp-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(140,200,255,.22), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.rp-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(100,180,255,.55) 30%, rgba(160,220,255,.80) 50%, rgba(100,180,255,.55) 70%, transparent 100%);
+}
+.rp-tab-bar {
+  background: rgba(210,228,255,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(80,130,240,.25) !important;
+}
+.dark-theme .rp-tab-bar {
+  background: rgba(4,10,32,.82) !important;
+  border-bottom: 1px solid rgba(60,100,220,.18) !important;
+}
+
+/* ════════════════════════════
+   RESSOURCES HUMAINES — violet / soin / personnes
+   ════════════════════════════ */
+.rh-gradient {
+  --text-base: #200840; --text-dim: #5a1ea8; --text-muted: #7a38d0;
+  --bg-surface: rgba(245,238,255,.82); --bg-alt: rgba(230,215,255,.55);
+  --bg-hover: rgba(218,200,255,.60); --border-light: rgba(140,80,230,.28);
+}
+.dark-theme .rh-gradient {
+  --text-base: #ecdeff; --text-dim: #b070f0; --text-muted: #7840c0;
+  --bg-surface: rgba(16,5,35,.75); --bg-alt: rgba(22,7,48,.60);
+  --bg-hover: rgba(28,9,60,.65); --border-light: rgba(120,60,210,.18);
+}
+.rh-gradient .gradient-layer {
+  background-color: #f0e6ff;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(265,80%,50%,.60) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(290,70%,58%,.42) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(250,78%,45%,.52) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(280,68%,62%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(268,62%,52%,.26) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .rh-gradient .gradient-layer {
+  background-color: #080212;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(265,82%,18%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(290,72%,16%,.56) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(250,80%,14%,.80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(280,70%,18%,.46) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(265,60%,10%,.55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.rh-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #2e0870 0%, #6020c0 20%, #380a88 40%, #7030d8 58%, #420e98 78%, #6422c2 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(60,10,140,.30);
+}
+.dark-theme .rh-space-header {
+  background: linear-gradient(130deg,
+    #0c0220 0%, #180438 20%, #0a0218 40%, #160432 58%, #080214 78%, #140330 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.50);
+}
+.rh-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(200,140,255,.22), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.rh-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(200,140,255,.55) 30%, rgba(230,180,255,.80) 50%, rgba(200,140,255,.55) 70%, transparent 100%);
+}
+.rh-tab-bar {
+  background: rgba(228,212,255,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(140,80,230,.25) !important;
+}
+.dark-theme .rh-tab-bar {
+  background: rgba(14,4,30,.82) !important;
+  border-bottom: 1px solid rgba(120,60,210,.18) !important;
+}
+
+/* ════════════════════════════
+   PLAIDOYER — cramoisi / justice / action
+   ════════════════════════════ */
+.plaidoyer-gradient {
+  --text-base: #380008; --text-dim: #900018; --text-muted: #c0102a;
+  --bg-surface: rgba(255,238,242,.82); --bg-alt: rgba(255,215,222,.55);
+  --bg-hover: rgba(255,200,210,.60); --border-light: rgba(220,50,70,.28);
+}
+.dark-theme .plaidoyer-gradient {
+  --text-base: #ffe8ec; --text-dim: #f07080; --text-muted: #c04858;
+  --bg-surface: rgba(35,3,8,.75); --bg-alt: rgba(50,4,10,.60);
+  --bg-hover: rgba(60,5,12,.65); --border-light: rgba(200,40,55,.18);
+}
+.plaidoyer-gradient .gradient-layer {
+  background-color: #fce8ec;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(350,85%,42%,.62) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(0,78%,52%,.44) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(345,80%,36%,.54) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(356,72%,56%,.34) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(348,65%,46%,.28) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .plaidoyer-gradient .gradient-layer {
+  background-color: #120005;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(350,88%,18%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(0,80%,16%,.56) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(345,84%,12%,.80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(356,74%,16%,.46) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(348,65%,8%,.55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.plaidoyer-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #580008 0%, #960014 20%, #680010 40%, #aa0018 58%, #720012 78%, #9a0016 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(120,0,15,.30);
+}
+.dark-theme .plaidoyer-space-header {
+  background: linear-gradient(130deg,
+    #140002 0%, #280004 20%, #100002 40%, #220004 58%, #0e0002 78%, #240004 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.50);
+}
+.plaidoyer-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,160,170,.22), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.plaidoyer-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,120,140,.55) 30%, rgba(255,200,210,.80) 50%, rgba(255,120,140,.55) 70%, transparent 100%);
+}
+.plaidoyer-tab-bar {
+  background: rgba(255,215,222,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(210,50,65,.25) !important;
+}
+.dark-theme .plaidoyer-tab-bar {
+  background: rgba(28,2,6,.82) !important;
+  border-bottom: 1px solid rgba(190,40,55,.18) !important;
+}
+
+/* ════════════════════════════
+   ETUDES — cyan / savoir / académique
+   ════════════════════════════ */
+.etudes-gradient {
+  --text-base: #042030; --text-dim: #0870a0; --text-muted: #1090c0;
+  --bg-surface: rgba(228,248,255,.82); --bg-alt: rgba(200,238,255,.55);
+  --bg-hover: rgba(180,230,255,.60); --border-light: rgba(50,160,210,.28);
+}
+.dark-theme .etudes-gradient {
+  --text-base: #d0f0ff; --text-dim: #50b8d8; --text-muted: #2888a8;
+  --bg-surface: rgba(2,16,24,.75); --bg-alt: rgba(3,22,34,.60);
+  --bg-hover: rgba(4,28,42,.65); --border-light: rgba(30,140,190,.18);
+}
+.etudes-gradient .gradient-layer {
+  background-color: #d8f0fa;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(196,82%,38%,.62) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(180,72%,45%,.44) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(205,78%,35%,.54) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(190,68%,50%,.34) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(198,62%,42%,.28) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .etudes-gradient .gradient-layer {
+  background-color: #010c12;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(196,84%,16%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(180,74%,12%,.56) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(205,80%,12%,.80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(190,70%,14%,.46) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(198,62%,8%,.55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.etudes-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #024060 0%, #0678a8 20%, #035070 40%, #0888bc 58%, #045878 78%, #077aaa 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(0,80,120,.30);
+}
+.dark-theme .etudes-space-header {
+  background: linear-gradient(130deg,
+    #010c14 0%, #021826 20%, #010a10 40%, #021522 58%, #010810 78%, #021420 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.50);
+}
+.etudes-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(100,220,255,.22), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.etudes-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(60,200,240,.55) 30%, rgba(120,240,255,.80) 50%, rgba(60,200,240,.55) 70%, transparent 100%);
+}
+.etudes-tab-bar {
+  background: rgba(200,238,252,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(50,160,210,.25) !important;
+}
+.dark-theme .etudes-tab-bar {
+  background: rgba(2,14,22,.82) !important;
+  border-bottom: 1px solid rgba(30,140,190,.18) !important;
+}
+
+/* ════════════════════════════
+   DÉVELOPPEMENT FINANCIER — vert forêt / croissance / or
+   ════════════════════════════ */
+.devfin-gradient {
+  --text-base: #062010; --text-dim: #0c6828; --text-muted: #18903c;
+  --bg-surface: rgba(232,250,238,.82); --bg-alt: rgba(205,240,215,.55);
+  --bg-hover: rgba(185,232,200,.60); --border-light: rgba(40,170,80,.28);
+}
+.dark-theme .devfin-gradient {
+  --text-base: #d0f5de; --text-dim: #50c870; --text-muted: #289848;
+  --bg-surface: rgba(3,18,8,.75); --bg-alt: rgba(4,26,11,.60);
+  --bg-hover: rgba(5,32,13,.65); --border-light: rgba(30,150,60,.18);
+}
+.devfin-gradient .gradient-layer {
+  background-color: #d5f0de;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(140,75%,30%,.64) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(48,75%,52%,.40) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(150,72%,26%,.56) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(120,65%,40%,.34) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(144,58%,34%,.28) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .devfin-gradient .gradient-layer {
+  background-color: #020e06;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(140,78%,14%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(48,70%,16%,.52) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(150,75%,10%,.80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(120,68%,14%,.46) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(144,60%,8%,.55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.devfin-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #044018 0%, #0c7830 20%, #054e20 40%, #0e8838 58%, #065a24 78%, #0c7a32 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(0,80,25,.30);
+}
+.dark-theme .devfin-space-header {
+  background: linear-gradient(130deg,
+    #010e04 0%, #021a08 20%, #010a04 40%, #021604 58%, #010804 78%, #021808 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.50);
+}
+.devfin-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(200,255,160,.20), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.devfin-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(180,220,80,.55) 30%, rgba(220,255,100,.80) 50%, rgba(180,220,80,.55) 70%, transparent 100%);
+}
+.devfin-tab-bar {
+  background: rgba(205,242,215,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(40,170,80,.25) !important;
+}
+.dark-theme .devfin-tab-bar {
+  background: rgba(3,16,6,.82) !important;
+  border-bottom: 1px solid rgba(30,150,60,.18) !important;
+}
+
+/* ════════════════════════════
+   COMMUNICATION — orange / énergie / expression
+   ════════════════════════════ */
+.comm-gradient {
+  --text-base: #350c00; --text-dim: #8a2c00; --text-muted: #c04010;
+  --bg-surface: rgba(255,242,232,.82); --bg-alt: rgba(255,225,205,.55);
+  --bg-hover: rgba(255,212,190,.60); --border-light: rgba(220,110,50,.28);
+}
+.dark-theme .comm-gradient {
+  --text-base: #ffe8d5; --text-dim: #f09050; --text-muted: #c06030;
+  --bg-surface: rgba(30,8,0,.75); --bg-alt: rgba(44,12,0,.60);
+  --bg-hover: rgba(56,15,0,.65); --border-light: rgba(200,90,40,.18);
+}
+.comm-gradient .gradient-layer {
+  background-color: #fce5d0;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(22,88%,48%,.62) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(38,84%,54%,.44) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(12,82%,42%,.54) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(32,78%,58%,.34) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(20,70%,50%,.28) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .comm-gradient .gradient-layer {
+  background-color: #120500;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(22,90%,18%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(38,82%,16%,.56) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(12,85%,14%,.80) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(32,78%,16%,.46) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(20,70%,8%,.55) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.comm-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #6a1e00 0%, #c03a08 20%, #7e2400 40%, #d04210 58%, #8e2800 78%, #c23c08 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(120,35,0,.30);
+}
+.dark-theme .comm-space-header {
+  background: linear-gradient(130deg,
+    #1a0500 0%, #320a00 20%, #140400 40%, #2c0800 58%, #100400 78%, #2e0800 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.50);
+}
+.comm-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,200,100,.22), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.comm-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,180,60,.55) 30%, rgba(255,220,80,.80) 50%, rgba(255,180,60,.55) 70%, transparent 100%);
+}
+.comm-tab-bar {
+  background: rgba(255,228,210,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(210,110,50,.25) !important;
+}
+.dark-theme .comm-tab-bar {
+  background: rgba(26,7,0,.82) !important;
+  border-bottom: 1px solid rgba(190,90,40,.18) !important;
+}
+
+/* ════════════════════════════
+   TRÉSORERIE — marine profond / rigueur / or
+   ════════════════════════════ */
+.treso-gradient {
+  --text-base: #040f28; --text-dim: #1a3868; --text-muted: #2a5098;
+  --bg-surface: rgba(228,234,248,.82); --bg-alt: rgba(205,215,240,.55);
+  --bg-hover: rgba(188,202,235,.60); --border-light: rgba(60,100,180,.28);
+}
+.dark-theme .treso-gradient {
+  --text-base: #d8e2f8; --text-dim: #6080c0; --text-muted: #3858a0;
+  --bg-surface: rgba(2,6,18,.75); --bg-alt: rgba(3,9,26,.60);
+  --bg-hover: rgba(4,11,32,.65); --border-light: rgba(40,80,160,.18);
+}
+.treso-gradient .gradient-layer {
+  background-color: #dae2f5;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(218,80%,22%,.68) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(48,65%,50%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(226,75%,18%,.58) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(210,70%,30%,.36) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(220,65%,20%,.30) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.dark-theme .treso-gradient .gradient-layer {
+  background-color: #010408;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(218,82%,12%,.95) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(48,65%,14%,.48) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(226,78%,10%,.82) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(210,72%,14%,.48) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(220,65%,6%,.58) 0px, transparent 42%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+.treso-space-header {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg,
+    #030c20 0%, #0c2248 20%, #040e28 40%, #0e2a58 58%, #040e24 78%, #0c2448 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  animation: euHeaderDrift 9s ease-in-out infinite;
+  box-shadow: 0 2px 20px rgba(0,10,40,.40);
+}
+.dark-theme .treso-space-header {
+  background: linear-gradient(130deg,
+    #010408 0%, #030b18 20%, #010408 40%, #030d1a 58%, #010306 78%, #030c18 100%
+  ) !important;
+  background-size: 280% 280% !important;
+  box-shadow: 0 2px 20px rgba(0,0,0,.60);
+}
+.treso-space-header::before {
+  content: ""; position: absolute; top: -50%; left: 0;
+  width: 60px; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(220,200,120,.20), transparent);
+  animation: euShimmer 22s ease-in-out infinite; pointer-events: none;
+}
+.treso-space-header::after {
+  content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(200,175,80,.55) 30%, rgba(240,215,100,.80) 50%, rgba(200,175,80,.55) 70%, transparent 100%);
+}
+.treso-tab-bar {
+  background: rgba(205,215,242,.70) !important;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(60,100,180,.25) !important;
+}
+.dark-theme .treso-tab-bar {
+  background: rgba(2,6,18,.82) !important;
+  border-bottom: 1px solid rgba(40,80,160,.18) !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   IDENTITÉS VISUELLES — PAGES GLOBALES
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Cartes glass pour toutes les pages thématisées ─────────────────────── */
+.actions-gradient .kc, .actions-gradient .sc,
+.planning-gradient .kc, .planning-gradient .sc,
+.annuaire-gradient .kc, .annuaire-gradient .sc,
+.messagerie-gradient .kc, .messagerie-gradient .sc,
+.analytics-gradient .kc, .analytics-gradient .sc,
+.notefrais-gradient .kc, .notefrais-gradient .sc,
+.devis-gradient .kc, .devis-gradient .sc,
+.faq-gradient .kc, .faq-gradient .sc,
+.bureau-gradient .kc, .bureau-gradient .sc,
+.admin-gradient .kc, .admin-gradient .sc {
+  background: rgba(255,255,255,.46) !important;
+  border-color: rgba(255,255,255,.55) !important;
+}
+.dark-theme .actions-gradient .kc, .dark-theme .actions-gradient .sc,
+.dark-theme .planning-gradient .kc, .dark-theme .planning-gradient .sc,
+.dark-theme .annuaire-gradient .kc, .dark-theme .annuaire-gradient .sc,
+.dark-theme .messagerie-gradient .kc, .dark-theme .messagerie-gradient .sc,
+.dark-theme .analytics-gradient .kc, .dark-theme .analytics-gradient .sc,
+.dark-theme .notefrais-gradient .kc, .dark-theme .notefrais-gradient .sc,
+.dark-theme .devis-gradient .kc, .dark-theme .devis-gradient .sc,
+.dark-theme .faq-gradient .kc, .dark-theme .faq-gradient .sc,
+.dark-theme .bureau-gradient .kc, .dark-theme .bureau-gradient .sc,
+.dark-theme .admin-gradient .kc, .dark-theme .admin-gradient .sc {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.10) !important;
+}
+
+/* ════════════════════════════
+   ACTIONS — amber / dynamisme / engagement
+   ════════════════════════════ */
+.actions-gradient {
+  --text-base: #2d1400; --text-dim: #7a3a00; --text-muted: #b06020;
+  --bg-surface: rgba(255,245,228,.82); --bg-alt: rgba(255,232,195,.55);
+  --bg-hover: rgba(255,218,170,.60); --border-light: rgba(200,110,20,.28);
+}
+.dark-theme .actions-gradient {
+  --text-base: #ffe8c0; --text-dim: #e08840; --text-muted: #b06028;
+  --bg-surface: rgba(28,10,0,.75); --bg-alt: rgba(40,14,0,.60);
+  --bg-hover: rgba(50,18,0,.65); --border-light: rgba(180,80,15,.18);
+}
+.actions-gradient .gradient-layer {
+  --gx1: 18% ; --gy1: 22%; --gx2: 72%; --gy2: 68%; --gx3: 45%; --gy3: 50%; --gx4: 85%; --gy4: 20%;
+  background-color: #f9f0dc;
+  background-image:
+    radial-gradient(ellipse 70% 60% at var(--gx1) var(--gy1), hsla(36,85%,70%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 50% 45% at var(--gx2) var(--gy2), hsla(20,80%,65%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 65% 55% at var(--gx3) var(--gy3), hsla(44,90%,75%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 45% 40% at var(--gx4) var(--gy4), hsla(15,75%,68%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 80% 70% at 88% 85%, hsla(30,70%,60%,.28) 0px, transparent 100%);
+  animation: gradientDrift 40s ease-in-out infinite;
+}
+.dark-theme .actions-gradient .gradient-layer {
+  background-color: #0c0500;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(36,85%,22%,.90) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(20,80%,18%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(44,90%,20%,.75) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(15,75%,16%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 85%, hsla(30,70%,10%,.55) 0px, transparent 42%);
+  animation: gradientDrift 40s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   PLANNING — indigo / structure / organisation
+   ════════════════════════════ */
+.planning-gradient {
+  --text-base: #0c0830; --text-dim: #2a2068; --text-muted: #5048a0;
+  --bg-surface: rgba(238,236,255,.82); --bg-alt: rgba(220,215,255,.55);
+  --bg-hover: rgba(205,198,255,.60); --border-light: rgba(100,88,210,.28);
+}
+.dark-theme .planning-gradient {
+  --text-base: #dcd8ff; --text-dim: #8880d0; --text-muted: #6058a8;
+  --bg-surface: rgba(8,6,28,.75); --bg-alt: rgba(12,8,40,.60);
+  --bg-hover: rgba(16,12,50,.65); --border-light: rgba(80,65,190,.18);
+}
+.planning-gradient .gradient-layer {
+  --gx1: 20%; --gy1: 25%; --gx2: 75%; --gy2: 65%; --gx3: 48%; --gy3: 52%; --gx4: 82%; --gy4: 22%;
+  background-color: #eeeaff;
+  background-image:
+    radial-gradient(ellipse 70% 60% at var(--gx1) var(--gy1), hsla(252,75%,72%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 50% 45% at var(--gx2) var(--gy2), hsla(220,70%,70%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 65% 55% at var(--gx3) var(--gy3), hsla(240,80%,75%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 45% 40% at var(--gx4) var(--gy4), hsla(210,65%,68%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 80% 70% at 85% 88%, hsla(260,65%,65%,.28) 0px, transparent 100%);
+  animation: gradientDrift 42s ease-in-out infinite;
+}
+.dark-theme .planning-gradient .gradient-layer {
+  background-color: #04020e;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(252,75%,18%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(220,70%,14%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(240,80%,16%,.78) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(210,65%,12%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 85% 88%, hsla(260,65%,10%,.55) 0px, transparent 42%);
+  animation: gradientDrift 42s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   ANNUAIRE — sky blue / clarté / réseau
+   ════════════════════════════ */
+.annuaire-gradient {
+  --text-base: #001830; --text-dim: #004a6e; --text-muted: #0070a0;
+  --bg-surface: rgba(228,245,255,.82); --bg-alt: rgba(205,235,255,.55);
+  --bg-hover: rgba(185,225,255,.60); --border-light: rgba(0,120,180,.28);
+}
+.dark-theme .annuaire-gradient {
+  --text-base: #cceeff; --text-dim: #50b0e0; --text-muted: #2888b8;
+  --bg-surface: rgba(0,10,22,.75); --bg-alt: rgba(0,14,30,.60);
+  --bg-hover: rgba(0,18,38,.65); --border-light: rgba(0,90,150,.18);
+}
+.annuaire-gradient .gradient-layer {
+  --gx1: 22%; --gy1: 28%; --gx2: 70%; --gy2: 62%; --gx3: 50%; --gy3: 48%; --gx4: 80%; --gy4: 25%;
+  background-color: #ddf0fc;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(200,85%,72%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(185,80%,70%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(210,90%,75%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(195,75%,68%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(205,70%,65%,.28) 0px, transparent 100%);
+  animation: gradientDrift 44s ease-in-out infinite;
+}
+.dark-theme .annuaire-gradient .gradient-layer {
+  background-color: #000810;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(200,85%,16%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(185,80%,12%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(210,90%,14%,.78) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(195,75%,10%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(205,70%,8%,.55) 0px, transparent 42%);
+  animation: gradientDrift 44s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   MESSAGERIE — emerald / connexion / échange
+   ════════════════════════════ */
+.messagerie-gradient {
+  --text-base: #001a0c; --text-dim: #00502a; --text-muted: #007840;
+  --bg-surface: rgba(225,248,238,.82); --bg-alt: rgba(200,240,220,.55);
+  --bg-hover: rgba(178,232,205,.60); --border-light: rgba(0,140,70,.28);
+}
+.dark-theme .messagerie-gradient {
+  --text-base: #c0f0d8; --text-dim: #40c880; --text-muted: #209858;
+  --bg-surface: rgba(0,12,6,.75); --bg-alt: rgba(0,16,8,.60);
+  --bg-hover: rgba(0,22,11,.65); --border-light: rgba(0,100,50,.18);
+}
+.messagerie-gradient .gradient-layer {
+  --gx1: 20%; --gy1: 24%; --gx2: 72%; --gy2: 66%; --gx3: 46%; --gy3: 50%; --gx4: 84%; --gy4: 22%;
+  background-color: #d8f5e8;
+  background-image:
+    radial-gradient(ellipse 70% 60% at var(--gx1) var(--gy1), hsla(150,80%,68%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 50% 45% at var(--gx2) var(--gy2), hsla(165,75%,65%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 65% 55% at var(--gx3) var(--gy3), hsla(140,85%,72%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 45% 40% at var(--gx4) var(--gy4), hsla(155,70%,64%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 80% 70% at 88% 88%, hsla(145,68%,60%,.28) 0px, transparent 100%);
+  animation: gradientDrift 46s ease-in-out infinite;
+}
+.dark-theme .messagerie-gradient .gradient-layer {
+  background-color: #000802;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(150,80%,12%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(165,75%,10%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(140,85%,12%,.78) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(155,70%,8%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(145,68%,6%,.55) 0px, transparent 42%);
+  animation: gradientDrift 46s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   ANALYTICS — violet / données / vision
+   ════════════════════════════ */
+.analytics-gradient {
+  --text-base: #1a0030; --text-dim: #4a0070; --text-muted: #7a20a8;
+  --bg-surface: rgba(245,228,255,.82); --bg-alt: rgba(232,205,255,.55);
+  --bg-hover: rgba(218,182,255,.60); --border-light: rgba(140,40,210,.28);
+}
+.dark-theme .analytics-gradient {
+  --text-base: #f0d0ff; --text-dim: #c070f0; --text-muted: #9040c8;
+  --bg-surface: rgba(10,0,20,.75); --bg-alt: rgba(16,0,30,.60);
+  --bg-hover: rgba(22,0,40,.65); --border-light: rgba(100,20,180,.18);
+}
+.analytics-gradient .gradient-layer {
+  --gx1: 18%; --gy1: 26%; --gx2: 74%; --gy2: 64%; --gx3: 48%; --gy3: 50%; --gx4: 82%; --gy4: 20%;
+  background-color: #f0e0ff;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(280,80%,72%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(300,75%,68%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(265,85%,75%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(290,70%,65%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(275,68%,62%,.28) 0px, transparent 100%);
+  animation: gradientDrift 38s ease-in-out infinite;
+}
+.dark-theme .analytics-gradient .gradient-layer {
+  background-color: #060010;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(280,80%,16%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(300,75%,12%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(265,85%,14%,.78) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(290,70%,10%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(275,68%,8%,.55) 0px, transparent 42%);
+  animation: gradientDrift 38s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   NOTE DE FRAIS — gold / rigueur / finance
+   ════════════════════════════ */
+.notefrais-gradient {
+  --text-base: #1e1000; --text-dim: #5a3a00; --text-muted: #9a6a10;
+  --bg-surface: rgba(255,248,220,.82); --bg-alt: rgba(255,238,185,.55);
+  --bg-hover: rgba(255,228,160,.60); --border-light: rgba(190,140,20,.28);
+}
+.dark-theme .notefrais-gradient {
+  --text-base: #fff0c0; --text-dim: #d0a030; --text-muted: #a87818;
+  --bg-surface: rgba(14,8,0,.75); --bg-alt: rgba(20,12,0,.60);
+  --bg-hover: rgba(26,16,0,.65); --border-light: rgba(160,110,0,.18);
+}
+.notefrais-gradient .gradient-layer {
+  --gx1: 20%; --gy1: 25%; --gx2: 72%; --gy2: 68%; --gx3: 46%; --gy3: 52%; --gx4: 84%; --gy4: 20%;
+  background-color: #fdf4d0;
+  background-image:
+    radial-gradient(ellipse 70% 60% at var(--gx1) var(--gy1), hsla(46,90%,72%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 50% 45% at var(--gx2) var(--gy2), hsla(38,85%,68%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 65% 55% at var(--gx3) var(--gy3), hsla(52,95%,76%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 45% 40% at var(--gx4) var(--gy4), hsla(42,80%,65%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 80% 70% at 88% 88%, hsla(48,75%,62%,.28) 0px, transparent 100%);
+  animation: gradientDrift 50s ease-in-out infinite;
+}
+.dark-theme .notefrais-gradient .gradient-layer {
+  background-color: #080400;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(46,90%,16%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(38,85%,12%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(52,95%,16%,.78) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(42,80%,10%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(48,75%,8%,.55) 0px, transparent 42%);
+  animation: gradientDrift 50s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   DEVIS & FACTURES — steel blue / précision / gestion
+   ════════════════════════════ */
+.devis-gradient {
+  --text-base: #001428; --text-dim: #003860; --text-muted: #005e90;
+  --bg-surface: rgba(220,238,255,.82); --bg-alt: rgba(198,225,255,.55);
+  --bg-hover: rgba(175,212,255,.60); --border-light: rgba(0,100,170,.28);
+}
+.dark-theme .devis-gradient {
+  --text-base: #c0deff; --text-dim: #4090d0; --text-muted: #1870b0;
+  --bg-surface: rgba(0,8,18,.75); --bg-alt: rgba(0,12,26,.60);
+  --bg-hover: rgba(0,16,34,.65); --border-light: rgba(0,70,130,.18);
+}
+.devis-gradient .gradient-layer {
+  --gx1: 22%; --gy1: 28%; --gx2: 70%; --gy2: 62%; --gx3: 50%; --gy3: 48%; --gx4: 80%; --gy4: 25%;
+  background-color: #d5ecff;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(210,80%,70%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(220,75%,68%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(200,85%,72%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(215,70%,65%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(205,68%,62%,.28) 0px, transparent 100%);
+  animation: gradientDrift 48s ease-in-out infinite;
+}
+.dark-theme .devis-gradient .gradient-layer {
+  background-color: #000610;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(210,80%,14%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(220,75%,10%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(200,85%,12%,.78) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(215,70%,8%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(205,68%,6%,.55) 0px, transparent 42%);
+  animation: gradientDrift 48s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   FAQ — cyan / clarté / aide
+   ════════════════════════════ */
+.faq-gradient {
+  --text-base: #001c22; --text-dim: #005060; --text-muted: #007888;
+  --bg-surface: rgba(220,250,255,.82); --bg-alt: rgba(195,242,252,.55);
+  --bg-hover: rgba(170,234,250,.60); --border-light: rgba(0,160,188,.28);
+}
+.dark-theme .faq-gradient {
+  --text-base: #b8f0f8; --text-dim: #30c0d8; --text-muted: #0898b0;
+  --bg-surface: rgba(0,10,14,.75); --bg-alt: rgba(0,14,18,.60);
+  --bg-hover: rgba(0,18,24,.65); --border-light: rgba(0,110,140,.18);
+}
+.faq-gradient .gradient-layer {
+  --gx1: 20%; --gy1: 24%; --gx2: 72%; --gy2: 66%; --gx3: 48%; --gy3: 50%; --gx4: 82%; --gy4: 22%;
+  background-color: #d0f5fe;
+  background-image:
+    radial-gradient(ellipse 70% 60% at var(--gx1) var(--gy1), hsla(188,85%,70%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 50% 45% at var(--gx2) var(--gy2), hsla(196,80%,68%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 65% 55% at var(--gx3) var(--gy3), hsla(180,90%,72%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 45% 40% at var(--gx4) var(--gy4), hsla(192,75%,65%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 80% 70% at 88% 88%, hsla(184,70%,62%,.28) 0px, transparent 100%);
+  animation: gradientDrift 43s ease-in-out infinite;
+}
+.dark-theme .faq-gradient .gradient-layer {
+  background-color: #000a0e;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(188,85%,14%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(196,80%,10%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(180,90%,12%,.78) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(192,75%,8%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(184,70%,6%,.55) 0px, transparent 42%);
+  animation: gradientDrift 43s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   BUREAU — prestige gold / leadership / institution
+   ════════════════════════════ */
+.bureau-gradient {
+  --text-base: #1a1200; --text-dim: #4e3600; --text-muted: #886018;
+  --bg-surface: rgba(255,250,230,.82); --bg-alt: rgba(255,242,200,.55);
+  --bg-hover: rgba(255,234,175,.60); --border-light: rgba(180,130,20,.28);
+}
+.dark-theme .bureau-gradient {
+  --text-base: #fff8e0; --text-dim: #c8a040; --text-muted: #a07820;
+  --bg-surface: rgba(12,8,0,.75); --bg-alt: rgba(18,12,0,.60);
+  --bg-hover: rgba(24,16,0,.65); --border-light: rgba(150,100,0,.18);
+}
+.bureau-gradient .gradient-layer {
+  --gx1: 18%; --gy1: 22%; --gx2: 74%; --gy2: 68%; --gx3: 44%; --gy3: 50%; --gx4: 86%; --gy4: 18%;
+  background-color: #fdf8e8;
+  background-image:
+    radial-gradient(ellipse 72% 62% at var(--gx1) var(--gy1), hsla(44,85%,72%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 52% 48% at var(--gx2) var(--gy2), hsla(32,80%,65%,.38) 0px, transparent 100%),
+    radial-gradient(ellipse 66% 58% at var(--gx3) var(--gy3), hsla(50,90%,76%,.48) 0px, transparent 100%),
+    radial-gradient(ellipse 48% 44% at var(--gx4) var(--gy4), hsla(38,75%,65%,.32) 0px, transparent 100%),
+    radial-gradient(ellipse 82% 72% at 88% 88%, hsla(42,70%,62%,.28) 0px, transparent 100%);
+  animation: gradientDrift 55s ease-in-out infinite;
+}
+.dark-theme .bureau-gradient .gradient-layer {
+  background-color: #080600;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(44,85%,16%,.92) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(32,80%,12%,.50) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(50,90%,16%,.78) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(38,75%,10%,.44) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(42,70%,8%,.55) 0px, transparent 42%);
+  animation: gradientDrift 55s ease-in-out infinite;
+}
+
+/* ════════════════════════════
+   ADMIN — slate anthracite / contrôle / sécurité
+   ════════════════════════════ */
+.admin-gradient {
+  --text-base: #0a0c10; --text-dim: #2a3040; --text-muted: #505870;
+  --bg-surface: rgba(235,238,248,.82); --bg-alt: rgba(218,222,240,.55);
+  --bg-hover: rgba(200,206,232,.60); --border-light: rgba(60,70,110,.28);
+}
+.dark-theme .admin-gradient {
+  --text-base: #d8dcf0; --text-dim: #7880a8; --text-muted: #505878;
+  --bg-surface: rgba(4,5,10,.75); --bg-alt: rgba(6,8,14,.60);
+  --bg-hover: rgba(8,10,18,.65); --border-light: rgba(40,48,80,.18);
+}
+.admin-gradient .gradient-layer {
+  --gx1: 20%; --gy1: 25%; --gx2: 72%; --gy2: 65%; --gx3: 48%; --gy3: 50%; --gx4: 82%; --gy4: 22%;
+  background-color: #e8eaf2;
+  background-image:
+    radial-gradient(ellipse 70% 60% at var(--gx1) var(--gy1), hsla(230,45%,68%,.50) 0px, transparent 100%),
+    radial-gradient(ellipse 50% 45% at var(--gx2) var(--gy2), hsla(215,40%,65%,.35) 0px, transparent 100%),
+    radial-gradient(ellipse 65% 55% at var(--gx3) var(--gy3), hsla(240,50%,72%,.44) 0px, transparent 100%),
+    radial-gradient(ellipse 45% 40% at var(--gx4) var(--gy4), hsla(220,38%,62%,.28) 0px, transparent 100%),
+    radial-gradient(ellipse 80% 70% at 88% 88%, hsla(232,42%,60%,.24) 0px, transparent 100%);
+  animation: gradientDrift 60s ease-in-out infinite;
+}
+.dark-theme .admin-gradient .gradient-layer {
+  background-color: #020306;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(230,45%,12%,.90) 0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(215,40%,8%,.48) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(240,50%,10%,.75) 0px, transparent 52%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(220,38%,6%,.40) 0px, transparent 46%),
+    radial-gradient(ellipse at 88% 88%, hsla(232,42%,4%,.52) 0px, transparent 42%);
+  animation: gradientDrift 60s ease-in-out infinite;
+}

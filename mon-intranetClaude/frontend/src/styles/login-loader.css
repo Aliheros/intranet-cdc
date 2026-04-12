@@ -188,7 +188,7 @@
 .ll-progress-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #3b82f6 0%, #e63946 60%, #f43f5e 100%);
+  background: linear-gradient(90deg, #ffffff 0%, #ffffff 60%, #ffffff 100%);
   border-radius: 2px;
   animation: ll-progress 2.3s cubic-bezier(.4, 0, .6, 1) forwards 1.2s;
 }
@@ -202,3 +202,44 @@
   width: 40% !important;
   animation: ll-progress-slide 1.2s cubic-bezier(.4, 0, .6, 1) infinite !important;
 }
+
+/* ── DashboardMessageHeader — intégration dans la transition post-login ───── */
+
+/* Overlay : couleurs du loader → transparent (révèle le fond thème derrière) */
+@keyframes dmh-overlay-out {
+  0%   { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+/* Overlay identique au ll-bg du loader (même palette, même direction, même animation de mouvement)
+   → la couleur perçue est exactement celle du loader ; à t=2.5s elle s'efface vers le thème header */
+.dmh-loader-overlay {
+  background: linear-gradient(270deg, #0f2d5e, #e63946, #4c1d95);
+  background-size: 400% 400%;
+  animation: ll-gradient 20s ease infinite, dmh-overlay-out 3s ease-in-out 2.5s forwards;
+}
+
+/* Texte — mode sombre : blanc → blanc (inchangé, pas d'animation nécessaire) */
+/* Texte — mode clair : blanc → bleu foncé */
+@keyframes dmh-msg-to-light {
+  0%   { color: rgba(255,255,255,0.95); }
+  100% { color: #0f1e5a; }
+}
+@keyframes dmh-eyebrow-to-light {
+  0%   { color: rgba(255,255,255,0.70); }
+  100% { color: rgba(60,100,200,0.70); }
+}
+/* Texte — mode sombre : part blanc, reste blanc (on ne touche pas la couleur) */
+@keyframes dmh-msg-to-dark {
+  0%   { color: rgba(255,255,255,0.95); }
+  100% { color: #ffffff; }
+}
+@keyframes dmh-eyebrow-to-dark {
+  0%   { color: rgba(255,255,255,0.70); }
+  100% { color: rgba(160,185,255,0.65); }
+}
+
+.dmh-msg-light-fresh    { animation: dmh-msg-to-light     3s ease-in-out 2.5s both; }
+.dmh-eyebrow-light-fresh{ animation: dmh-eyebrow-to-light 3s ease-in-out 2.5s both; }
+.dmh-msg-dark-fresh     { animation: dmh-msg-to-dark      3s ease-in-out 2.5s both; }
+.dmh-eyebrow-dark-fresh { animation: dmh-eyebrow-to-dark  3s ease-in-out 2.5s both; }
+

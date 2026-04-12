@@ -20,7 +20,7 @@ const Dashboard = () => {
   const {
     requestConfirm, addToast, handleNav,
     setActiveEventId, highlightedTaskId, setHighlightedTaskId, setHighlightedActionId, setHighlightedEventId,
-    setNoteFraisModal, openMemberProfile, freshLogin,
+    setNoteFraisModal, openMemberProfile, freshLogin, loginKey,
   } = useAppContext();
   const onNewNoteFrais = () => setNoteFraisModal({});
   const navigate = handleNav;
@@ -43,6 +43,8 @@ const Dashboard = () => {
   const onEditConge = ({ id, ...updatedConge }) => handleEditConge(id, updatedConge);
   const onDeleteConge = (id) => handleDeleteConge(id);
   // ── Restart fiable de la transition au login (marche aussi à la re-connexion) ─
+  // loginKey s'incrémente à chaque connexion → l'effet se relance même si freshLogin
+  // était déjà true (reconnexion avant la fin des 8.5s).
   useEffect(() => {
     if (!freshLogin) return;
     const layer = document.querySelector('.gradient-layer');
@@ -56,7 +58,7 @@ const Dashboard = () => {
       layer.style.opacity = '1';
     }, 2500);
     return () => clearTimeout(t);
-  }, [freshLogin]);
+  }, [loginKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Drift animé + magnétisme souris sur les halos de fond ───────────────
   useEffect(() => {
@@ -240,7 +242,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <DashboardMessageHeader />
+      <DashboardMessageHeader key={loginKey} />
 
       {/* ── KPIs RAPIDES ──────────────────────────────────────────────────── */}
       <div className={`kpi-grid${freshLogin ? ' dash-stagger-2' : ''}`} style={{ marginBottom: 24 }} data-tour="dashboard-main">

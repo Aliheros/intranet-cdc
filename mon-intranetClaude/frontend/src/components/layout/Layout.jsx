@@ -1,7 +1,7 @@
 // src/components/layout/Layout.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { AvatarInner, isAvatarUrl } from '../ui/AvatarDisplay';
-import { POLE_COLORS, PROJET_COLORS } from '../../data/constants';
+import { POLE_COLORS, PROJET_COLORS, SPACE_CLASS_MAP, PAGE_GRADIENT_MAP } from '../../data/constants';
 import { SPACE_LOGO } from '../../data/spaceLogos';
 import { LogOut, Moon, Sun, Settings, Search, X, Bell, ClipboardList, MessageCircle, LayoutDashboard, Zap, Users, Receipt, Crown, Shield, Calendar, User, Target, Menu, ExternalLink, HelpCircle, FileSignature, BarChart2, ChevronRight } from 'lucide-react';
 import { useDataContext } from '../../contexts/DataContext';
@@ -432,8 +432,8 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
         </button>
 
         {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────────── */}
-        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'main-gradient' : ''}${(page === 'projet' && subPage === 'Europe') ? ' europe-gradient' : ''}${page === 'coordination' ? ' coord-gradient' : ''}${freshLogin ? ' login-transition' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
-          {(page === 'dashboard' || (page === 'projet' && subPage === 'Europe') || page === 'coordination') && <div className="gradient-layer" aria-hidden="true" />}
+        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'main-gradient' : ''}${(page === 'pole' || page === 'projet') && SPACE_CLASS_MAP[subPage] ? ` ${SPACE_CLASS_MAP[subPage]}-gradient` : ''}${page === 'coordination' ? ' coord-gradient' : ''}${PAGE_GRADIENT_MAP[page] ? ` ${PAGE_GRADIENT_MAP[page]}-gradient` : ''}${freshLogin ? ' login-transition' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
+          {(page === 'dashboard' || ((page === 'pole' || page === 'projet') && SPACE_CLASS_MAP[subPage]) || page === 'coordination' || PAGE_GRADIENT_MAP[page]) && <div className="gradient-layer" aria-hidden="true" />}
 
           {/* ── TOPBAR STICKY ───────────────────────────────────────────────── */}
           <div className="topbar">
@@ -621,7 +621,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
           )}
 
           {/* ── PAGE CONTENT ────────────────────────────────────────────────── */}
-          <div className={(page === 'dashboard' || (page === 'projet' && subPage === 'Europe')) ? 'gradient-content' : ''} style={(page !== 'dashboard' && !(page === 'projet' && subPage === 'Europe') && page !== 'coordination') ? { padding: '28px 44px 44px' } : undefined}>
+          <div className={(page === 'dashboard' || ((page === 'pole' || page === 'projet') && SPACE_CLASS_MAP[subPage]) || PAGE_GRADIENT_MAP[page]) ? 'gradient-content' : ''} style={(page !== 'dashboard' && !((page === 'pole' || page === 'projet') && SPACE_CLASS_MAP[subPage]) && page !== 'coordination' && !PAGE_GRADIENT_MAP[page]) ? { padding: '28px 44px 44px' } : undefined}>
             <div key={page} className="page-transition">{children}</div>
           </div>
 
