@@ -308,29 +308,10 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
   const canManageSpace = accessObj?.canManage;
   const color = page === "pole" ? POLE_COLORS[subPage] : PROJET_COLORS[subPage];
 
-  // ── Alimente la barre contextuelle (header + onglets) dans la topbar ────
+  // ── Nettoie la barre contextuelle en quittant la page ────────────────────
   useLayoutEffect(() => {
-    setContextBar(
-      <>
-        <button className={`ctx-tab ${activeTab === 'contenu' ? 'active' : ''}`} onClick={() => setActiveTab('contenu')}>
-          <Folder size={12} strokeWidth={1.8}/> Contenu
-        </button>
-        {subPage === 'Trésorerie' && acc === 'edit' && <>
-          <button className={`ctx-tab ${activeTab === 'tresorerie' ? 'active' : ''}`} onClick={() => setActiveTab('tresorerie')}><BarChart2 size={12} strokeWidth={1.8}/> Finance</button>
-          <button className={`ctx-tab ${activeTab === 'ndf_treso' ? 'active' : ''}`} onClick={() => setActiveTab('ndf_treso')}><Receipt size={12} strokeWidth={1.8}/> Notes de frais</button>
-          <button className={`ctx-tab ${activeTab === 'df_treso' ? 'active' : ''}`} onClick={() => setActiveTab('df_treso')}><FileText size={12} strokeWidth={1.8}/> Devis &amp; Factures</button>
-        </>}
-        {subPage === 'Ressources Humaines' && <>
-          <button className={`ctx-tab ${activeTab === 'rh_suivi' ? 'active' : ''}`} onClick={() => setActiveTab('rh_suivi')}><Users size={12} strokeWidth={1.8}/> Suivi RH</button>
-          <button className={`ctx-tab ${activeTab === 'rh_missions' ? 'active' : ''}`} onClick={() => setActiveTab('rh_missions')}><Target size={12} strokeWidth={1.8}/> Bourses aux missions</button>
-        </>}
-        {subPage === 'Etudes' && <button className={`ctx-tab ${activeTab === 'etudes_stats' ? 'active' : ''}`} onClick={() => setActiveTab('etudes_stats')}><BarChart2 size={12} strokeWidth={1.8}/> Statistiques</button>}
-        {subPage === 'Relations Publiques' && <button className={`ctx-tab ${activeTab === 'rp_contacts' ? 'active' : ''}`} onClick={() => setActiveTab('rp_contacts')}><Users size={12} strokeWidth={1.8}/> Contacts &amp; Sollicitations</button>}
-        {acc === 'edit' && <button className={`ctx-tab ${activeTab === 'corbeille' ? 'active' : ''}`} onClick={() => setActiveTab('corbeille')}><Trash2 size={12} strokeWidth={1.8}/> Corbeille</button>}
-      </>
-    );
     return () => setContextBar(null);
-  }, [subPage, activeTab, acc]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-réinitialise le surlignage après 2.5 secondes
   useEffect(() => {
@@ -366,7 +347,7 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '12px 44px',
-        margin: '-28px -44px 24px',
+        margin: '-28px -44px 0',
         background: color || 'var(--accent)',
       }}>
         <div style={{
@@ -398,6 +379,34 @@ const SpaceView = ({ spaceWallContainerRef, spaceFileRef }) => {
             <Settings size={12} strokeWidth={1.8} /> Paramétrer
           </button>
         )}
+      </div>
+
+      {/* ── Barre d'onglets sticky (colle sous la topbar au scroll) ─────── */}
+      <div style={{
+        position: 'sticky', top: 62, zIndex: 40,
+        display: 'flex', alignItems: 'center', gap: 2,
+        margin: '0 -44px', padding: '0 44px',
+        background: 'rgba(255,255,255,0.72)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        borderBottom: '1px solid rgba(0,0,0,0.07)',
+        marginBottom: 24,
+      }}>
+        <button className={`ctx-tab ${activeTab === 'contenu' ? 'active' : ''}`} onClick={() => setActiveTab('contenu')}>
+          <Folder size={12} strokeWidth={1.8}/> Contenu
+        </button>
+        {subPage === 'Trésorerie' && acc === 'edit' && <>
+          <button className={`ctx-tab ${activeTab === 'tresorerie' ? 'active' : ''}`} onClick={() => setActiveTab('tresorerie')}><BarChart2 size={12} strokeWidth={1.8}/> Finance</button>
+          <button className={`ctx-tab ${activeTab === 'ndf_treso' ? 'active' : ''}`} onClick={() => setActiveTab('ndf_treso')}><Receipt size={12} strokeWidth={1.8}/> Notes de frais</button>
+          <button className={`ctx-tab ${activeTab === 'df_treso' ? 'active' : ''}`} onClick={() => setActiveTab('df_treso')}><FileText size={12} strokeWidth={1.8}/> Devis &amp; Factures</button>
+        </>}
+        {subPage === 'Ressources Humaines' && <>
+          <button className={`ctx-tab ${activeTab === 'rh_suivi' ? 'active' : ''}`} onClick={() => setActiveTab('rh_suivi')}><Users size={12} strokeWidth={1.8}/> Suivi RH</button>
+          <button className={`ctx-tab ${activeTab === 'rh_missions' ? 'active' : ''}`} onClick={() => setActiveTab('rh_missions')}><Target size={12} strokeWidth={1.8}/> Bourses aux missions</button>
+        </>}
+        {subPage === 'Etudes' && <button className={`ctx-tab ${activeTab === 'etudes_stats' ? 'active' : ''}`} onClick={() => setActiveTab('etudes_stats')}><BarChart2 size={12} strokeWidth={1.8}/> Statistiques</button>}
+        {subPage === 'Relations Publiques' && <button className={`ctx-tab ${activeTab === 'rp_contacts' ? 'active' : ''}`} onClick={() => setActiveTab('rp_contacts')}><Users size={12} strokeWidth={1.8}/> Contacts &amp; Sollicitations</button>}
+        {acc === 'edit' && <button className={`ctx-tab ${activeTab === 'corbeille' ? 'active' : ''}`} onClick={() => setActiveTab('corbeille')}><Trash2 size={12} strokeWidth={1.8}/> Corbeille</button>}
       </div>
 
       {/* --- MODALE DES TÂCHES --- */}
