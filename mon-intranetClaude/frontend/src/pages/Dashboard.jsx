@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
 import { useDataContext } from '../contexts/DataContext';
 import '../styles/login-loader.css';
+import DashboardMessageHeader from '../components/ui/DashboardMessageHeader';
 
 const URGENCE_COLOR = { haute: "#e63946", normale: "#d97706", basse: "#16a34a" };
 
@@ -239,8 +240,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className={`eyebrow${freshLogin ? ' dash-stagger-1 dash-text-to-dark' : ''}`}>Cité des Chances</div>
-      <div className={`ptitle${freshLogin ? ' dash-stagger-1 dash-text-to-dark' : ''}`}>Bonjour, {currentUser.nom.split(" ")[0]} 👋</div>
+      <DashboardMessageHeader />
 
       {/* ── KPIs RAPIDES ──────────────────────────────────────────────────── */}
       <div className={`kpi-grid${freshLogin ? ' dash-stagger-2' : ''}`} style={{ marginBottom: 24 }} data-tour="dashboard-main">

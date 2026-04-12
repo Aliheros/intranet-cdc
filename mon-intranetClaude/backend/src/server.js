@@ -30,6 +30,7 @@ const impactStudiesRoutes    = require('./routes/impact-studies');
 const seancePresencesRoutes  = require('./routes/seance-presences');
 const automationRulesRoutes  = require('./routes/automation-rules');
 const appConfigRoutes        = require('./routes/app-config');
+const dashboardMessagesRoutes = require('./routes/dashboard-messages');
 const { startAutomationCron } = require('./lib/automationCron');
 const { seedAppConfig }       = require('./lib/seedAppConfig');
 
@@ -138,6 +139,7 @@ app.use('/api/impact-studies',    impactStudiesRoutes);
 app.use('/api/seance-presences',  seancePresencesRoutes);
 app.use('/api/automation-rules',  automationRulesRoutes);
 app.use('/api/app-config',        appConfigRoutes);
+app.use('/api/dashboard-messages', dashboardMessagesRoutes);
 
 // Health check
 app.get('/', (req, res) => res.json({ status: 'ok', message: 'Intranet API' }));

@@ -32,6 +32,8 @@ model User {
   emailPerso        String?
   emailPreferences  Json      @default("{}")
   notifEmail        Boolean   @default(true)
+  genre             String?
+  dateNaissance     String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -433,6 +435,32 @@ model ImpactStudy {
   createdBy String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Messages du tableau de bord ─────────────────────────────────────────────
+// Messages personnalisables affichés en rotation dans le header du Dashboard.
+// Les messages système (Bonjour, Bienvenue) sont gérés côté frontend.
+
+model DashboardMessage {
+  id            Int      @id @default(autoincrement())
+  contenu       String   // Max 120 caractères (validé en API)
+  actif         Boolean  @default(true)
+
+  // Ciblage — tableau vide = tous les utilisateurs passent ce filtre
+  cibleUsers    String[] @default([])  // Noms exacts d'utilisateurs
+  ciblePoles    String[] @default([])  // Pôles
+  cibleProjets  String[] @default([])  // Projets
+  cibleRoles    String[] @default([])  // Admin | Bureau | Éditeur | Lecteur
+  cibleGenres   String[] @default([])  // Valeurs libres du champ genre
+  cibleStatuts  String[] @default([])  // Actif | Inactif | …
+  cibleAgeMin   Int?                   // Âge minimum inclus
+  cibleAgeMax   Int?                   // Âge maximum inclus
+
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("dashboard_messages")
 }
 
 // ─── Configuration applicative ───────────────────────────────────────────────

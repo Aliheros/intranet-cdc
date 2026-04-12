@@ -9,7 +9,8 @@ import Permissions from './Permissions';
 import NdfConfigPanel     from '../components/admin/NdfConfigPanel';
 import DfConfigPanel      from '../components/admin/DfConfigPanel';
 import AutomationPanel    from '../components/admin/AutomationPanel';
-import AppConfigPanel     from '../components/admin/AppConfigPanel';
+import AppConfigPanel           from '../components/admin/AppConfigPanel';
+import DashboardMessagesPanel   from '../components/admin/DashboardMessagesPanel';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (d) => {
@@ -595,6 +596,7 @@ const ParametresTab = () => {
 // ─── Page principale ──────────────────────────────────────────────────────────
 const TABS = [
   { id: 'utilisateurs', label: 'Utilisateurs',      icon: Users },
+  { id: 'messages',     label: 'Messages Dashboard', icon: MessageSquare },
   { id: 'audit',        label: 'Journal d\'audit',  icon: ScrollText },
   { id: 'parametres',   label: 'Paramètres',        icon: Settings2 },
   { id: 'exports',      label: 'Exports',           icon: Download },
@@ -647,6 +649,7 @@ const Admin = () => {
 
       {/* Contenu */}
       {tab === 'utilisateurs'  && <Permissions />}
+      {tab === 'messages'      && <DashboardMessagesPanel />}
       {tab === 'audit'         && <AuditTab />}
       {tab === 'parametres'    && <ParametresTab />}
       {tab === 'exports'       && <ExportsTab />}
