@@ -76,6 +76,9 @@ export default function LoginLoader({ onDone }) {
           onError={e => { e.currentTarget.style.display = 'none'; }}
         />
         <div className="ll-text">Chargement</div>
+        <div className="ll-progress-track">
+          <div className="ll-progress-bar" />
+        </div>
       </div>
     </div>
   );

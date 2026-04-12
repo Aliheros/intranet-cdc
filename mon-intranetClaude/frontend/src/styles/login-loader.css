@@ -168,3 +168,27 @@
   opacity: 0;
   animation: ll-text-in 2s ease forwards 0.5s;
 }
+
+/* ── Barre de progression ─────────────────────────────────────────────────── */
+@keyframes ll-progress {
+  0%   { width: 0%;    opacity: 1; }
+  85%  { width: 92%;   opacity: 1; }
+  100% { width: 100%;  opacity: 0; }
+}
+.ll-progress-track {
+  width: 200px;
+  height: 2px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  margin-top: 20px;
+  overflow: hidden;
+  opacity: 0;
+  animation: ll-text-in 0.6s ease forwards 1s; /* apparaît avec le texte */
+}
+.ll-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3b82f6 0%, #e63946 60%, #f43f5e 100%);
+  border-radius: 2px;
+  animation: ll-progress 2.3s cubic-bezier(.4, 0, .6, 1) forwards 1.2s;
+}

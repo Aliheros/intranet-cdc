@@ -180,7 +180,8 @@ function App() {
   }, [isBannerActive, unreadVisibleNotifs.length]);
 
   // ─── LOADER POST-LOGIN — détection premier login ─────────────────────────
-  useEffect(() => {
+  // useLayoutEffect : s'exécute avant le premier paint → évite le flash de l'intranet
+  useLayoutEffect(() => {
     if (!authLoading) {
       const wasLoading = wasLoadingRef.current;
       wasLoadingRef.current = false;
