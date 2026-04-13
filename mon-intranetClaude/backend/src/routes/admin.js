@@ -186,4 +186,67 @@ router.get('/export/heures', requireAuth, requireAdmin, async (req, res) => {
     `heures_benevoles_${new Date().toISOString().slice(0,10)}.csv`);
 });
 
+// ─── EXPORT GOOGLE DRIVE ──────────────────────────────────────────────────────
+
+const { runDriveExport } = require('../lib/driveExportCron');
+const { getAllExporters } = require('../exports/index');
+
+// GET /api/admin/drive-export/exporters — liste des exporteurs disponibles
+router.get('/drive-export/exporters', requireAuth, requireAdmin, (req, res) => {
+  const exporters = getAllExporters().map(e => ({
+    key:           e.key,
+    label:         e.label,
+    defaultFormat: e.defaultFormat,
+  }));
+  res.json(exporters);
+});
+
+// GET /api/admin/drive-export/status — configuration actuelle + dernier run
+router.get('/drive-export/status', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const configRow = await prisma.appConfig.findUnique({ where: { key: 'google_drive_export' } });
+    const config = configRow?.value || {};
+
+    // Dernier run dans l'audit log
+    const lastRun = await prisma.auditLog.findFirst({
+      where: { action: 'export.drive.run' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json({ config, lastRun: lastRun || null });
+  } catch (err) {
+    log.error({ err }, 'Erreur GET /admin/drive-export/status');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/drive-export/history — historique des runs (20 derniers)
+router.get('/drive-export/history', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 20, 100);
+    const history = await prisma.auditLog.findMany({
+      where: { action: 'export.drive.run' },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    res.json(history);
+  } catch (err) {
+    log.error({ err }, 'Erreur GET /admin/drive-export/history');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/drive-export/run — déclenchement manuel
+router.post('/drive-export/run', requireAuth, requireAdmin, async (req, res) => {
+  auditLog(req, { action: 'admin.drive_export.manual', targetType: 'System', targetNom: 'Google Drive' });
+  log.info({ actor: req.user?.nom }, '[DriveExport] Déclenchement manuel via API');
+  try {
+    const results = await runDriveExport();
+    res.json(results);
+  } catch (err) {
+    log.error({ err }, 'Erreur POST /admin/drive-export/run');
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -5,7 +5,7 @@ const prisma          = require('../lib/prisma');
 
 const router = express.Router();
 
-const ALLOWED_KEYS = ['types_action', 'niveaux_classe', 'labels_rep', 'statuts_action', 'thresholds', 'notification_rules'];
+const ALLOWED_KEYS = ['types_action', 'niveaux_classe', 'labels_rep', 'statuts_action', 'thresholds', 'notification_rules', 'google_drive_export'];
 
 function requireAdmin(req, res, next) {
   if (req.user.role !== 'Admin' && req.user.role !== 'Bureau') {

@@ -31,8 +31,9 @@ const seancePresencesRoutes  = require('./routes/seance-presences');
 const automationRulesRoutes  = require('./routes/automation-rules');
 const appConfigRoutes        = require('./routes/app-config');
 const dashboardMessagesRoutes = require('./routes/dashboard-messages');
-const { startAutomationCron } = require('./lib/automationCron');
-const { seedAppConfig }       = require('./lib/seedAppConfig');
+const { startAutomationCron }  = require('./lib/automationCron');
+const { startDriveExportCron } = require('./lib/driveExportCron');
+const { seedAppConfig }        = require('./lib/seedAppConfig');
 
 const app = express();
 
@@ -178,4 +179,5 @@ app.listen(PORT, () => {
   log.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Backend démarré');
   seedAppConfig().catch(err => log.error({ err }, '[AppConfig] Erreur seed'));
   startAutomationCron();
+  startDriveExportCron();
 });
