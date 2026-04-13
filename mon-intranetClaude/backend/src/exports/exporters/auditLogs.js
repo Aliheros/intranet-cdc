@@ -21,10 +21,10 @@ registerExporter({
       'Cible nom': l.targetNom || '',
       IP: l.ip || '',
       'Payload (JSON)': JSON.stringify(l.payload || {}),
-      'Créé le': l.createdAt ? l.createdAt.toISOString() : '',
+      'Horodatage': l.createdAt ? l.createdAt.toISOString() : '',
     }));
 
-    const headers = ['ID','Acteur ID','Acteur nom','Action','Cible ID','Cible type','Cible nom','IP','Payload (JSON)','Créé le'];
+    const headers = ['ID','Acteur ID','Acteur nom','Action','Cible ID','Cible type','Cible nom','IP','Payload (JSON)','Horodatage'];
     return Buffer.from(toCSV(rows, headers), 'utf8');
   },
 });
