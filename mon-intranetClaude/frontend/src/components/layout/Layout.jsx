@@ -432,7 +432,7 @@ const Layout = ({ children, page, setPage, subPage, setSubPage, setActiveTab, da
         </button>
 
         {/* ── CONTENU PRINCIPAL ─────────────────────────────────────────────── */}
-        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'main-gradient' : ''}${(page === 'pole' || page === 'projet') && SPACE_CLASS_MAP[subPage] ? ` ${SPACE_CLASS_MAP[subPage]}-gradient` : ''}${page === 'coordination' ? ' coord-gradient' : ''}${PAGE_GRADIENT_MAP[page] ? ` ${PAGE_GRADIENT_MAP[page]}-gradient` : ''}${freshLogin ? ' login-transition' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
+        <main ref={mainRef} className={`main ${page === 'dashboard' ? 'utdient' : ''}${(page === 'pole' || page === 'projet') && SPACE_CLASS_MAP[subPage] ? ` ${SPACE_CLASS_MAP[subPage]}-gradient` : ''}${page === 'coordination' ? ' coord-gradient' : ''}${PAGE_GRADIENT_MAP[page] ? ` ${PAGE_GRADIENT_MAP[page]}-gradient` : ''}${freshLogin ? ' login-transition' : ''}`} style={{ padding: 0, transition: "all 0.3s ease-out" }}>
           {(page === 'dashboard' || ((page === 'pole' || page === 'projet') && SPACE_CLASS_MAP[subPage]) || page === 'coordination' || PAGE_GRADIENT_MAP[page]) && <div className="gradient-layer" aria-hidden="true" />}
 
           {/* ── TOPBAR STICKY ───────────────────────────────────────────────── */}
