@@ -4,7 +4,13 @@
    Keyframes partagées : euHeaderDrift, euShimmer, gradientDrift (glass.css)
    ════════════════════════════════════════════════════════════════════════════ */
 
-/* ── Cartes glass pour tous les espaces thématisés ─────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   STYLES GLASS MORPHISM COMMUNS POUR TOUS LES ESPACES
+   (Inspirés du modèle Europe - glass.css - lignes 219-342)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. CARTES GLASS (cycles annuels, panneaux) ────────────────────────── */
+/* Style complet avec backdrop-filter, border et box-shadow */
 .parcours-gradient .kc, .parcours-gradient .sc,
 .orientation-gradient .kc, .orientation-gradient .sc,
 .rp-gradient .kc, .rp-gradient .sc,
@@ -15,8 +21,26 @@
 .comm-gradient .kc, .comm-gradient .sc,
 .treso-gradient .kc, .treso-gradient .sc {
   background: rgba(255,255,255,.46) !important;
-  border-color: rgba(255,255,255,.55) !important;
+  backdrop-filter: blur(14px) saturate(145%);
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+  border: 1px solid rgba(255,255,255,.55) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,.75);
+  transform-style: preserve-3d;
+  transition: box-shadow .3s ease, border-color .3s ease, transform .3s ease;
 }
+.parcours-gradient .kc:hover, .parcours-gradient .sc:hover,
+.orientation-gradient .kc:hover, .orientation-gradient .sc:hover,
+.rp-gradient .kc:hover, .rp-gradient .sc:hover,
+.rh-gradient .kc:hover, .rh-gradient .sc:hover,
+.plaidoyer-gradient .kc:hover, .plaidoyer-gradient .sc:hover,
+.etudes-gradient .kc:hover, .etudes-gradient .sc:hover,
+.devfin-gradient .kc:hover, .devfin-gradient .sc:hover,
+.comm-gradient .kc:hover, .comm-gradient .sc:hover,
+.treso-gradient .kc:hover, .treso-gradient .sc:hover {
+  box-shadow: 0 30px 60px rgba(0,0,0,.11), inset 0 1px 0 rgba(255,255,255,.92);
+  border-color: rgba(255,255,255,.85) !important;
+}
+/* Mode sombre */
 .dark-theme .parcours-gradient .kc, .dark-theme .parcours-gradient .sc,
 .dark-theme .orientation-gradient .kc, .dark-theme .orientation-gradient .sc,
 .dark-theme .rp-gradient .kc, .dark-theme .rp-gradient .sc,
@@ -28,6 +52,554 @@
 .dark-theme .treso-gradient .kc, .dark-theme .treso-gradient .sc {
   background: rgba(255,255,255,.06) !important;
   border-color: rgba(255,255,255,.10) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.dark-theme .parcours-gradient .kc:hover, .dark-theme .parcours-gradient .sc:hover,
+.dark-theme .orientation-gradient .kc:hover, .dark-theme .orientation-gradient .sc:hover,
+.dark-theme .rp-gradient .kc:hover, .dark-theme .rp-gradient .sc:hover,
+.dark-theme .rh-gradient .kc:hover, .dark-theme .rh-gradient .sc:hover,
+.dark-theme .plaidoyer-gradient .kc:hover, .dark-theme .plaidoyer-gradient .sc:hover,
+.dark-theme .etudes-gradient .kc:hover, .dark-theme .etudes-gradient .sc:hover,
+.dark-theme .devfin-gradient .kc:hover, .dark-theme .devfin-gradient .sc:hover,
+.dark-theme .comm-gradient .kc:hover, .dark-theme .comm-gradient .sc:hover,
+.dark-theme .treso-gradient .kc:hover, .dark-theme .treso-gradient .sc:hover {
+  border-color: rgba(255,255,255,.18) !important;
+  box-shadow: 0 30px 60px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1);
+}
+
+/* ── 2. INSTRUCTIONS DE L'ÉQUIPE ──────────────────────────────────────── */
+/* Style glass avec border solid (pas dashed) */
+.parcours-gradient .space-instructions,
+.orientation-gradient .space-instructions,
+.rp-gradient .space-instructions,
+.rh-gradient .space-instructions,
+.plaidoyer-gradient .space-instructions,
+.etudes-gradient .space-instructions,
+.devfin-gradient .space-instructions,
+.comm-gradient .space-instructions,
+.treso-gradient .space-instructions {
+  background: rgba(255,255,255,.42) !important;
+  border: 1px solid rgba(255,255,255,.50) !important;
+  border-style: solid !important;
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  box-shadow: 0 8px 24px rgba(0,0,0,.06), inset 0 1px 0 rgba(255,255,255,.7);
+  border-radius: 12px;
+}
+.dark-theme .parcours-gradient .space-instructions,
+.dark-theme .orientation-gradient .space-instructions,
+.dark-theme .rp-gradient .space-instructions,
+.dark-theme .rh-gradient .space-instructions,
+.dark-theme .plaidoyer-gradient .space-instructions,
+.dark-theme .etudes-gradient .space-instructions,
+.dark-theme .devfin-gradient .space-instructions,
+.dark-theme .comm-gradient .space-instructions,
+.dark-theme .treso-gradient .space-instructions {
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  border-style: solid !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.20);
+}
+
+/* ── 3. TOOLBAR & YEAR-TAB (cycles annuels) ───────────────────────────── */
+.parcours-gradient .toolbar-wrap,
+.orientation-gradient .toolbar-wrap,
+.rp-gradient .toolbar-wrap,
+.rh-gradient .toolbar-wrap,
+.plaidoyer-gradient .toolbar-wrap,
+.etudes-gradient .toolbar-wrap,
+.devfin-gradient .toolbar-wrap,
+.comm-gradient .toolbar-wrap,
+.treso-gradient .toolbar-wrap {
+  background: rgba(255,255,255,.46) !important;
+  border: 1px solid rgba(255,255,255,.45) !important;
+  backdrop-filter: blur(14px) saturate(145%);
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+  box-shadow: 0 20px 40px rgba(0,0,0,.09), inset 0 1px 0 rgba(255,255,255,.75);
+}
+.parcours-gradient .toolbar-wrap:hover,
+.orientation-gradient .toolbar-wrap:hover,
+.rp-gradient .toolbar-wrap:hover,
+.rh-gradient .toolbar-wrap:hover,
+.plaidoyer-gradient .toolbar-wrap:hover,
+.etudes-gradient .toolbar-wrap:hover,
+.devfin-gradient .toolbar-wrap:hover,
+.comm-gradient .toolbar-wrap:hover,
+.treso-gradient .toolbar-wrap:hover {
+  box-shadow: 0 30px 60px rgba(0,0,0,.11), inset 0 1px 0 rgba(255,255,255,.92);
+  border-color: rgba(255,255,255,.70) !important;
+}
+.dark-theme .parcours-gradient .toolbar-wrap,
+.dark-theme .orientation-gradient .toolbar-wrap,
+.dark-theme .rp-gradient .toolbar-wrap,
+.dark-theme .rh-gradient .toolbar-wrap,
+.dark-theme .plaidoyer-gradient .toolbar-wrap,
+.dark-theme .etudes-gradient .toolbar-wrap,
+.dark-theme .devfin-gradient .toolbar-wrap,
+.dark-theme .comm-gradient .toolbar-wrap,
+.dark-theme .treso-gradient .toolbar-wrap {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* Year-tab (sélecteur de cycle) */
+.parcours-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.parcours-gradient .year-tab.active {
+  background: rgba(180,30,20,.18) !important;
+  border-color: rgba(180,30,20,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .parcours-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .parcours-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+.orientation-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.orientation-gradient .year-tab.active {
+  background: rgba(3,68,56,.18) !important;
+  border-color: rgba(3,68,56,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .orientation-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .orientation-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+.rp-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.rp-gradient .year-tab.active {
+  background: rgba(10,48,144,.18) !important;
+  border-color: rgba(10,48,144,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .rp-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .rp-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+.rh-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.rh-gradient .year-tab.active {
+  background: rgba(46,8,112,.18) !important;
+  border-color: rgba(46,8,112,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .rh-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .rh-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+.plaidoyer-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.plaidoyer-gradient .year-tab.active {
+  background: rgba(88,0,8,.18) !important;
+  border-color: rgba(88,0,8,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .plaidoyer-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .plaidoyer-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+.etudes-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.etudes-gradient .year-tab.active {
+  background: rgba(2,64,96,.18) !important;
+  border-color: rgba(2,64,96,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .etudes-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .etudes-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+.devfin-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.devfin-gradient .year-tab.active {
+  background: rgba(4,64,24,.18) !important;
+  border-color: rgba(4,64,24,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .devfin-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .devfin-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+.comm-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.comm-gradient .year-tab.active {
+  background: rgba(106,30,0,.18) !important;
+  border-color: rgba(106,30,0,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .comm-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .comm-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+.treso-gradient .year-tab {
+  background: rgba(255,255,255,.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-dim) !important;
+}
+.treso-gradient .year-tab.active {
+  background: rgba(3,12,32,.18) !important;
+  border-color: rgba(3,12,32,.35) !important;
+  color: var(--text-base) !important;
+}
+.dark-theme .treso-gradient .year-tab {
+  background: rgba(255,255,255,.05) !important;
+}
+.dark-theme .treso-gradient .year-tab.active {
+  background: rgba(255,255,255,.15) !important;
+  border-color: rgba(255,255,255,.35) !important;
+}
+
+/* ── 4. BOUTONS PRIMAIRES & SECONDAIRES ───────────────────────────────── */
+/* Boutons secondaires (glass transparent) */
+.parcours-gradient .btn-secondary,
+.orientation-gradient .btn-secondary,
+.rp-gradient .btn-secondary,
+.rh-gradient .btn-secondary,
+.plaidoyer-gradient .btn-secondary,
+.etudes-gradient .btn-secondary,
+.devfin-gradient .btn-secondary,
+.comm-gradient .btn-secondary,
+.treso-gradient .btn-secondary {
+  background: rgba(255,255,255,.35) !important;
+  border-color: rgba(255,255,255,.50) !important;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+.parcours-gradient .btn-secondary:hover,
+.orientation-gradient .btn-secondary:hover,
+.rp-gradient .btn-secondary:hover,
+.rh-gradient .btn-secondary:hover,
+.plaidoyer-gradient .btn-secondary:hover,
+.etudes-gradient .btn-secondary:hover,
+.devfin-gradient .btn-secondary:hover,
+.comm-gradient .btn-secondary:hover,
+.treso-gradient .btn-secondary:hover {
+  background: rgba(255,255,255,.58) !important;
+  border-color: rgba(255,255,255,.70) !important;
+}
+.dark-theme .parcours-gradient .btn-secondary,
+.dark-theme .orientation-gradient .btn-secondary,
+.dark-theme .rp-gradient .btn-secondary,
+.dark-theme .rh-gradient .btn-secondary,
+.dark-theme .plaidoyer-gradient .btn-secondary,
+.dark-theme .etudes-gradient .btn-secondary,
+.dark-theme .devfin-gradient .btn-secondary,
+.dark-theme .comm-gradient .btn-secondary,
+.dark-theme .treso-gradient .btn-secondary {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.18) !important;
+}
+.dark-theme .parcours-gradient .btn-secondary:hover,
+.dark-theme .orientation-gradient .btn-secondary:hover,
+.dark-theme .rp-gradient .btn-secondary:hover,
+.dark-theme .rh-gradient .btn-secondary:hover,
+.dark-theme .plaidoyer-gradient .btn-secondary:hover,
+.dark-theme .etudes-gradient .btn-secondary:hover,
+.dark-theme .devfin-gradient .btn-secondary:hover,
+.dark-theme .comm-gradient .btn-secondary:hover,
+.dark-theme .treso-gradient .btn-secondary:hover {
+  background: rgba(255,255,255,.13) !important;
+}
+
+/* Boutons primaires (glass coloré) */
+.parcours-gradient .btn-primary {
+  background: rgba(180,30,20,.55) !important;
+  border: 1px solid rgba(220,80,60,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(180,30,20,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(60,10,10,.35);
+}
+.parcours-gradient .btn-primary:hover {
+  background: rgba(180,30,20,.72) !important;
+  border-color: rgba(220,80,60,.75) !important;
+  box-shadow: 0 6px 22px rgba(180,30,20,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .parcours-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(200,60,40,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .parcours-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(255,165,60,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(255,165,60,.08);
+}
+
+.orientation-gradient .btn-primary {
+  background: rgba(3,68,56,.55) !important;
+  border: 1px solid rgba(10,120,98,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(3,68,56,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,40,30,.35);
+}
+.orientation-gradient .btn-primary:hover {
+  background: rgba(3,68,56,.72) !important;
+  border-color: rgba(10,120,98,.75) !important;
+  box-shadow: 0 6px 22px rgba(3,68,56,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .orientation-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(10,120,98,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .orientation-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(80,220,190,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(80,220,190,.08);
+}
+
+.rp-gradient .btn-primary {
+  background: rgba(10,48,144,.55) !important;
+  border: 1px solid rgba(26,82,216,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(10,48,144,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,20,60,.35);
+}
+.rp-gradient .btn-primary:hover {
+  background: rgba(10,48,144,.72) !important;
+  border-color: rgba(26,82,216,.75) !important;
+  box-shadow: 0 6px 22px rgba(10,48,144,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .rp-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(26,82,216,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .rp-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(100,180,255,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(100,180,255,.08);
+}
+
+.rh-gradient .btn-primary {
+  background: rgba(46,8,112,.55) !important;
+  border: 1px solid rgba(96,32,192,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(46,8,112,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(20,0,60,.35);
+}
+.rh-gradient .btn-primary:hover {
+  background: rgba(46,8,112,.72) !important;
+  border-color: rgba(96,32,192,.75) !important;
+  box-shadow: 0 6px 22px rgba(46,8,112,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .rh-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(96,32,192,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .rh-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(200,140,255,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(200,140,255,.08);
+}
+
+.plaidoyer-gradient .btn-primary {
+  background: rgba(88,0,8,.55) !important;
+  border: 1px solid rgba(150,0,20,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(88,0,8,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(40,0,5,.35);
+}
+.plaidoyer-gradient .btn-primary:hover {
+  background: rgba(88,0,8,.72) !important;
+  border-color: rgba(150,0,20,.75) !important;
+  box-shadow: 0 6px 22px rgba(88,0,8,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .plaidoyer-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(150,0,20,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .plaidoyer-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(255,120,140,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(255,120,140,.08);
+}
+
+.etudes-gradient .btn-primary {
+  background: rgba(2,64,96,.55) !important;
+  border: 1px solid rgba(6,120,168,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(2,64,96,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,30,50,.35);
+}
+.etudes-gradient .btn-primary:hover {
+  background: rgba(2,64,96,.72) !important;
+  border-color: rgba(6,120,168,.75) !important;
+  box-shadow: 0 6px 22px rgba(2,64,96,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .etudes-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(6,120,168,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .etudes-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(60,200,240,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(60,200,240,.08);
+}
+
+.devfin-gradient .btn-primary {
+  background: rgba(4,64,24,.55) !important;
+  border: 1px solid rgba(12,120,48,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(4,64,24,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,30,10,.35);
+}
+.devfin-gradient .btn-primary:hover {
+  background: rgba(4,64,24,.72) !important;
+  border-color: rgba(12,120,48,.75) !important;
+  box-shadow: 0 6px 22px rgba(4,64,24,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .devfin-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(12,120,48,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .devfin-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(180,220,80,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(180,220,80,.08);
+}
+
+.comm-gradient .btn-primary {
+  background: rgba(106,30,0,.55) !important;
+  border: 1px solid rgba(192,58,8,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(106,30,0,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(50,15,0,.35);
+}
+.comm-gradient .btn-primary:hover {
+  background: rgba(106,30,0,.72) !important;
+  border-color: rgba(192,58,8,.75) !important;
+  box-shadow: 0 6px 22px rgba(106,30,0,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .comm-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(192,58,8,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .comm-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(255,180,60,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(255,180,60,.08);
+}
+
+.treso-gradient .btn-primary {
+  background: rgba(3,12,32,.55) !important;
+  border: 1px solid rgba(12,34,72,.55) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 16px rgba(3,12,32,.22), inset 0 1px 0 rgba(255,255,255,.25);
+  color: #fff !important;
+  text-shadow: 0 1px 3px rgba(0,5,15,.35);
+}
+.treso-gradient .btn-primary:hover {
+  background: rgba(3,12,32,.72) !important;
+  border-color: rgba(12,34,72,.75) !important;
+  box-shadow: 0 6px 22px rgba(3,12,32,.30), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.dark-theme .treso-gradient .btn-primary {
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(12,34,72,.35) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.dark-theme .treso-gradient .btn-primary:hover {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(200,175,80,.35) !important;
+  box-shadow: 0 6px 22px rgba(0,0,0,.50), inset 0 1px 0 rgba(200,175,80,.08);
 }
 
 /* ════════════════════════════
