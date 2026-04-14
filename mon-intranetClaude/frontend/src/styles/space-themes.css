@@ -1239,6 +1239,17 @@
 .bureau-gradient .kc, .bureau-gradient .sc,
 .admin-gradient .kc, .admin-gradient .sc {
   background: rgba(255,255,255,.46) !important;
+  backdrop-filter: blur(14px) saturate(145%);
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
+  border-color: rgba(255,255,255,.55) !important;
+}
+
+/* ── Cartes glass pour le Dashboard (pas de gradient) ────────────────────── */
+.kpi-grid .kc, .kpi-grid .sc,
+.kc, .sc {
+  background: rgba(255,255,255,.46) !important;
+  backdrop-filter: blur(14px) saturate(145%);
+  -webkit-backdrop-filter: blur(14px) saturate(145%);
   border-color: rgba(255,255,255,.55) !important;
 }
 .dark-theme .actions-gradient .kc, .dark-theme .actions-gradient .sc,
