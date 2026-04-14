@@ -1,6 +1,6 @@
 // src/pages/Admin.jsx — Panneau d'administration centralisé
 import React, { useState, useEffect, useCallback } from 'react';
-import { Shield, Users, ScrollText, BarChart2, RefreshCw, ChevronLeft, ChevronRight, Search, Calendar, User, Activity, MessageSquare, Receipt, Zap, Bell, Download, Settings2, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Shield, Users, ScrollText, BarChart2, RefreshCw, ChevronLeft, ChevronRight, Search, Calendar, User, Activity, MessageSquare, Receipt, Zap, Bell, Download, Settings2, Plus, Trash2, AlertTriangle, CloudUpload } from 'lucide-react';
 import api from '../api/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppContext } from '../contexts/AppContext';
@@ -11,6 +11,7 @@ import DfConfigPanel      from '../components/admin/DfConfigPanel';
 import AutomationPanel    from '../components/admin/AutomationPanel';
 import AppConfigPanel           from '../components/admin/AppConfigPanel';
 import DashboardMessagesPanel   from '../components/admin/DashboardMessagesPanel';
+import DriveExportPanel         from '../components/admin/DriveExportPanel';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (d) => {
@@ -600,6 +601,7 @@ const TABS = [
   { id: 'audit',        label: 'Journal d\'audit',  icon: ScrollText },
   { id: 'parametres',   label: 'Paramètres',        icon: Settings2 },
   { id: 'exports',      label: 'Exports',           icon: Download },
+  { id: 'drive',        label: 'Sauvegarde Drive',  icon: CloudUpload },
   { id: 'statistiques', label: 'Statistiques',      icon: BarChart2 },
 ];
 
@@ -653,6 +655,7 @@ const Admin = () => {
       {tab === 'audit'         && <AuditTab />}
       {tab === 'parametres'    && <ParametresTab />}
       {tab === 'exports'       && <ExportsTab />}
+      {tab === 'drive'         && <DriveExportPanel />}
       {tab === 'statistiques'  && <StatsTab />}
     </>
   );

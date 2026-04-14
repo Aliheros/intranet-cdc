@@ -64,6 +64,28 @@ const DEFAULTS = {
     task_request:    true,
     action_terminee: true,
   },
+
+  // Configuration export automatique Google Drive
+  // enabled: false par défaut — à activer manuellement dans le panneau Admin
+  google_drive_export: {
+    enabled: false,
+    schedule: '0 7 * * *',       // Tous les jours à 07:00 (Europe/Paris)
+    format: 'csv',               // Format global : 'csv' | 'json'
+    rootFolderId: '',            // ID du dossier Drive racine (requis pour activer)
+    syncFiles: true,             // Synchroniser aussi les fichiers uploadés
+    notifyUsers: [],             // Noms des admins à notifier en cas d'échec
+    activeExporters: [           // Liste vide = tous les exporteurs actifs
+      'users', 'actions', 'evenements', 'seancePresences',
+      'transactions', 'notesFrais', 'devisFactures', 'heures',
+      'missions', 'impactStudies', 'contacts', 'auditLogs',
+      'tasks', 'taskRequests', 'budgets', 'faq',
+      'dashboardMessages', 'appConfig', 'automationRules', 'notifications',
+    ],
+    formatOverrides: {           // Surcharger le format pour certains exporteurs
+      appConfig:  'json',
+      auditLogs:  'json',
+    },
+  },
 };
 
 async function seedAppConfig() {
