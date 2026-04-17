@@ -1,0 +1,241 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAVIGATION — Styles de la sidebar et navigation
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── SIDEBAR TOP ──────────────────────────────────────────────────────────── */
+.s-top {
+  padding: 22px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.s-bottom {
+  position: relative;
+  z-index: 1;
+}
+
+.dark-theme .s-top {
+  border-bottom-color: rgba(255,255,255,0.04);
+}
+
+.dark-theme .s-bottom {
+  border-top-color: rgba(255,255,255,0.04);
+}
+
+/* ── LOGO ─────────────────────────────────────────────────────────────────── */
+.logo-badge {
+  display: inline-block;
+  background: #e63946;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  margin-bottom: 9px;
+}
+
+.logo-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.logo-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.28);
+  margin-top: 3px;
+}
+
+.dark-theme .logo-sub {
+  color: rgba(255,255,255,0.18);
+}
+
+/* ── NAVIGATION ───────────────────────────────────────────────────────────── */
+.nav {
+  flex: 1;
+  padding: 10px 0 14px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.18) transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.nav::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.03);
+  border-radius: 4px;
+}
+
+.nav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(230,57,70,0.7);
+}
+
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.18) transparent;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.03);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(230,57,70,0.7);
+}
+
+/* ── SECTIONS DE NAVIGATION ───────────────────────────────────────────────── */
+.ns {
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 8px 20px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: default;
+  user-select: none;
+  font-weight: 600;
+}
+
+.dark-theme .ns {
+  color: rgba(255,255,255,0.18);
+}
+
+/* ── ITEMS DE NAVIGATION ──────────────────────────────────────────────────── */
+.ni, a.ni, a.ni:link, a.ni:visited {
+  display: flex;
+  align-items: center;
+  padding: 7px 20px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.5);
+  transition: all 0.18s ease;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+}
+
+.ni:hover, a.ni:hover {
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.05);
+}
+
+.ni.active, a.ni.active {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+  border-left-color: #e63946;
+  font-weight: 600;
+}
+
+.dark-theme .ni, .dark-theme a.ni, .dark-theme a.ni:link, .dark-theme a.ni:visited {
+  color: rgba(255,255,255,0.35);
+}
+
+.dark-theme .ni:hover, .dark-theme a.ni:hover {
+  color: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.04);
+}
+
+.dark-theme .ni.active, .dark-theme a.ni.active {
+  color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.07);
+  border-left-color: #e63946;
+}
+
+/* ── SIDEBAR BOTTOM (USER) ────────────────────────────────────────────────── */
+.s-bottom {
+  padding: 12px 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 6px 8px;
+  transition: all 0.2s ease;
+  flex: 1;
+  border: none;
+  background: transparent;
+}
+
+.user-btn:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.uav {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #e63946;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.uname {
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+  font-weight: 600;
+}
+
+.urole {
+  font-size: 10px;
+  color: rgba(255,255,255,0.28);
+}
+
+/* ── THEME TOGGLE ─────────────────────────────────────────────────────────── */
+.theme-toggle {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}

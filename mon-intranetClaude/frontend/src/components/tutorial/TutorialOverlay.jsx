@@ -105,7 +105,7 @@ const TutorialOverlay = ({ onComplete, onSkip, handleNav }) => {
       if (e.key === 'ArrowRight' || e.key === 'Enter') goNext();
       if (e.key === 'ArrowLeft') goPrev();
       if (e.key === 'Escape') handleSkip();
-    };
+    }
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   });
@@ -165,7 +165,7 @@ const TutorialOverlay = ({ onComplete, onSkip, handleNav }) => {
     pointerEvents: 'none',
   };
 
-  // Arrow du tooltip
+  // Arrow du tooltip (styles dynamiques pour les 4 directions)
   const arrowBase = { position: 'absolute', width: 0, height: 0 };
   const arrows = {
     top:    { ...arrowBase, bottom: -8, left: 20, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '8px solid var(--bg-surface)' },
@@ -175,18 +175,11 @@ const TutorialOverlay = ({ onComplete, onSkip, handleNav }) => {
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9799,
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 0.3s ease',
-        pointerEvents: navigating ? 'none' : 'auto',
-      }}
-    >
+    <div className="tutorial-overlay">
       {/* Backdrop (cliquable pour skip) — uniquement si pas de spotlight */}
       {!rect && (
         <div
-          style={{ position: 'fixed', inset: 0, zIndex: 9800, cursor: 'default' }}
+          className="tutorial-overlay-backdrop"
           onClick={handleSkip}
         />
       )}
@@ -196,18 +189,11 @@ const TutorialOverlay = ({ onComplete, onSkip, handleNav }) => {
 
       {/* Tooltip */}
       <div
+        className="tutorial-tooltip"
         style={{
-          position: 'fixed',
           top:   tooltip.top,
           left:  tooltip.left,
           width: TOOLTIP_W,
-          zIndex: 9900,
-          background: 'var(--bg-surface)',
-          borderRadius: 14,
-          boxShadow: '0 24px 64px rgba(0,0,0,0.45), 0 4px 16px rgba(0,0,0,0.2)',
-          padding: '22px 24px 18px',
-          transition: 'top 0.35s cubic-bezier(0.4,0,0.2,1), left 0.35s cubic-bezier(0.4,0,0.2,1)',
-          border: '1px solid var(--border-light)',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -215,18 +201,18 @@ const TutorialOverlay = ({ onComplete, onSkip, handleNav }) => {
         {tooltip.arrowSide && <div style={arrows[tooltip.arrowSide]} />}
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, gap: 10 }}>
+        <div className="tutorial-tooltip-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #0f2d5e, #1a56db)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div className="tutorial-tooltip-icon">
               <BookOpen size={14} strokeWidth={2} color="#fff" />
             </div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-base)', lineHeight: 1.3 }}>
+            <div className="tutorial-tooltip-title">
               {step.title}
             </div>
           </div>
           <button
             onClick={handleSkip}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 2, display: 'flex', alignItems: 'center', flexShrink: 0 }}
+            className="tutorial-tooltip-close"
             title="Quitter le tutoriel"
           >
             <X size={16} strokeWidth={2} />
@@ -234,52 +220,48 @@ const TutorialOverlay = ({ onComplete, onSkip, handleNav }) => {
         </div>
 
         {/* Corps */}
-        <p style={{ fontSize: 13, color: 'var(--text-dim)', lineHeight: 1.65, margin: '0 0 18px' }}>
+        <p className="tutorial-tooltip-body">
           {step.body}
         </p>
 
         {/* Barre de progression */}
-        <div style={{ display: 'flex', gap: 5, marginBottom: 16, alignItems: 'center' }}>
+        <div className="tutorial-tooltip-progress">
           {TOUR_STEPS.map((_, i) => (
             <div
               key={i}
               onClick={() => goTo(i)}
+              className={`tutorial-tooltip-progress-dot ${i <= stepIdx ? 'active' : ''}`}
               style={{
-                height: 4,
                 flex: i === stepIdx ? 2 : 1,
-                borderRadius: 2,
-                background: i < stepIdx ? '#1a56db' : i === stepIdx ? '#1a56db' : 'var(--border-light)',
                 opacity: i > stepIdx ? 0.4 : 1,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
               }}
             />
           ))}
-          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: 6 }}>
+          <span className="tutorial-tooltip-progress-text">
             {stepIdx + 1}/{TOUR_STEPS.length}
           </span>
         </div>
 
         {/* Footer boutons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <div className="tutorial-tooltip-footer">
           <button
             onClick={handleSkip}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)', padding: '6px 0', textDecoration: 'underline' }}
+            className="tutorial-tooltip-skip"
           >
             Passer le tutoriel
           </button>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="tutorial-tooltip-nav">
             {!isFirst && (
               <button
                 onClick={goPrev}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 14px', borderRadius: 8, background: 'var(--bg-alt)', border: '1px solid var(--border-light)', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text-dim)' }}
+                className="tutorial-tooltip-btn-prev"
               >
                 <ChevronLeft size={14} strokeWidth={2} /> Préc.
               </button>
             )}
             <button
               onClick={goNext}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 18px', borderRadius: 8, background: 'linear-gradient(135deg, #0f2d5e, #1a56db)', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#fff', boxShadow: '0 2px 8px rgba(26,86,219,0.35)' }}
+              className="tutorial-tooltip-btn-next"
             >
               {isLast ? 'Terminer' : (<>Suivant <ChevronRight size={14} strokeWidth={2} /></>)}
             </button>

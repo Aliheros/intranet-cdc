@@ -241,7 +241,7 @@ const Dashboard = () => {
   seancesAValider.sort((a, b) => a.seanceDate - b.seanceDate);
 
   return (
-    <>
+    <div className="glass-theme">
       <DashboardMessageHeader key={loginKey} />
 
       {/* ── KPIs RAPIDES ──────────────────────────────────────────────────── */}
@@ -913,7 +913,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

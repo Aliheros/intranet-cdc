@@ -1,0 +1,514 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT — Structure de base de l'application
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── RESET GLOBAL ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── CORPS ET POLICES ─────────────────────────────────────────────────────── */
+body {
+  background: var(--bg-base);
+  color: var(--text-base);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+/* ── STRUCTURE APP ────────────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg-base);
+  overflow: hidden;
+  position: relative;
+}
+
+.body-row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 3;
+}
+
+/* ── OVERLAY POST-LOGIN ───────────────────────────────────────────────────── */
+.app-dark-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(270deg, #0f2d5e, #e63946, #4c1d95);
+  background-size: 400% 400%;
+  animation: gradientBgShift 20s ease infinite, fadeOutDarkBg 5s ease-in-out 2.5s forwards;
+}
+
+/* ── ZONE PRINCIPALE ──────────────────────────────────────────────────────── */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 36px 44px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.main.login-transition {
+  background-color: #050510 !important;
+  background-image: linear-gradient(270deg, #0f2d5e 0%, #e63946 50%, #4c1d95 100%) !important;
+  background-size: 400% 400% !important;
+  animation: gradientBgShift 20s ease infinite, loginTxtReveal 4s ease-in-out 2.5s forwards, loginTxtMutedReveal 4s ease-in-out 2.5s forwards !important;
+  --text-base: var(--login-txt);
+  --text-muted: var(--login-txt-muted);
+  --login-txt: rgb(255, 255, 255);
+  --login-txt-muted: rgb(220, 230, 255);
+}
+
+.sidebar.login-transition::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(270deg, #0f2d5e, #e63946, #4c1d95);
+  background-size: 400% 400%;
+  animation: gradientBgShift 20s ease infinite, fadeOutDarkBg 5s ease-in-out 2.5s forwards;
+}
+
+/* ── TRANSITIONS DE PAGE ──────────────────────────────────────────────────── */
+.page-transition {
+  animation: pageEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── SIDEBAR ──────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: 248px;
+  background: linear-gradient(145deg, #0a1f42 0%, #0f2d5e 25%, #1a3f7a 50%, #0d2550 75%, #0a1f42 100%);
+  background-size: 300% 300%;
+  animation: sidebarShift 18s ease infinite;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  position: relative;
+  z-index: 10;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+}
+
+/* Mode sombre — marine très profond, presque noir */
+.dark-theme .sidebar {
+  background: linear-gradient(145deg, #03080f 0%, #060f1e 25%, #0a1830 50%, #050d1a 75%, #03080f 100%);
+}
+
+/* ── SIDEBAR COLLAPSIBLE ──────────────────────────────────────────────────── */
+.sidebar-collapse-tab {
+  position: fixed;
+  top: 14px;
+  left: 248px;
+  margin-left: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(15, 45, 94, 0.72);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.32),
+    0 1px 2px rgba(0,0,0,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+  cursor: pointer;
+  z-index: 51;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.75);
+  transition:
+    left       0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s;
+}
+
+.sidebar-collapse-tab:hover {
+  background: rgba(230, 57, 70, 0.85);
+  border-color: rgba(255,255,255,0.30);
+  box-shadow:
+    0 4px 16px rgba(230,57,70,0.40),
+    0 1px 4px  rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.sidebar-collapse-tab__icon {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(180deg);
+  flex-shrink: 0;
+}
+
+.sidebar-collapse-tab--collapsed { left: 60px; }
+.sidebar-collapse-tab--collapsed .sidebar-collapse-tab__icon {
+  transform: rotate(0deg);
+}
+
+.dark-theme .sidebar-collapse-tab {
+  background: rgba(6, 15, 30, 0.80);
+  border-color: rgba(255,255,255,0.14);
+  box-shadow:
+    0 2px 10px rgba(0,0,0,0.50),
+    0 1px 3px  rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.dark-theme .sidebar-collapse-tab:hover {
+  background: rgba(230, 57, 70, 0.85);
+  border-color: rgba(255,255,255,0.25);
+}
+
+.sidebar-collapsed {
+  width: 60px !important;
+}
+
+.sidebar-collapsed .s-top {
+  padding: 20px 0 16px !important;
+}
+
+.sidebar-collapsed .s-bottom {
+  padding: 12px 0 !important;
+  margin: 0 !important;
+}
+
+.sidebar-collapsed .s-bottom > div {
+  justify-content: center;
+}
+
+.sidebar-collapsed .nav {
+  padding: 10px 0 14px;
+}
+
+.sidebar-collapsed .ni, .sidebar-collapsed a.ni {
+  padding: 9px 0;
+  justify-content: center;
+  border-left: none !important;
+  border-bottom: 3px solid transparent;
+}
+
+.sidebar-collapsed .ni.active, .sidebar-collapsed a.ni.active {
+  border-left: none !important;
+  border-bottom-color: #e63946;
+}
+
+/* ── UTILITAIRES RESPONSIVE ───────────────────────────────────────────────── */
+.mobile-only  { display: none !important; }
+.desktop-only { display: flex !important; }
+
+/* Wrapper pour tableau scrollable sur mobile */
+.table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Grille dashboard 2 colonnes */
+.dash-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Grilles KPI SpaceView */
+.space-kpi-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.space-kpi-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.space-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.space-instructions {
+  padding: 16px;
+}
+
+/* Grille 3 colonnes (NoteFrais KPIs, Annuaire missions) */
+.kpi-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+/* Grilles formulaires dans les modales */
+.form-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-3col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+/* Grille 2 colonnes générique */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Annonces Bureau auto-fill */
+.annonces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 16px;
+}
+
+/* ── TABLET (≤ 1024px) ────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .main          { padding: 24px 28px; }
+  .kpi-grid      { grid-template-columns: repeat(2, 1fr); }
+  .two-col       { grid-template-columns: 1fr; }
+  .members-grid  { grid-template-columns: repeat(2, 1fr); }
+  .space-layout  { grid-template-columns: 1fr; gap: 20px; }
+  .event-layout  { grid-template-columns: 1fr; height: auto; min-height: unset; }
+  .dash-two-col  { grid-template-columns: 1fr; gap: 14px; }
+}
+
+/* ── MOBILE (≤ 768px) ─────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Affichage conditionnel */
+  .mobile-only  { display: flex !important; }
+  .desktop-only { display: none !important; }
+
+  /* Sidebar : drawer depuis la gauche */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    z-index: 8500;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  /* Barre du haut mobile */
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 52px;
+    background: #0f2d5e;
+    position: sticky;
+    top: 0;
+    z-index: 300;
+    flex-shrink: 0;
+  }
+
+  /* Navigation bas d'écran mobile */
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 300;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    align-items: stretch;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+
+  .mob-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border: none;
+    background: transparent;
+    transition: color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mob-nav-item.active { color: #1a56db; }
+  .mob-nav-item:active { background: var(--bg-alt); }
+
+  /* Contenu principal */
+  .main { padding: 14px 14px 80px; }
+
+  /* Grilles */
+  .kpi-grid     { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
+  .two-col      { grid-template-columns: 1fr; gap: 12px; }
+  .members-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .space-layout { grid-template-columns: 1fr; gap: 14px; }
+  .event-layout { grid-template-columns: 1fr; height: auto; min-height: unset; }
+  .dash-two-col  { grid-template-columns: 1fr; gap: 12px; }
+  .space-kpi-4   { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .space-kpi-5   { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .space-two-col { grid-template-columns: 1fr; gap: 12px; }
+  .kpi-3col      { grid-template-columns: 1fr; gap: 10px; margin-bottom: 18px; }
+  .grid-2col     { grid-template-columns: 1fr; }
+  .form-2col     { grid-template-columns: 1fr; gap: 12px; }
+  .form-3col     { grid-template-columns: 1fr; gap: 12px; }
+  .annonces-grid { grid-template-columns: 1fr; }
+
+  /* Typographie */
+  .ptitle { font-size: 18px; margin-bottom: 16px; }
+
+  /* Sécurité globale : aucun élément ne dépasse la largeur du conteneur */
+  .main > *, .sc, .sc > * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  img, video, iframe, canvas, svg:not(.lucide) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  input, select, textarea, button {
+    max-width: 100%;
+  }
+
+  /* Tous les sélects de tri dans les toolbars */
+  .form-select { max-width: 100%; }
+
+  /* Sélects width:auto sur mobile */
+  select.form-select[style*="width"] {
+    width: auto !important;
+    max-width: 140px;
+  }
+
+  /* Tableau */
+  .table-scroll-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+  }
+
+  .actions-table {
+    min-width: 680px;
+  }
+
+  .actions-table th,
+  .actions-table td {
+    padding: 10px 12px;
+  }
+
+  /* Toolbar */
+  .toolbar-wrap { padding: 10px 12px; gap: 8px; }
+  .toolbar-group { flex-wrap: wrap; }
+
+  /* Cartes KPI */
+  .kc { padding: 14px; }
+  .kv { font-size: 22px; }
+
+  /* Événement — passe en colonne, liste cachée par défaut */
+  .event-list {
+    border-right: none;
+    border-bottom: 1px solid var(--border-light);
+    border-radius: 12px 12px 0 0;
+    max-height: 260px;
+  }
+
+  .event-detail {
+    padding: 18px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  /* Modales — plein écran sur mobile */
+  .modal-box {
+    max-width: calc(100vw - 24px) !important;
+    width: calc(100vw - 24px) !important;
+    max-height: 92dvh !important;
+    border-radius: 12px !important;
+  }
+
+  /* Onglets contextuels — scroll horizontal sur mobile */
+  .ctx-tab { padding: 8px 10px; font-size: 12px; }
+
+  /* Header modales — compact sur mobile */
+  .modal-header { padding: 14px 16px; border-radius: 12px 12px 0 0; }
+  .modal-header-title { font-size: 14px; }
+
+  /* Toolbar cycles — scroll horizontal propre */
+  .cycles-group {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    padding-bottom: 2px;
+  }
+
+  .cycles-group .year-tab { flex-shrink: 0; }
+
+  /* SpaceView — colonnes principales */
+  .space-col {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* SpaceView — carte tâches/sections */
+  .space-card { padding: 14px; }
+
+  /* SpaceView — instructions */
+  .space-instructions { padding: 14px; }
+
+  /* SpaceView — mur de discussion : hauteur réduite */
+  .space-wall { height: 220px !important; }
+
+  /* SpaceView — section titles wrappent sur mobile */
+  .section-title { flex-wrap: wrap; gap: 8px; }
+
+  /* DocRow — filename prend sa propre ligne sur mobile */
+  .doc-row {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+  }
+
+  .doc-name { flex: 1; min-width: 60%; }
+
+  /* Contenu des cartes .sc — limité à la largeur */
+  .sc {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sc > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

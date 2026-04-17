@@ -1,0 +1,559 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTONS — Système unifié et harmonisé pour tous les boutons
+   Compatible avec le glass morphism et les thèmes (clair/sombre)
+   
+   Classes disponibles :
+   - .btn-primary      — Bouton d'action principale (bleu)
+   - .btn-secondary    — Bouton d'action secondaire (glass)
+   - .btn-ghost        — Bouton discret (hover seulement)
+   - .btn-danger       — Bouton de suppression/danger (rouge)
+   - .btn-success      — Bouton de validation (vert)
+   - .btn-warning      — Bouton d'avertissement (orange)
+   - .add-btn          — Bouton d'ajout (variante danger)
+   - .icon-btn         — Bouton icône carré
+   - .section-ctrl     — Contrôle de section (déplace/renomme/supprime)
+   - .year-tab         — Onglet année/cycle
+   - .chip             — Chip/étiquette cliquable
+   - .ctx-tab          — Onglet contextuel (navigation interne)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE COMMUNE — Propriétés partagées par tous les boutons
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn-primary,
+.btn-secondary,
+.btn-ghost,
+.btn-danger,
+.btn-success,
+.btn-warning,
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Taille compacte (optionnelle) */
+.btn-sm {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+}
+
+/* Taille large */
+.btn-lg {
+  padding: 12px 28px !important;
+  font-size: 14px !important;
+}
+
+/* Désactivé */
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled,
+.btn-success:disabled,
+.btn-warning:disabled,
+.add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON PRIMAIRE — Action principale (bleu)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn-primary {
+  padding: 9px 20px;
+  background: #1a56db;
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(26, 86, 219, 0.2);
+}
+
+.btn-primary:hover {
+  background: #1849b8;
+  box-shadow: 0 4px 12px rgba(26, 86, 219, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(26, 86, 219, 0.2);
+}
+
+/* Mode sombre */
+.dark-theme .btn-primary {
+  background: #3b82f6;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
+.dark-theme .btn-primary:hover {
+  background: #60a5fa;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON SECONDAIRE — Action secondaire (glass morphism)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn-secondary {
+  padding: 9px 18px;
+  background: var(--bg-surface);
+  color: var(--text-dim);
+  border: 1px solid var(--border-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  color: var(--text-base);
+  border-color: #1a56db;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.btn-secondary:active {
+  background: var(--bg-alt);
+  transform: scale(0.98);
+}
+
+/* Glass morphism — version améliorée */
+.glass-theme .btn-secondary {
+  background: rgba(255, 255, 255, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  color: var(--text-dim);
+}
+
+.glass-theme .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.8) !important;
+  color: var(--text-base);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark-theme .glass-theme .btn-secondary {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark-theme .glass-theme .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.13) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON GHOST — Action discrète (visible au hover)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn-ghost {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-alt);
+  color: var(--text-base);
+}
+
+.btn-ghost:active {
+  background: var(--bg-hover);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON DANGER — Suppression/action critique (rouge)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn-danger {
+  padding: 9px 18px;
+  background: #e63946;
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(230, 57, 70, 0.2);
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+}
+
+/* Variante outline */
+.btn-danger-outline {
+  background: transparent !important;
+  color: #e63946 !important;
+  border: 1px solid rgba(230, 57, 70, 0.3) !important;
+}
+
+.btn-danger-outline:hover {
+  background: rgba(230, 57, 70, 0.08) !important;
+  border-color: rgba(230, 57, 70, 0.5) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON SUCCÈS — Validation/action positive (vert)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn-success {
+  padding: 9px 18px;
+  background: #16a34a;
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.2);
+}
+
+.btn-success:hover {
+  background: #15803d;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON WARNING — Avertissement (orange)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn-warning {
+  padding: 9px 18px;
+  background: #d97706;
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.2);
+}
+
+.btn-warning:hover {
+  background: #b45309;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON AJOUTER — Variante du bouton danger pour l'ajout
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.add-btn {
+  padding: 8px 16px;
+  background: #e63946;
+  color: #fff;
+  border: none;
+  box-shadow: 0 1px 3px rgba(230, 57, 70, 0.2);
+}
+
+.add-btn:hover {
+  background: #c0392b;
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON ICÔNE CARRÉ — Pour les actions iconographiques
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover {
+  background: var(--bg-alt);
+  color: var(--text-base);
+}
+
+.icon-btn:active {
+  background: var(--bg-hover);
+  transform: scale(0.95);
+}
+
+/* Variantes de couleur */
+.icon-btn.danger:hover {
+  color: #e63946;
+  background: rgba(230, 57, 70, 0.08);
+}
+
+.icon-btn.primary:hover {
+  color: #1a56db;
+  background: rgba(26, 86, 219, 0.08);
+}
+
+.icon-btn.success:hover {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.icon-btn.warning:hover {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.08);
+}
+
+/* Taille compacte */
+.icon-btn-sm {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTRÔLE DE SECTION — Boutons pour déplacer/renommer/supprimer sections
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.section-ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.section-ctrl:hover {
+  background: var(--bg-surface);
+  color: var(--text-base);
+  border-color: #1a56db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-ctrl:active {
+  transform: scale(0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ONGLET ANNÉE / CYCLE — Sélecteur de période
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.year-tab {
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  background: var(--bg-surface);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.year-tab:hover {
+  color: var(--text-base);
+  background: var(--bg-hover);
+}
+
+.year-tab.active {
+  background: rgba(26, 86, 219, 0.1);
+  color: #1a56db;
+  border-color: rgba(26, 86, 219, 0.2);
+  font-weight: 700;
+}
+
+/* Glass morphism */
+.glass-theme .year-tab {
+  background: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-theme .year-tab.active {
+  background: rgba(26, 86, 219, 0.18) !important;
+  border-color: rgba(26, 86, 219, 0.35) !important;
+}
+
+.dark-theme .glass-theme .year-tab {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-theme .glass-theme .year-tab.active {
+  background: rgba(96, 165, 250, 0.15) !important;
+  border-color: rgba(96, 165, 250, 0.35) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHIP / ÉTIQUETTE CLIQUABLE — Pour filtres et sélecteurs
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.chip {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  color: var(--text-dim);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chip:hover {
+  border-color: #1a56db;
+  color: #1a56db;
+  background: var(--bg-hover);
+}
+
+.chip.on {
+  background: #1a56db;
+  color: #fff;
+  border-color: #1a56db;
+  font-weight: 600;
+}
+
+/* Glass morphism */
+.glass-theme .chip {
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-theme .chip:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+
+.glass-theme .chip.on {
+  background: rgba(26, 86, 219, 0.88) !important;
+  border-color: rgba(80, 130, 255, 0.5) !important;
+  box-shadow: 0 2px 12px rgba(30, 60, 180, 0.25);
+}
+
+.dark-theme .glass-theme .chip {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark-theme .glass-theme .chip.on {
+  background: rgba(40, 80, 200, 0.9) !important;
+  border-color: rgba(100, 150, 255, 0.4) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ONGLET CONTEXTUEL — Navigation interne (sous-onglets)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.ctx-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
+
+.ctx-tab:hover {
+  color: var(--text-base);
+  background: rgba(26, 86, 219, 0.04);
+}
+
+.ctx-tab.active {
+  color: #1a56db;
+  border-bottom-color: #1a56db;
+}
+
+.dark-theme .ctx-tab.active {
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOUTON FLOTTANT — Pour actions principales (ex: nouveau message)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #1a56db;
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 20px rgba(26, 86, 219, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.fab:hover {
+  background: #1849b8;
+  box-shadow: 0 6px 28px rgba(26, 86, 219, 0.5);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.fab:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Ajustements pour mobile
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-success,
+  .btn-warning,
+  .add-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .fab {
+    bottom: 16px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+  }
+}

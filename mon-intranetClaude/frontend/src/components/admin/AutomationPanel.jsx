@@ -36,39 +36,33 @@ function RuleForm({ initial, onSave, onCancel }) {
     try { await onSave(form); } finally { setSaving(false); }
   };
 
-  const inputStyle = {
-    width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-light)',
-    background: 'var(--bg-alt)', color: 'var(--text-base)', fontSize: 13, boxSizing: 'border-box',
-  };
-  const labelStyle = { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', display: 'block', marginBottom: 5 };
-
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <form onSubmit={handleSubmit} className="automation-form">
       {/* Nom */}
-      <div>
-        <label style={labelStyle}>Nom de la règle *</label>
-        <input style={inputStyle} value={form.nom} onChange={e => set('nom', e.target.value)} placeholder="ex : Questionnaire fin de simulation" required />
+      <div className="form-row">
+        <label className="automation-label">Nom de la règle *</label>
+        <input className="automation-input" value={form.nom} onChange={e => set('nom', e.target.value)} placeholder="ex : Questionnaire fin de simulation" required />
       </div>
 
       {/* Description */}
-      <div>
-        <label style={labelStyle}>Description (optionnelle)</label>
-        <textarea style={{ ...inputStyle, resize: 'vertical', minHeight: 56 }} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Contexte de cette automatisation..." />
+      <div className="form-row">
+        <label className="automation-label">Description (optionnelle)</label>
+        <textarea className="automation-input automation-textarea" value={form.description} onChange={e => set('description', e.target.value)} placeholder="Contexte de cette automatisation..." />
       </div>
 
       {/* Déclencheur */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="form-grid-2col">
         <div>
-          <label style={labelStyle}>Jours avant la date (J-X) *</label>
-          <input style={inputStyle} type="number" min={0} max={365} value={form.triggerOffsetDays}
+          <label className="automation-label">Jours avant la date (J-X) *</label>
+          <input className="automation-input" type="number" min={0} max={365} value={form.triggerOffsetDays}
             onChange={e => set('triggerOffsetDays', parseInt(e.target.value, 10) || 0)} />
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+          <div className="automation-hint">
             La demande sera créée J-{form.triggerOffsetDays} avant la date choisie
           </div>
         </div>
         <div>
-          <label style={labelStyle}>Date de référence *</label>
-          <select style={inputStyle} value={form.triggerDateRef} onChange={e => set('triggerDateRef', e.target.value)}>
+          <label className="automation-label">Date de référence *</label>
+          <select className="automation-input" value={form.triggerDateRef} onChange={e => set('triggerDateRef', e.target.value)}>
             <option value="date_debut">Date de début</option>
             <option value="date_fin">Date de fin</option>
           </select>
@@ -77,55 +71,52 @@ function RuleForm({ initial, onSave, onCancel }) {
 
       {/* Filtre type d'action */}
       <div>
-        <label style={labelStyle}>Filtrer par type d'action (vide = toutes)</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <label className="automation-label">Filtrer par type d'action (vide = toutes)</label>
+        <div className="automation-types">
           {TYPES_ACTION.map(type => {
             const active = form.actionTypeFilter.includes(type);
             return (
               <button key={type} type="button" onClick={() => toggleType(type)}
-                style={{ padding: '5px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                  border: `1px solid ${active ? '#1a56db' : 'var(--border-light)'}`,
-                  background: active ? 'rgba(26,86,219,0.1)' : 'var(--bg-hover)',
-                  color: active ? '#1a56db' : 'var(--text-dim)' }}>
+                className={`automation-type-chip ${active ? 'active' : ''}`}>
                 {type}
               </button>
             );
           })}
         </div>
         {form.actionTypeFilter.length === 0 && (
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>S'applique à tous les types d'actions</div>
+          <div className="automation-hint">S'applique à tous les types d'actions</div>
         )}
       </div>
 
       {/* Pôle cible */}
-      <div>
-        <label style={labelStyle}>Pôle destinataire de la demande *</label>
-        <select style={inputStyle} value={form.targetPole} onChange={e => set('targetPole', e.target.value)}>
+      <div className="form-row">
+        <label className="automation-label">Pôle destinataire de la demande *</label>
+        <select className="automation-input" value={form.targetPole} onChange={e => set('targetPole', e.target.value)}>
           {POLES.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
 
       {/* Texte de la tâche */}
-      <div>
-        <label style={labelStyle}>Intitulé de la tâche *</label>
-        <input style={inputStyle} value={form.taskText} onChange={e => set('taskText', e.target.value)}
+      <div className="form-row">
+        <label className="automation-label">Intitulé de la tâche *</label>
+        <input className="automation-input" value={form.taskText} onChange={e => set('taskText', e.target.value)}
           placeholder="ex : Envoyer le questionnaire de fin de simulation" required />
       </div>
 
       {/* Description de la tâche */}
-      <div>
-        <label style={labelStyle}>Description de la tâche (optionnelle)</label>
-        <textarea style={{ ...inputStyle, resize: 'vertical', minHeight: 72 }} value={form.taskDescription}
+      <div className="form-row">
+        <label className="automation-label">Description de la tâche (optionnelle)</label>
+        <textarea className="automation-input automation-textarea" value={form.taskDescription}
           onChange={e => set('taskDescription', e.target.value)}
           placeholder="Instructions complémentaires pour l'équipe..." />
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 4 }}>
-        <button type="button" onClick={onCancel} style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border-light)', background: 'none', color: 'var(--text-dim)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+      <div className="automation-actions">
+        <button type="button" onClick={onCancel} className="btn-secondary">
           Annuler
         </button>
-        <button type="submit" disabled={saving} style={{ padding: '8px 20px', borderRadius: 8, background: '#1a56db', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+        <button type="submit" disabled={saving} className="btn-primary automation-save-btn" style={{ opacity: saving ? 0.6 : 1 }}>
           {saving ? 'Enregistrement…' : 'Enregistrer'}
         </button>
       </div>
@@ -149,40 +140,37 @@ function RuleCard({ rule, onEdit, onDelete, onToggle, onRun }) {
   };
 
   return (
-    <div style={{ background: 'var(--bg-alt)', border: `1px solid ${rule.isActive ? 'rgba(26,86,219,0.25)' : 'var(--border-light)'}`, borderRadius: 12, overflow: 'hidden' }}>
+    <div className={`rule-card ${rule.isActive ? 'active' : ''}`}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px' }}>
+      <div className="rule-header">
         <button onClick={() => onToggle(rule)} title={rule.isActive ? 'Désactiver' : 'Activer'}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: rule.isActive ? '#1a56db' : 'var(--text-muted)', display: 'flex', padding: 2 }}>
+          className={`rule-toggle ${rule.isActive ? 'active' : 'inactive'}`}>
           {rule.isActive ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
         </button>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-base)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="rule-title">
+          <div className="rule-title-text">
             {rule.nom}
-            {!rule.isActive && <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 5, background: 'var(--bg-hover)', color: 'var(--text-muted)', fontWeight: 700 }}>Inactif</span>}
+            {!rule.isActive && <span className="rule-title-badge">Inactif</span>}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+          <div className="rule-subtitle">
             J-{rule.triggerOffsetDays} avant la {DATE_REF_LABELS[rule.triggerDateRef]} · Pôle {rule.targetPole}
             {rule.actionTypeFilter?.length > 0 && ` · ${rule.actionTypeFilter.length} type(s) filtré(s)`}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="rule-actions">
           <button onClick={handleRun} disabled={running} title="Exécuter maintenant"
-            style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border-light)', background: 'none', color: '#16a34a', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, opacity: running ? 0.5 : 1 }}>
+            className={`rule-action-btn success ${running ? 'disabled' : ''}`}>
             <Play size={13} /> {running ? '…' : 'Tester'}
           </button>
-          <button onClick={() => onEdit(rule)} title="Modifier"
-            style={{ padding: 7, borderRadius: 7, border: '1px solid var(--border-light)', background: 'none', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex' }}>
+          <button onClick={() => onEdit(rule)} title="Modifier" className="rule-action-btn">
             <Pencil size={14} />
           </button>
-          <button onClick={() => onDelete(rule)} title="Supprimer"
-            style={{ padding: 7, borderRadius: 7, border: '1px solid var(--border-light)', background: 'none', color: '#e63946', cursor: 'pointer', display: 'flex' }}>
+          <button onClick={() => onDelete(rule)} title="Supprimer" className="rule-action-btn danger">
             <Trash2 size={14} />
           </button>
-          <button onClick={() => setExpanded(x => !x)}
-            style={{ padding: 7, borderRadius: 7, border: '1px solid var(--border-light)', background: 'none', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex' }}>
+          <button onClick={() => setExpanded(x => !x)} className="rule-action-btn">
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
         </div>
@@ -190,34 +178,36 @@ function RuleCard({ rule, onEdit, onDelete, onToggle, onRun }) {
 
       {/* Résultat du test manuel */}
       {lastResult && (
-        <div style={{ margin: '0 18px 12px', padding: '8px 12px', borderRadius: 8, background: lastResult.triggered > 0 ? 'rgba(22,163,74,0.08)' : 'var(--bg-hover)', border: `1px solid ${lastResult.triggered > 0 ? 'rgba(22,163,74,0.25)' : 'var(--border-light)'}`, fontSize: 12, color: 'var(--text-dim)', display: 'flex', gap: 16 }}>
-          <span style={{ color: '#16a34a', fontWeight: 700 }}>✓ {lastResult.triggered} déclenchée(s)</span>
+        <div className={`rule-result ${lastResult.triggered > 0 ? 'success' : 'neutral'}`}>
+          <span className="rule-result-text success">✓ {lastResult.triggered} déclenchée(s)</span>
           <span>{lastResult.skipped} déjà faite(s)</span>
-          {lastResult.errors > 0 && <span style={{ color: '#e63946' }}>⚠ {lastResult.errors} erreur(s)</span>}
+          {lastResult.errors > 0 && <span className="rule-result-text error">⚠ {lastResult.errors} erreur(s)</span>}
         </div>
       )}
 
       {/* Détails */}
       {expanded && (
-        <div style={{ borderTop: '1px solid var(--border-light)', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="rule-body">
           {rule.description && (
-            <div style={{ fontSize: 13, color: 'var(--text-dim)', fontStyle: 'italic' }}>{rule.description}</div>
+            <div className="rule-description">{rule.description}</div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 4 }}>Tâche créée</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-base)' }}>{rule.taskText}</div>
-              {rule.taskDescription && <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 3 }}>{rule.taskDescription}</div>}
+          <div className="rule-details">
+            <div className="rule-detail-section">
+              <div className="rule-detail-label">Tâche créée</div>
+              <div className="rule-detail-value">{rule.taskText}</div>
+              {rule.taskDescription && <div className="rule-detail-sub">{rule.taskDescription}</div>}
             </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 4 }}>Types d'action ciblés</div>
+            <div className="rule-detail-section">
+              <div className="rule-detail-label">Types d'action ciblés</div>
               {rule.actionTypeFilter?.length > 0
-                ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>{rule.actionTypeFilter.map(t => <span key={t} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 5, background: 'rgba(26,86,219,0.08)', color: '#1a56db', fontWeight: 600 }}>{t}</span>)}</div>
-                : <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Toutes les actions</span>
+                ? <div className="rule-detail-types">
+                    {rule.actionTypeFilter.map(t => <span key={t} className="rule-type-chip">{t}</span>)}
+                  </div>
+                : <span className="rule-detail-empty">Toutes les actions</span>
               }
             </div>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+          <div className="rule-meta">
             Créé par {rule.createdBy} · {new Date(rule.createdAt).toLocaleDateString('fr-FR')}
           </div>
         </div>
@@ -298,19 +288,18 @@ export default function AutomationPanel() {
   const cancelForm = () => { setShowForm(false); setEditRule(null); };
 
   return (
-    <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 14, padding: '24px 28px' }}>
+    <div className="automation-panel">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
+      <div className="automation-panel-header">
         <div>
-          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 3 }}>Automatisation</div>
-          <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-display)' }}>Règles d'automatisation</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+          <div className="automation-panel-label">Automatisation</div>
+          <div className="automation-panel-title">Règles d'automatisation</div>
+          <div className="automation-panel-desc">
             Chaque règle active crée automatiquement une demande de tâche J-X avant une date d'action. Le cron tourne chaque jour à 06h00.
           </div>
         </div>
         {!showForm && (
-          <button onClick={openCreate}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 16px', borderRadius: 9, background: '#0f2d5e', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
+          <button onClick={openCreate} className="btn-primary automation-new-btn">
             <Plus size={13} /> Nouvelle règle
           </button>
         )}
@@ -318,8 +307,8 @@ export default function AutomationPanel() {
 
       {/* Formulaire création / édition */}
       {showForm && (
-        <div style={{ background: 'var(--bg-alt)', border: '1px solid rgba(26,86,219,0.3)', borderRadius: 12, padding: '20px 22px', marginBottom: 22 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>
+        <div className="automation-form-container">
+          <div className="automation-form-title">
             {editRule ? `Modifier — ${editRule.nom}` : 'Nouvelle règle d\'automatisation'}
           </div>
           <RuleForm initial={editRule || undefined} onSave={handleSave} onCancel={cancelForm} />
@@ -328,15 +317,15 @@ export default function AutomationPanel() {
 
       {/* Liste des règles */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>Chargement…</div>
+        <div className="automation-loading">Chargement…</div>
       ) : rules.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>⚙️</div>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>Aucune règle configurée</div>
-          <div style={{ fontSize: 12, marginTop: 4 }}>Créez votre première règle d'automatisation ci-dessus</div>
+        <div className="automation-empty">
+          <div className="automation-empty-icon">⚙️</div>
+          <div className="automation-empty-title">Aucune règle configurée</div>
+          <div className="automation-empty-desc">Créez votre première règle d'automatisation ci-dessus</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="automation-rules-list">
           {rules.map(rule => (
             <RuleCard key={rule.id} rule={rule}
               onEdit={openEdit}
@@ -349,7 +338,7 @@ export default function AutomationPanel() {
       )}
 
       {/* Info bas de page */}
-      <div style={{ marginTop: 24, padding: '12px 16px', borderRadius: 10, background: 'var(--bg-hover)', border: '1px solid var(--border-light)', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+      <div className="automation-info">
         <strong style={{ color: 'var(--text-dim)' }}>Comment ça fonctionne :</strong> chaque jour à 06h00, le serveur parcourt toutes les règles actives.
         Si une action a sa date de référence dans exactement J-X jours, une demande de tâche est créée dans l'espace du pôle cible,
         associée à l'action. L'auteur est affiché comme <em>automatique</em>. Chaque règle ne se déclenche qu'une seule fois par action.

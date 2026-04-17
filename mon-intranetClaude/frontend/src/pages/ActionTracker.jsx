@@ -98,43 +98,56 @@ const ActionTracker = () => {
   // Fonction pour calculer la progression des tâches pour une action
   const getTasksCompletion = (actionId) => {
     const actionTasks = tasks.filter(t => t.actionId === actionId);
-    if (actionTasks.length === 0) return { completed: 0, total: 0, percentage: 0 };
-    const completed = actionTasks.filter(isTaskDone).length;
     const total = actionTasks.length;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-    return { completed, total, percentage };
+    const done = actionTasks.filter(isTaskDone).length;
+    return { total, done, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
   };
 
-  // Logique de filtrage
-  let finalActions = actions.filter(
-    (a) =>
-      a.isArchived === (actionsTab === "archives") &&
-      (filterStatut === "Tous" || a.statut === filterStatut) &&
-      (filterType === "Tous" || a.type === filterType) &&
-      (filterSearch === "" ||
-        (a.etablissement || "").toLowerCase().includes(filterSearch.toLowerCase()) ||
-        (a.ville || "").toLowerCase().includes(filterSearch.toLowerCase()))
-  );
-  
-  if (actionsCycle !== "Toutes") {
-    finalActions = finalActions.filter((a) => a.cycle === actionsCycle);
-  }
+  // Filtres
+  const finalActions = actions
+    .filter(a => {
+      if (actionsTab === "actifs") return !a.isArchived;
+      if (actionsTab === "archives") return a.isArchived;
+      if (actionsTab === "corbeille") return false; // géré séparément
+      return true;
+    })
+    .filter(a => actionsCycle === "Toutes" || a.cycle === actionsCycle)
+    .filter(a => filterStatut === "Tous" || a.statut === filterStatut)
+    .filter(a => filterType === "Tous" || a.type === filterType)
+    .filter(a => {
+      const q = (filterSearch || "").toLowerCase();
+      if (!q) return true;
+      return (
+        (a.etablissement || "").toLowerCase().includes(q) ||
+        (a.ville || "").toLowerCase().includes(q) ||
+        (a.contact_nom || "").toLowerCase().includes(q) ||
+        (a.contact_email || "").toLowerCase().includes(q) ||
+        (a.contact_tel || "").toLowerCase().includes(q) ||
+        (a.notes || "").toLowerCase().includes(q) ||
+        (a.type || "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (actionsSort === "date_desc") return new Date(b.date_debut || 0) - new Date(a.date_debut || 0);
+      if (actionsSort === "date_asc")  return new Date(a.date_debut || 0) - new Date(b.date_debut || 0);
+      if (actionsSort === "nom")      return (a.etablissement || "").localeCompare(b.etablissement || "");
+      if (actionsSort === "type")     return (a.type || "").localeCompare(b.type || "");
+      if (actionsSort === "statut")   return (a.statut || "").localeCompare(b.statut || "");
+      return 0;
+    });
 
-  // Logique de tri
-  finalActions.sort((a, b) => {
-    if (actionsSort === "date_asc") return (a.date_debut || "").localeCompare(b.date_debut || "");
-    if (actionsSort === "date_desc") return (b.date_debut || "").localeCompare(a.date_debut || "");
-    if (actionsSort === "nom_asc") return (a.etablissement || "").localeCompare(b.etablissement || "");
-    if (actionsSort === "nom_desc") return (b.etablissement || "").localeCompare(a.etablissement || "");
-    return 0;
-  });
+  const trashActions = trash.filter(t => t.space === "actions" && t.data?.type === "action");
+  const canDeleteTrash = (item) => isAdmin || item.deletedBy === currentUser?.nom;
 
   return (
     <>
-      <div className="eyebrow">Terrain</div>
-      <div className="ptitle">Suivi des actions</div>
+      {/* En-tête */}
+      <div className="eyebrow">
+        <Zap size={12} strokeWidth={2} /> Suivi terrain
+      </div>
+      <div className="ptitle">Actions transversales</div>
 
-      {/* Barre d'outils supérieure */}
+      {/* Tabs + Cycle */}
       <div className="toolbar-wrap" style={{ marginBottom: 16 }} data-tour="actions-list">
         <div className="toolbar-group" style={{ borderRight: "1px solid var(--border-light)", paddingRight: "12px" }}>
           <button
@@ -142,7 +155,7 @@ const ActionTracker = () => {
             style={{ border: "none" }}
             onClick={() => setActionsTab("actifs")}
           >
-            En cours ({actions.filter((a) => !a.isArchived && a.cycle === actionsCycle).length})
+            <span style={{display:"inline-flex",alignItems:"center",gap:5}}><Zap size={12} strokeWidth={1.8}/> Actifs ({actions.filter((a) => !a.isArchived && a.cycle === actionsCycle).length})</span>
           </button>
           <button
             className={`chip ${actionsTab === "archives" ? "on" : ""}`}
@@ -158,9 +171,7 @@ const ActionTracker = () => {
           >
             <span style={{display:"inline-flex",alignItems:"center",gap:5}}>
               <Trash2 size={12} strokeWidth={1.8}/>
-              Corbeille ({isResponsable
-                ? trash.filter(t => t.type === "action").length
-                : trash.filter(t => t.type === "action" && t.deletedBy === currentUser?.nom).length})
+              Corbeille ({trashActions.length})
             </span>
           </button>
         </div>
@@ -168,76 +179,63 @@ const ActionTracker = () => {
         <div className="toolbar-group cycles-group" style={{ paddingLeft: "12px" }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0 }}>Cycle&nbsp;:</span>
           {cycles.map((y) => (
-            <div key={y} className={`year-tab ${actionsCycle === y ? "active" : ""}`} onClick={() => setActionsCycle(y)}>
-              {y}
-            </div>
+            <button key={y} className={`chip ${actionsCycle === y ? "on" : ""}`} onClick={() => setActionsCycle(y)}>{y}</button>
           ))}
-          <div className={`year-tab ${actionsCycle === "Toutes" ? "active" : ""}`} onClick={() => setActionsCycle("Toutes")}>
-            Tous
-          </div>
         </div>
 
         <div className="toolbar-group" style={{ marginLeft: "auto", borderLeft: "1px solid var(--border-light)", paddingLeft: "12px" }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", whiteSpace: "nowrap", flexShrink: 0 }}>Trier par&nbsp;:</span>
           <select className="form-select" style={{ width: "auto", border: "none", background: "transparent", paddingLeft: 4 }}
             value={actionsSort} onChange={(e) => setActionsSort(e.target.value)}>
-            <option value="date_desc">Date (Récents)</option>
-            <option value="date_asc">Date (Anciens)</option>
-            <option value="nom_asc">Nom (A-Z)</option>
-            <option value="nom_desc">Nom (Z-A)</option>
+            <option value="date_desc">Date ↓</option>
+            <option value="date_asc">Date ↑</option>
+            <option value="nom">Nom</option>
+            <option value="type">Type</option>
+            <option value="statut">Statut</option>
           </select>
         </div>
       </div>
 
       {/* Corbeille */}
-      {actionsTab === "corbeille" && (() => {
-        const allTrashActions = trash.filter(t => t.type === "action").sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
-        // Responsables voient tout ; membres ne voient que leur propre corbeille
-        const trashActions = isResponsable
-          ? allTrashActions
-          : allTrashActions.filter(t => t.deletedBy === currentUser?.nom);
-        return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {!isResponsable && (
-              <div style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 8, padding: "8px 14px", display: "flex", alignItems: "center", gap: 6 }}>
-                <Lock size={11} strokeWidth={1.8}/> Vous ne pouvez voir et restaurer que vos propres éléments supprimés.
-              </div>
-            )}
-            {trashActions.length === 0 ? (
-              <div className="empty">La corbeille est vide.</div>
-            ) : trashActions.map(item => (
-              <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "var(--bg-surface)", border: "1px solid var(--border-light)", borderLeft: "3px solid #e63946", borderRadius: 8 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {item.data.etablissement} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>· {item.data.type}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 8 }}>
-                    {item.data.ville && <span>{item.data.ville}</span>}
-                    {item.data.date_debut && <span><Calendar size={10} strokeWidth={1.8} style={{ verticalAlign: "middle" }}/> {formatDateShort(item.data.date_debut)}</span>}
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Trash2 size={9} strokeWidth={1.8}/> Supprimé par <strong>{item.deletedBy}</strong> le {new Date(item.deletedAt).toLocaleDateString("fr-FR")}</span>
-                  </div>
-                </div>
-                {restoreTrash && (isResponsable || item.deletedBy === currentUser?.nom) && (
-                  <button
-                    onClick={() => restoreTrash(item.id)}
-                    style={{ background: "rgba(22,163,74,0.08)", border: "1px solid rgba(22,163,74,0.25)", borderRadius: 6, padding: "5px 10px", cursor: "pointer", color: "#16a34a", display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}
-                  >
-                    <RotateCcw size={11} strokeWidth={1.8}/> Restaurer
-                  </button>
-                )}
-                {forceDeleteTrash && isAdmin && (
-                  <button
-                    onClick={() => forceDeleteTrash(item.id)}
-                    style={{ background: "rgba(230,57,70,0.06)", border: "1px solid rgba(230,57,70,0.2)", borderRadius: 6, padding: "5px 10px", cursor: "pointer", color: "#e63946", display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}
-                  >
-                    <Trash2 size={11} strokeWidth={1.8}/> Supprimer définitivement
-                  </button>
-                )}
-              </div>
-            ))}
+      {actionsTab === "corbeille" && (
+        <div className="toolbar-wrap" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", background: "var(--bg-alt)", border: "1px solid var(--border-light)", borderRadius: 8, padding: "8px 14px", display: "flex", alignItems: "center", gap: 6 }}>
+            <Lock size={11} strokeWidth={1.8}/> Vous ne pouvez voir et restaurer que vos propres éléments supprimés.
           </div>
-        );
-      })()}
+          {trashActions.length === 0 ? (
+            <div className="empty">La corbeille est vide.</div>
+          ) : trashActions.map(item => (
+            <div key={item.id} className="action-row">
+              <div className="action-row-content">
+                <div className="action-row-title">
+                  {item.data.etablissement} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>· {item.data.type}</span>
+                </div>
+                <div className="action-row-meta">
+                  {item.data.ville && <span>{item.data.ville}</span>}
+                  {item.data.date_debut && <span><Calendar size={10} strokeWidth={1.8} style={{ verticalAlign: "middle" }}/> {formatDateShort(item.data.date_debut)}</span>}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Trash2 size={9} strokeWidth={1.8}/> Supprimé par <strong>{item.deletedBy}</strong> le {new Date(item.deletedAt).toLocaleDateString("fr-FR")}</span>
+                </div>
+              </div>
+              {restoreTrash && (isResponsable || item.deletedBy === currentUser?.nom) && (
+                <button
+                  onClick={() => restoreTrash(item.id)}
+                  className="action-row-btn restore"
+                >
+                  <RotateCcw size={11} strokeWidth={1.8}/> Restaurer
+                </button>
+              )}
+              {forceDeleteTrash && isAdmin && (
+                <button
+                  onClick={() => forceDeleteTrash(item.id)}
+                  className="action-row-btn delete"
+                >
+                  <Trash2 size={11} strokeWidth={1.8}/> Supprimer définitivement
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Barre de Filtres */}
       {actionsTab !== "corbeille" && <div className="toolbar-wrap" style={{ background: "transparent", border: "none", padding: 0, marginBottom: 18 }}>
@@ -332,11 +330,8 @@ const ActionTracker = () => {
                       {a.responsables.map((r, i) => {
                         const m = findMemberByName(directory, r);
                         return (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3 }}>
-                            <div onClick={() => openMemberProfile(m)} style={{ width: 20, height: 20, borderRadius: "50%", background: isAvatarUrl(m?.avatar) ? "transparent" : (m ? POLE_COLORS[m.pole] : "var(--text-muted)"), color: "#fff", fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", cursor: m ? "pointer" : "default" }}>
-                              <AvatarInner avatar={m?.avatar} nom={r} />
-                            </div>
-                            <span style={{ fontSize: 11 }}>{r}</span>
+                          <div key={i} className="responsable-avatar" onClick={() => openMemberProfile(m)}>
+                            <AvatarInner avatar={m?.avatar} nom={r} />
                           </div>
                         );
                       })}
@@ -440,12 +435,13 @@ const ActionTracker = () => {
                                   <div
                                     key={t.id}
                                     onClick={() => { if (t.space && canAccessSpace) { navigate(spaceType, t.space); } }}
-                                    style={{ cursor: (t.space && canAccessSpace) ? "pointer" : "default", padding: "5px 7px", borderRadius: 6, background: "var(--bg-hover)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.25)" : "var(--border-light)"}`, borderLeft: `3px solid ${barColor}` }}
+                                    className={`task-item ${isOverdue ? 'overdue' : ''}`}
+                                    style={{ borderLeft: `3px solid ${barColor}` }}
                                     title={`${t.text || ""}${t.space && canAccessSpace ? ` → ${t.space}` : ""}`}
                                   >
-                                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
-                                      <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 700, minWidth: 12, flexShrink: 0 }}>{i + 1}.</span>
-                                      <span style={{ fontSize: 10, color: isDone ? "#16a34a" : isOverdue ? "#e63946" : "var(--text-base)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 110, textDecoration: isDone ? "line-through" : "none" }}>
+                                    <div className="task-item-content">
+                                      <span className="task-item-number">{i + 1}.</span>
+                                      <span className={`task-item-text ${isDone ? 'done' : ''} ${isOverdue ? 'overdue' : ''}`}>
                                         {t.text || "—"}
                                       </span>
                                       {isOverdue && <AlertTriangle size={8} strokeWidth={2} style={{ color: "#e63946", flexShrink: 0 }} />}
@@ -454,7 +450,7 @@ const ActionTracker = () => {
                                       <div style={{ height: "100%", width: `${isDone ? 100 : assigneePct}%`, background: barColor, borderRadius: 2 }} />
                                     </div>
                                     {assigneesList.length > 0 && (
-                                      <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 2 }}>
+                                      <div className="task-item-assignees">
                                         {assigneesList.map(x => (x.name || "").split(" ")[0]).filter(Boolean).join(", ")}
                                       </div>
                                     )}
@@ -482,9 +478,9 @@ const ActionTracker = () => {
                         b.notes || null,
                       ].filter(Boolean).join('\n');
                       return (
-                        <div style={{ marginTop: 6, fontSize: 10, color: "#16a34a", display: "flex", alignItems: "flex-start", gap: 4 }} title={tooltip}>
-                          <FileText size={10} strokeWidth={2} style={{ flexShrink: 0, marginTop: 1 }}/>
-                          <span style={{ cursor: "help" }}>
+                        <div className="bilan-indicator" title={tooltip}>
+                          <FileText size={10} strokeWidth={2} className="bilan-indicator-icon"/>
+                          <span className="bilan-indicator-text">
                             Bilan{stars ? ` ${b.satisfaction}/5` : ''}
                           </span>
                         </div>
@@ -567,11 +563,12 @@ const ActionTracker = () => {
                                   const pageType = POLES_PAGES_EXP.includes(t.space) ? "pole" : "projet";
                                   navigate(pageType, t.space);
                                 }}
-                                style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 6, background: "var(--bg-surface)", border: `1px solid ${isOverdue ? "rgba(230,57,70,0.3)" : "var(--border-light)"}`, borderLeft: isOverdue ? "3px solid #e63946" : "3px solid #1a56db", cursor: (t.space && canNavSpace) ? "pointer" : "default", fontSize: 11, maxWidth: 260 }}
+                                className="task-link"
+                                style={{ borderLeft: isOverdue ? "3px solid #e63946" : "3px solid #1a56db" }}
                               >
-                                <span style={{ fontWeight: 600, color: "var(--text-base)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.text || "—"}</span>
+                                <span className="task-link-text">{t.text || "—"}</span>
                                 {isOverdue && <span style={{ display:"inline-flex", color: "#e63946", flexShrink: 0 }}><AlertTriangle size={9} strokeWidth={2}/></span>}
-                                <span style={{ fontSize: 9, color: "var(--text-muted)", flexShrink: 0 }}>{(t.assignees || []).map(a => (a.name || "").split(" ")[0]).filter(Boolean).join(", ")}</span>
+                                <span className="task-link-assignees">{(t.assignees || []).map(a => (a.name || "").split(" ")[0]).filter(Boolean).join(", ")}</span>
                               </div>
                             );
                           })}
@@ -588,103 +585,98 @@ const ActionTracker = () => {
       </div>}
 
       {/* ── PANEL BILAN POST-ACTION ────────────────────────────────────────── */}
-      {bilanPending && (() => {
-        const action = actions.find(a => a.id === bilanPending.actionId);
-        return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-            <div style={{ background: 'var(--bg-card)', borderRadius: 12, padding: 28, width: '100%', maxWidth: 520, boxShadow: '0 8px 40px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#16a34a', marginBottom: 4 }}>Action terminée</div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-base)' }}>{action?.etablissement}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Saisissez le bilan (optionnel — peut être rempli plus tard)</div>
-              </div>
+      {bilanPending && (
+        <div className="bilan-modal">
+          <div className="bilan-modal-content">
+            <div className="bilan-modal-header">
+              <div className="bilan-modal-type">Action terminée</div>
+              <div className="bilan-modal-title">{actions.find(a => a.id === bilanPending.actionId)?.etablissement}</div>
+              <div className="bilan-modal-subtitle">Saisissez le bilan (optionnel — peut être rempli plus tard)</div>
+            </div>
 
-              {/* Satisfaction */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-base)', marginBottom: 8 }}>Satisfaction globale</div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {[1,2,3,4,5].map(n => (
-                    <button
-                      key={n}
-                      onClick={() => setBilanPending(f => ({ ...f, satisfaction: n }))}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, fontSize: 24, color: n <= bilanPending.satisfaction ? '#f59e0b' : 'var(--border-light)', transition: 'color 0.15s' }}
-                    >★</button>
-                  ))}
-                  {bilanPending.satisfaction > 0 && (
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', alignSelf: 'center', marginLeft: 4 }}>
-                      {['','Insuffisant','Passable','Bien','Très bien','Excellent'][bilanPending.satisfaction]}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Bénéficiaires */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-base)', display: 'block', marginBottom: 4 }}>
-                  Nombre de bénéficiaires (confirmer)
-                </label>
-                <input
-                  type="number" min="0"
-                  value={bilanPending.beneficiaires}
-                  onChange={e => setBilanPending(f => ({ ...f, beneficiaires: Number(e.target.value) }))}
-                  style={{ fontSize: 13, padding: '6px 10px', border: '1px solid var(--border-light)', borderRadius: 6, background: 'var(--bg-base)', width: 100 }}
-                />
-              </div>
-
-              {/* Points positifs */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', display: 'block', marginBottom: 4 }}>Ce qui a bien marché</label>
-                <textarea
-                  value={bilanPending.pointsPositifs}
-                  onChange={e => setBilanPending(f => ({ ...f, pointsPositifs: e.target.value }))}
-                  rows={2} placeholder="Points forts, moments marquants…"
-                  style={{ width: '100%', fontSize: 12, padding: '7px 9px', border: '1px solid var(--border-light)', borderRadius: 6, background: 'var(--bg-base)', resize: 'vertical', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              {/* Difficultés */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#d97706', display: 'block', marginBottom: 4 }}>Difficultés rencontrées</label>
-                <textarea
-                  value={bilanPending.difficultes}
-                  onChange={e => setBilanPending(f => ({ ...f, difficultes: e.target.value }))}
-                  rows={2} placeholder="Obstacles, frictions, retards…"
-                  style={{ width: '100%', fontSize: 12, padding: '7px 9px', border: '1px solid var(--border-light)', borderRadius: 6, background: 'var(--bg-base)', resize: 'vertical', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              {/* Recommandations */}
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 11, fontWeight: 700, color: '#1a56db', display: 'block', marginBottom: 4 }}>Recommandations pour le prochain cycle</label>
-                <textarea
-                  value={bilanPending.recommandations}
-                  onChange={e => setBilanPending(f => ({ ...f, recommandations: e.target.value }))}
-                  rows={2} placeholder="Améliorations, idées, points d'attention…"
-                  style={{ width: '100%', fontSize: 12, padding: '7px 9px', border: '1px solid var(--border-light)', borderRadius: 6, background: 'var(--bg-base)', resize: 'vertical', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button
-                  style={{ fontSize: 11, padding: '6px 14px', background: 'none', border: '1px solid var(--border-light)', borderRadius: 6, cursor: 'pointer', color: 'var(--text-muted)' }}
-                  onClick={() => submitBilan(true)}
-                  disabled={bilanSaving}
-                >
-                  Passer — terminer sans bilan
-                </button>
-                <button
-                  className="btn-primary"
-                  style={{ fontSize: 11, padding: '6px 16px' }}
-                  onClick={() => submitBilan(false)}
-                  disabled={bilanSaving}
-                >
-                  {bilanSaving ? 'Sauvegarde…' : 'Enregistrer le bilan'}
-                </button>
+            {/* Satisfaction */}
+            <div className="bilan-modal-section">
+              <div className="bilan-modal-label">Satisfaction globale</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {[1,2,3,4,5].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setBilanPending(f => ({ ...f, satisfaction: n }))}
+                    className={`bilan-modal-star-btn ${n <= bilanPending.satisfaction ? 'bilan-modal-star-active' : 'bilan-modal-star-inactive'}`}
+                  >★</button>
+                ))}
+                {bilanPending.satisfaction > 0 && (
+                  <span className="bilan-modal-star-label">
+                    {['','Insuffisant','Passable','Bien','Très bien','Excellent'][bilanPending.satisfaction]}
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* Bénéficiaires */}
+            <div className="bilan-modal-section">
+              <label className="bilan-modal-label">Nombre de bénéficiaires (confirmer)</label>
+              <input
+                type="number" min="0"
+                value={bilanPending.beneficiaires}
+                onChange={e => setBilanPending(f => ({ ...f, beneficiaires: Number(e.target.value) }))}
+                className="bilan-modal-input"
+              />
+            </div>
+
+            {/* Points positifs */}
+            <div className="bilan-modal-section">
+              <label className="bilan-modal-label">Ce qui a bien marché</label>
+              <textarea
+                value={bilanPending.pointsPositifs}
+                onChange={e => setBilanPending(f => ({ ...f, pointsPositifs: e.target.value }))}
+                rows={2} placeholder="Points forts, moments marquants…"
+                className="bilan-modal-textarea"
+              />
+            </div>
+
+            {/* Difficultés */}
+            <div className="bilan-modal-section">
+              <label className="bilan-modal-label">Difficultés rencontrées</label>
+              <textarea
+                value={bilanPending.difficultes}
+                onChange={e => setBilanPending(f => ({ ...f, difficultes: e.target.value }))}
+                rows={2} placeholder="Obstacles, frictions, retards…"
+                className="bilan-modal-textarea"
+              />
+            </div>
+
+            {/* Recommandations */}
+            <div className="bilan-modal-section">
+              <label className="bilan-modal-label">Recommandations pour le prochain cycle</label>
+              <textarea
+                value={bilanPending.recommandations}
+                onChange={e => setBilanPending(f => ({ ...f, recommandations: e.target.value }))}
+                rows={2} placeholder="Améliorations, idées, points d'attention…"
+                className="bilan-modal-textarea"
+              />
+            </div>
+
+            <div className="bilan-modal-actions">
+              <button
+                className="bilan-modal-btn-secondary"
+                onClick={() => submitBilan(true)}
+                disabled={bilanSaving}
+              >
+                Passer — terminer sans bilan
+              </button>
+              <button
+                className="btn-primary"
+                style={{ fontSize: 11, padding: '6px 16px' }}
+                onClick={() => submitBilan(false)}
+                disabled={bilanSaving}
+              >
+                {bilanSaving ? 'Sauvegarde…' : 'Enregistrer le bilan'}
+              </button>
+            </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* ── Modale demande de tâche ── */}
       {taskReqAction && (

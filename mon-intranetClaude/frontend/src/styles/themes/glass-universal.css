@@ -1,0 +1,344 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   glass-universal.css — Système glass morphism universel et rationalisé
+   SOURCE UNIQUE pour toutes les cartes glass sur TOUTES les pages.
+   
+   Utilisation :
+   1. Ajouter la classe `glass-theme` à n'importe quel conteneur pour activer
+      le glass morphism sur tous ses enfants (.kc, .sc, .cbox, etc.)
+   2. Ou utiliser `.glass-card` directement sur n'importe quel élément
+   
+   Variantes disponibles :
+   - `.glass-theme` — Glass standard (bleu/blanc par défaut)
+   - `.glass-theme-europe` — Glass avec thème Europe (bleu roi + or)
+   - `.glass-theme-coord` — Glass avec thème Coordination (indigo + violet)
+   - `.glass-theme-custom` — Glass avec variables CSS personnalisées
+   
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 1 : Variables CSS globales pour le glass morphism
+   Ces variables peuvent être redéfinies localement pour créer des variantes.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Glass de base (clair) ────────────────────────────────────────────── */
+  --glass-bg: rgba(255, 255, 255, 0.48);
+  --glass-bg-hover: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-border-hover: rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --glass-shadow-hover: 0 30px 60px rgba(0, 0, 0, 0.11), inset 0 1px 0 rgba(255, 255, 255, 1);
+  --glass-blur: blur(14px) saturate(140%);
+  --glass-transition: box-shadow .3s ease, border-color .3s ease, transform .3s ease;
+  
+  /* ── Glass sombre ─────────────────────────────────────────────────────── */
+  --glass-bg-dark: rgba(30, 41, 59, 0.6);
+  --glass-bg-hover-dark: rgba(30, 41, 59, 0.75);
+  --glass-border-dark: rgba(255, 255, 255, 0.08);
+  --glass-border-hover-dark: rgba(255, 255, 255, 0.15);
+  --glass-shadow-dark: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --glass-shadow-hover-dark: 0 30px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  /* ── Éléments internes glass ──────────────────────────────────────────── */
+  --glass-inner-bg: rgba(255, 255, 255, 0.35);
+  --glass-inner-bg-hover: rgba(255, 255, 255, 0.65);
+  --glass-inner-bg-dark: rgba(255, 255, 255, 0.04);
+  --glass-inner-bg-hover-dark: rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 2 : Classe principale — active le glass sur tous les enfants
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Cartes glass — activées via .glass-theme OU .main-gradient ────────── */
+.glass-theme .kc,
+.glass-theme .sc,
+.glass-theme .cbox,
+.glass-card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow);
+  transform-style: preserve-3d;
+  transition: var(--glass-transition);
+}
+
+.glass-theme .kc:hover,
+.glass-theme .sc:hover,
+.glass-theme .cbox:hover,
+.glass-card:hover {
+  background: var(--glass-bg-hover) !important;
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--glass-border-hover) !important;
+}
+
+/* ── Mode sombre ────────────────────────────────────────────────────────── */
+.dark-theme .glass-theme .kc,
+.dark-theme .glass-theme .sc,
+.dark-theme .glass-theme .cbox,
+.dark-theme .glass-card {
+  background: var(--glass-bg-dark) !important;
+  border-color: var(--glass-border-dark) !important;
+  box-shadow: var(--glass-shadow-dark);
+}
+
+.dark-theme .glass-theme .kc:hover,
+.dark-theme .glass-theme .sc:hover,
+.dark-theme .glass-theme .cbox:hover,
+.dark-theme .glass-card:hover {
+  background: var(--glass-bg-hover-dark) !important;
+  border-color: var(--glass-border-hover-dark) !important;
+  box-shadow: var(--glass-shadow-hover-dark);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 3 : Éléments UI glass — boutons, toolbars, etc.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Toolbar glass ──────────────────────────────────────────────────────── */
+.glass-theme .toolbar-wrap {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-theme .toolbar-wrap:hover {
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--glass-border-hover) !important;
+}
+
+.dark-theme .glass-theme .toolbar-wrap {
+  background: var(--glass-bg-dark) !important;
+  border-color: var(--glass-border-dark) !important;
+  box-shadow: var(--glass-shadow-dark);
+}
+
+/* ── Boutons secondaires glass ──────────────────────────────────────────── */
+.glass-theme .btn-secondary {
+  background: rgba(255, 255, 255, 0.35) !important;
+  border-color: var(--glass-border) !important;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+.glass-theme .btn-secondary:hover {
+  background: var(--glass-bg-hover) !important;
+  border-color: var(--glass-border-hover) !important;
+}
+
+.dark-theme .glass-theme .btn-secondary {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: var(--glass-border-dark) !important;
+}
+
+.dark-theme .glass-theme .btn-secondary:hover {
+  background: var(--glass-bg-hover-dark) !important;
+  border-color: var(--glass-border-hover-dark) !important;
+}
+
+/* ── Chips/Onglets glass ────────────────────────────────────────────────── */
+.glass-theme .chip,
+.glass-theme .year-tab {
+  background: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-theme .chip.on,
+.glass-theme .year-tab.active {
+  background: rgba(26, 86, 219, 0.18) !important;
+  border-color: rgba(26, 86, 219, 0.35) !important;
+}
+
+.dark-theme .glass-theme .chip,
+.dark-theme .glass-theme .year-tab {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-theme .glass-theme .chip.on,
+.dark-theme .glass-theme .year-tab.active {
+  background: rgba(96, 165, 250, 0.15) !important;
+  border-color: rgba(96, 165, 250, 0.35) !important;
+}
+
+/* ── Lignes internes dans les panneaux glass ────────────────────────────── */
+.glass-theme .sc .dash-row,
+.glass-theme .dash-row {
+  background: var(--glass-inner-bg) !important;
+}
+
+.glass-theme .sc .dash-row:hover,
+.glass-theme .dash-row:hover {
+  background: var(--glass-inner-bg-hover) !important;
+}
+
+.dark-theme .glass-theme .sc .dash-row,
+.dark-theme .glass-theme .dash-row {
+  background: var(--glass-inner-bg-dark) !important;
+}
+
+.dark-theme .glass-theme .sc .dash-row:hover,
+.dark-theme .glass-theme .dash-row:hover {
+  background: var(--glass-inner-bg-hover-dark) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 4 : Variante Europe — bleu roi + or
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.glass-theme-europe {
+  /* Variables Europe spécifiques */
+  --glass-bg: rgba(255, 255, 255, 0.46);
+  --glass-bg-hover: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(170, 205, 255, 0.45);
+  --glass-border-hover: rgba(180, 215, 255, 0.70);
+  --glass-shadow: 0 20px 40px rgba(0, 20, 80, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --glass-shadow-hover: 0 30px 60px rgba(0, 20, 80, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  --glass-bg-dark: rgba(4, 14, 40, 0.62);
+  --glass-bg-hover-dark: rgba(4, 14, 40, 0.75);
+  --glass-border-dark: rgba(100, 150, 255, 0.12);
+  --glass-border-hover-dark: rgba(255, 215, 0, 0.18);
+  --glass-shadow-dark: 0 20px 40px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(100, 150, 255, 0.08);
+  --glass-shadow-hover-dark: 0 30px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 215, 0, 0.07);
+  --glass-inner-bg: rgba(255, 255, 255, 0.38);
+  --glass-inner-bg-hover: rgba(255, 255, 255, 0.65);
+  --glass-inner-bg-dark: rgba(255, 255, 255, 0.04);
+  --glass-inner-bg-hover-dark: rgba(255, 215, 0, 0.05);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 5 : Variante Coordination — indigo + violet + teal
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.glass-theme-coord {
+  /* Variables Coordination spécifiques */
+  --glass-bg: rgba(230, 240, 255, 0.97);
+  --glass-bg-hover: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(150, 190, 255, 0.48);
+  --glass-border-hover: rgba(100, 150, 255, 0.55);
+  --glass-shadow: 0 4px 18px rgba(20, 50, 140, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  --glass-shadow-hover: 0 6px 22px rgba(30, 65, 200, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --glass-bg-dark: rgba(8, 16, 50, 0.97);
+  --glass-bg-hover-dark: rgba(255, 255, 255, 0.14);
+  --glass-border-dark: rgba(80, 120, 210, 0.28);
+  --glass-border-hover-dark: rgba(130, 180, 255, 0.45);
+  --glass-shadow-dark: 0 4px 18px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --glass-shadow-hover-dark: 0 6px 22px rgba(0, 0, 0, 0.50), inset 0 1px 0 rgba(255, 215, 0, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 6 : Gradient layer animé (optionnel, pour fonds décoratifs)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Propriétés CSS animables pour le dégradé */
+@property --gx1 { syntax: '<percentage>'; inherits: false; initial-value: 18%; }
+@property --gy1 { syntax: '<percentage>'; inherits: false; initial-value: 14%; }
+@property --gx2 { syntax: '<percentage>'; inherits: false; initial-value: 82%; }
+@property --gy2 { syntax: '<percentage>'; inherits: false; initial-value: 22%; }
+@property --gx3 { syntax: '<percentage>'; inherits: false; initial-value: 55%; }
+@property --gy3 { syntax: '<percentage>'; inherits: false; initial-value: 78%; }
+@property --gx4 { syntax: '<percentage>'; inherits: false; initial-value: 12%; }
+@property --gy4 { syntax: '<percentage>'; inherits: false; initial-value: 72%; }
+
+@keyframes gradientDrift {
+  0%   { --gx1: 8%; --gy1: 10%; --gx2:88%; --gy2:15%; --gx3:50%; --gy3:80%; --gx4: 5%; --gy4:70% }
+  16%  { --gx1:35%; --gy1:30%; --gx2:65%; --gy2: 5%; --gx3:30%; --gy3:55%; --gx4:25%; --gy4:90% }
+  33%  { --gx1:60%; --gy1:55%; --gx2:92%; --gy2:45%; --gx3:70%; --gy3:90%; --gx4: 2%; --gy4:45% }
+  50%  { --gx1:20%; --gy1: 5%; --gx2:75%; --gy2:60%; --gx3:45%; --gy3:60%; --gx4:15%; --gy4:30% }
+  66%  { --gx1:50%; --gy1:40%; --gx2:55%; --gy2:10%; --gx3:25%; --gy3:95%; --gx4: 8%; --gy4:60% }
+  83%  { --gx1:15%; --gy1:70%; --gx2:80%; --gy2:35%; --gx3:65%; --gy3:40%; --gx4:30%; --gy4:85% }
+  100% { --gx1: 8%; --gy1: 10%; --gx2:88%; --gy2:15%; --gx3:50%; --gy3:80%; --gx4: 5%; --gy4:70% }
+}
+
+/* ── Gradient layer de base ─────────────────────────────────────────────── */
+.glass-gradient-layer {
+  position: fixed;
+  top: -40px; right: -40px; bottom: -40px;
+  left: calc(248px - 40px);
+  z-index: 0;
+  pointer-events: none;
+  will-change: --gx1, --gy1, --gx2, --gy2, --gx3, --gy3, --gx4, --gy4;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #e8eeff;
+  background-image:
+    radial-gradient(ellipse 70% 60% at var(--gx1) var(--gy1), hsla(218,85%,75%,.75) 0px, transparent 100%),
+    radial-gradient(ellipse 55% 50% at var(--gx2) var(--gy2), hsla(354,80%,78%,.65) 0px, transparent 100%),
+    radial-gradient(ellipse 65% 55% at var(--gx3) var(--gy3), hsla(222,75%,72%,.6)  0px, transparent 100%),
+    radial-gradient(ellipse 50% 45% at var(--gx4) var(--gy4), hsla(340,70%,80%,.55) 0px, transparent 100%),
+    radial-gradient(ellipse 80% 70% at 85% 85%,               hsla(210,60%,82%,.45) 0px, transparent 100%);
+  animation: gradientDrift 45s ease-in-out infinite;
+}
+
+.dark-theme .glass-gradient-layer {
+  background-color: #0f172a;
+  background-image:
+    radial-gradient(ellipse at var(--gx1) var(--gy1), hsla(220,60%,20%,.9)  0px, transparent 55%),
+    radial-gradient(ellipse at var(--gx2) var(--gy2), hsla(260,60%,18%,.75) 0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx3) var(--gy3), hsla(300,50%,15%,.7)  0px, transparent 50%),
+    radial-gradient(ellipse at var(--gx4) var(--gy4), hsla(200,60%,16%,.6)  0px, transparent 45%),
+    radial-gradient(ellipse at 90% 90%,              hsla(220,50%,12%,.5)  0px, transparent 40%);
+}
+
+/* Sidebar réduite → décale le gradient-layer */
+.body-row:has(.sidebar-collapsed) .glass-gradient-layer {
+  left: calc(60px - 40px);
+}
+
+/* ── Wrapper contenu au-dessus du gradient layer ────────────────────────── */
+.glass-content-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 7 : Optimisation performance — pause pendant le scroll
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Pause animation pendant le scroll */
+.glass-scrolling .glass-theme .kc,
+.glass-scrolling .glass-theme .sc,
+.glass-scrolling .glass-theme .cbox,
+.glass-scrolling .glass-card,
+.glass-scrolling .glass-gradient-layer {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation-play-state: paused !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 8 : Guide d'utilisation
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+  COMMENT UTILISER LE GLASS MORPHISM UNIVERSEL
+  
+  1. Sur une page entière :
+     <div className="glass-theme">
+       {/* Toutes les .kc, .sc, .cbox seront glass *}/>
+     </div>
+  
+  2. Sur une carte spécifique :
+     <div className="glass-card">
+       {/* Cette carte sera glass *}/>
+     </div>
+  
+  3. Avec un thème spécifique :
+     <div className="glass-theme glass-theme-europe">
+       {/* Glass avec thème Europe *}/>
+     </div>
+  
+  4. Avec gradient animé en fond :
+     <div className="glass-theme">
+       <div className="glass-gradient-layer" />
+       <div className="glass-content-wrapper">
+         {/* Contenu *}/>
+       </div>
+     </div>
+  
+  5. Pour désactiver pendant le scroll (optionnel) :
+     Ajouter/supprimer la classe 'glass-scrolling' sur le conteneur principal
+     via JavaScript quand l'utilisateur scroll.
+*/
